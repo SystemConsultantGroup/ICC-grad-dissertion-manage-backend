@@ -6,6 +6,151 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int         @id @default(autoincrement())
+  Department Department? @relation(fields: [deptId], references: [id])
+  deptId     Int?
+  loginId    String      @unique @db.VarChar(20)
+  password   String      @db.VarChar(20)
+  name       String      @db.VarChar(20)
+  type       Type
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @default(now()) @updatedAt
+  Process    Process?
+  reviewers  Reviewer[]
+  reviews    Review[]
+
+  @@map("user")
+}
+
+model Process {
+  id          Int          @id @default(autoincrement())
+  isLock      Boolean
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+  User        User         @relation(fields: [userId], references: [id])
+  userId      Int          @unique
+  reviewers   Reviewer[]
+  Phase       Phase?       @relation(fields: [phaseId], references: [id])
+  phaseId     Int?
+  thesisInfos ThesisInfo[]
+
+  @@map("process")
+}
+
+model Department {
+  id   Int     @id @default(autoincrement())
+  name String? @db.VarChar(20)
+  user User[]
+
+  @@map("department")
+}
+
+model Reviewer {
+  id        Int      @id @default(autoincrement())
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+  Process   Process? @relation(fields: [processId], references: [id])
+  processId Int?
+
+  @@map("reviewer")
+}
+
+model ThesisInfo {
+  id          Int          @id @default(autoincrement())
+  title       String?      @db.VarChar(50)
+  abstract    String?      @db.Text
+  stage       Stage?
+  thesisFiles ThesisFile[]
+  reviews     Review[]
+  Process     Process?     @relation(fields: [processId], references: [id])
+  processId   Int?
+
+  @@map("thesis_info")
+}
+
+model ThesisFile {
+  id           Int         @id @default(autoincrement())
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @default(now()) @updatedAt
+  ThesisInfo   ThesisInfo? @relation(fields: [thesisInfoId], references: [id])
+  thesisInfoId Int?
+  File         File?       @relation(fields: [fileId], references: [id])
+  fileId       Int?
+
+  @@map("thesis_file")
+}
+
+model File {
+  id        Int      @id @default(autoincrement())
+  name      String?  @db.VarChar(50)
+  mimeType  String?  @db.VarChar(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  thesisFiles ThesisFile[]
+  reviewFiles ReviewFile[]
+
+  @@map("file")
+}
+
+model ReviewFile {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  File      File?    @relation(fields: [fileId], references: [id])
+  fileId    Int?
+  Review    Review?  @relation(fields: [reviewId], references: [id])
+  reviewId  Int?
+
+  @@map("review_file")
+}
+
+model Review {
+  id           Int          @id @default(autoincrement())
+  status       Status?
+  comment      String?      @db.VarChar(100) //임의로 100자 나중에 수정
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @default(now()) @updatedAt
+  User         User?        @relation(fields: [userId], references: [id])
+  userId       Int?
+  ThesisInfo   ThesisInfo?  @relation(fields: [thesisInfoId], references: [id])
+  thesisInfoId Int?
+  reviewFiles  ReviewFile[]
+
+  @@map("review")
+}
+
+model Phase {
+  id        Int       @id @default(autoincrement())
+  title     String    @db.VarChar(20)
+  start     DateTime?
+  end       DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+  processes Process[]
+
+  @@map("phase")
+}
+
+enum Stage {
+  PRELIMINARY
+  MAIN
+}
+
+enum Status {
+  UNEXAMINED
+  PASS
+  FAIL
+  PENDING
+}
+
+enum Type {
+  STUDENT
+  REVIEWER
+  HEAD_REVIEWER
 }
