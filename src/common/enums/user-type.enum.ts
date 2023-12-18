@@ -1,0 +1,5 @@
+export enum UserType {
+  STUDENT = 'STUDENT',
+  REVIEWER = 'REVIEWER',
+  HEAD_REVIEWER = 'HEAD_REVIEWER',
+}
