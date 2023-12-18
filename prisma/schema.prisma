@@ -17,7 +17,7 @@ model User {
   loginId    String      @unique @db.VarChar(20)
   password   String      @db.VarChar(20)
   name       String      @db.VarChar(20)
-  type       Type
+  type       UserType
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @default(now()) @updatedAt
   Process    Process?
@@ -149,7 +149,7 @@ enum Status {
   PENDING
 }
 
-enum Type {
+enum UserType {
   STUDENT
   REVIEWER
   HEAD_REVIEWER
