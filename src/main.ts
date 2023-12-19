@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -25,6 +26,10 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
   });
   app.enableShutdownHooks();
-  await app.listen(4000);
+
+  const appConfig = app.get(ConfigService);
+
+  await app.listen(appConfig.get('app.port'));
+  console.log(`==== Running as ${process.env.APP_ENV} ====`);
 }
 bootstrap();
