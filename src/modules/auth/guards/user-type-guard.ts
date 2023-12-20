@@ -23,7 +23,6 @@ export class UserTypeGuard implements CanActivate {
     );
 
     const { loginId, type } = request.user;
-
     if (!allowTypes.includes(type))
       throw new ForbiddenException('올바른 접근이 아닙니다');
 
