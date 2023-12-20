@@ -12,5 +12,5 @@ export class LoginRequestDto {
 
   @IsEnum(UserType)
   @IsNotEmpty()
-  userType: UserType;
+  type: UserType;
 }
