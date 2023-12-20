@@ -21,7 +21,7 @@ export class AuthService {
         loginId: loginRequsetDto.loginId,
       },
     });
-    console.log(this.createHash(user.password));
+
     if (
       !user ||
       !(await bcrypt.compare(loginRequsetDto.password, user.password))
