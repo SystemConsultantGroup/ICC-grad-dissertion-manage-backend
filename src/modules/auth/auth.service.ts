@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/config/database/prisma.service';
 import { LoginRequestDto } from './dto/login-request.dto';
@@ -31,6 +35,19 @@ export class AuthService {
     });
   }
 
+  async loginUser(loginId: string) {
+    const user: User = await this.prismaService.user.findUnique({
+      where: {
+        loginId: loginId,
+      },
+    });
+    if (!user) throw new BadRequestException('존재하지않는 id입니다');
+
+    return this.jwtService.sign({
+      loginId: user.loginId,
+      type: user.type,
+    });
+  }
   createHash(password: string) {
     const saltRounds = 10;
     const salt = bcrypt.genSaltSync(saltRounds);
