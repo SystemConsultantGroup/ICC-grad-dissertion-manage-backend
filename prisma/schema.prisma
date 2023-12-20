@@ -22,13 +22,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  deptId              Int?
-  department          Department? @relation(fields: [deptId], references: [id])
-  studentProcess      Process?    @relation("student")
-  headReviewerProcess Process?    @relation("headReviewer")
+  deptId         Int?
+  department     Department? @relation(fields: [deptId], references: [id])
+  studentProcess Process?    @relation("student")
 
-  reviewers Reviewer[]
-  reviews   Review[]
+  headReviewProcesses Process[]  @relation("headReviewer")
+  reviewers           Reviewer[]
+  reviews             Review[]
 
   @@map("user")
 }
@@ -58,7 +58,7 @@ model Process {
 
   studentId      Int?   @unique
   student        User?  @relation("student", fields: [studentId], references: [id])
-  headReviewerId Int?   @unique
+  headReviewerId Int?
   headReviewer   User?  @relation("headReviewer", fields: [headReviewerId], references: [id])
   phaseId        Int?
   phase          Phase? @relation(fields: [phaseId], references: [id])
