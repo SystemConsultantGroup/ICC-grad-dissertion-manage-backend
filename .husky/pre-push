@@ -11,4 +11,4 @@ npm run build ||
     false;
 )
 
-echo '✅✅✅✅ You win this time... I am pushing this now. ✅✅✅✅'
+echo '✅✅✅✅ You win this time... I am pushing this now. ✅✅✅✅'npm run lint
