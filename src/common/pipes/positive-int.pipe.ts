@@ -1,21 +1,15 @@
-import { HttpException, Injectable, PipeTransform } from '@nestjs/common';
+import { HttpException, Injectable, PipeTransform } from "@nestjs/common";
 
 @Injectable()
 export class PositiveIntPipe implements PipeTransform {
   transform(value: any) {
     if (!this.isInt(value)) {
-      throw new HttpException(
-        'Validation failed (integer number is expected)',
-        400,
-      );
+      throw new HttpException("Validation failed (integer number is expected)", 400);
     }
     value = parseInt(value, 10);
 
     if (!this.isPositive(value)) {
-      throw new HttpException(
-        'Validation failed (positive number is expected)',
-        400,
-      );
+      throw new HttpException("Validation failed (positive number is expected)", 400);
     }
     return value;
   }

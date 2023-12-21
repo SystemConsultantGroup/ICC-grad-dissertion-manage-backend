@@ -1,6 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsInt, IsPositive } from 'class-validator';
+import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import { IsInt, IsPositive } from "class-validator";
 
 export class PageDto<T> {
   pageNumber: number;
@@ -9,12 +9,7 @@ export class PageDto<T> {
   totalPages: number;
   content: T[];
 
-  constructor(
-    pageNumber: number,
-    pageSize: number,
-    totalCount: number,
-    content: T[],
-  ) {
+  constructor(pageNumber: number, pageSize: number, totalCount: number, content: T[]) {
     this.pageNumber = pageNumber;
     this.pageSize = pageSize;
     this.totalCount = totalCount;
@@ -24,13 +19,13 @@ export class PageDto<T> {
 }
 
 export class PageQuery {
-  @ApiProperty({ description: '페이지 번호' })
+  @ApiProperty({ description: "페이지 번호" })
   @Type(() => Number)
   @IsInt()
   @IsPositive()
   pageNumber: number;
 
-  @ApiProperty({ description: '페이지 크기' })
+  @ApiProperty({ description: "페이지 크기" })
   @Type(() => Number)
   @IsInt()
   @IsPositive()
