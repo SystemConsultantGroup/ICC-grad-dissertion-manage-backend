@@ -1,5 +1,5 @@
 import { StudentsService } from "./students.service";
-import { Controller, Get, Param, Post, Put, Query, Response, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put, Query, Response, UseGuards } from "@nestjs/common";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { PositiveIntPipe } from "src/common/pipes/positive-int.pipe";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
@@ -10,6 +10,7 @@ import { StudentPageQuery } from "./dtos/student-page-query.dto";
 import { PageDto } from "src/common/dtos/pagination.dto";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { GetStudentExcelQuery } from "./dtos/get-student-excel-query.dto";
+import { CreateStudentDto } from "./dtos/create-student.dto";
 
 @Controller("students")
 @UseGuards(JwtGuard)
@@ -44,8 +45,10 @@ export class StudentsController {
 
   @Post()
   @UseUserTypeGuard([UserType.ADMIN])
-  async createStudent() {
-    return "createStudent";
+  async createStudent(@Body() createStudentDto: CreateStudentDto) {
+    const student = await this.studentsService.createStudent(createStudentDto);
+    const studentDto = new StudentDto(student);
+    return new CommonResponseDto(studentDto);
   }
 
   @Post("/excel")
