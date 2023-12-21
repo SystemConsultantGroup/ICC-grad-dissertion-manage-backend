@@ -8,10 +8,19 @@ import * as XLSX from "xlsx";
 import * as DateUtil from "../../common/utils/date.util";
 import * as path from "path";
 import * as fs from "fs";
+import { CreateStudentDto } from "./dtos/create-student.dto";
+import { AuthService } from "../auth/auth.service";
+import { Stage } from "src/common/enums/stage.enum";
+import { Summary } from "src/common/enums/summary.enum";
+import { ThesisFileType } from "src/common/enums/thesis-file-type.enum";
+import { ReviewStatus } from "src/common/enums/review-status.enum";
 
 @Injectable()
 export class StudentsService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly authService: AuthService
+  ) {}
   async getStudentList(studentPageQuery: StudentPageQuery) {
     const { studentNumber, name, email, phone, departmentId, phaseId, isLock } = studentPageQuery;
 
@@ -32,7 +41,7 @@ export class StudentsService {
         },
       });
       if (!foundPhase) {
-        throw new BadRequestException("해당하는 학기가 없습니다.");
+        throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
       }
     }
 
@@ -105,7 +114,7 @@ export class StudentsService {
         },
       });
       if (!foundPhase) {
-        throw new BadRequestException("해당하는 학기가 없습니다.");
+        throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
       }
     }
 
@@ -164,7 +173,7 @@ export class StudentsService {
       record["시스템 단계"] = phase.title;
       record["시스템 락 여부"] = process.isLock;
 
-      // 제출 상태 : 넣을까 말까..
+      // TODO (제출 상태) : 넣을까 말까.. 솦 졸논에 비슷한 기능이 있는데 행정실에서 먼저 요청하지 않으면 굳이 포함하지 않는 것도 방법일 듯...ㅎ
       // record['예심 논문 파일 상태'];
       // record['예심 논문 발표 파일 상태'];
       // record['본심 논문 파일 상태'];
@@ -227,8 +236,199 @@ export class StudentsService {
     return student;
   }
 
-  async createStudent() {
-    return "CREATED STUDENT";
+  async createStudent(createStudentDto: CreateStudentDto) {
+    const {
+      loginId,
+      password,
+      name,
+      email,
+      phone,
+      deptId,
+      isLock,
+      headReviewerId,
+      phaseId,
+      reviewerIds,
+      preThesisTitle,
+      mainThesisTitle,
+    } = createStudentDto;
+
+    // 학생 존재 확인
+    const foundStudent = await this.prismaService.user.findUnique({
+      where: {
+        loginId,
+        type: UserType.STUDENT,
+      },
+    });
+    if (foundStudent) {
+      throw new BadRequestException("이미 존재하는 학생입니다.");
+    }
+
+    // deptId, phaseId, headReviewerId, reviewerIds 올바른지 확인
+    const foundDept = await this.prismaService.department.findUnique({
+      where: {
+        id: deptId,
+      },
+    });
+    if (!foundDept) {
+      throw new BadRequestException("해당하는 학과가 없습니다.");
+    }
+
+    const foundPhase = await this.prismaService.phase.findUnique({
+      where: {
+        id: phaseId,
+      },
+    });
+    if (!foundPhase) {
+      throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
+    }
+
+    if (!reviewerIds.includes(headReviewerId)) {
+      throw new BadRequestException("지도교수 리스트에 심사위원장이 포함되어야 합니다.");
+    }
+    for (const reviewerId of reviewerIds) {
+      const foundProfessor = await this.prismaService.user.findUnique({
+        where: {
+          id: reviewerId,
+          type: UserType.PROFESSOR,
+        },
+      });
+      if (!foundProfessor) {
+        throw new BadRequestException(`[ID:${reviewerId}]에 해당하는 교수가 없습니다.`);
+      }
+    }
+
+    try {
+      return await this.prismaService.$transaction(async (tx) => {
+        // 사용자(user) 생성
+        const user = await tx.user.create({
+          data: {
+            deptId,
+            loginId,
+            email,
+            password: this.authService.createHash(password),
+            name,
+            phone,
+            type: UserType.STUDENT,
+          },
+        });
+
+        // 논문 과정(process) 생성
+        const process = await tx.process.create({
+          data: {
+            studentId: user.id,
+            headReviewerId,
+            phaseId,
+            isLock,
+          },
+        });
+
+        // 지도 교수 배정 (reviewer)
+        await tx.reviewer.createMany({
+          data: reviewerIds.map((reviewerId) => {
+            return { processId: process.id, reviewerId };
+          }),
+        });
+
+        // 논문 정보 생성 (thesis_info) : 예심 논문 정보, 본심 논문 정보 총 2개 생성
+        const preThesisInfo = await tx.thesisInfo.create({
+          data: {
+            processId: process.id,
+            title: preThesisTitle,
+            stage: Stage.PRELIMINARY,
+            summary: Summary.UNEXAMINED,
+          },
+        });
+        const mainThesisInfo = await tx.thesisInfo.create({
+          data: {
+            processId: process.id,
+            title: mainThesisTitle,
+            stage: Stage.MAIN,
+            summary: Summary.UNEXAMINED,
+          },
+        });
+
+        // 논문 파일 생성 (thesis_file) : 각 논문 정보 마다 2개씩(논문 파일, 발표 파일) 생성
+        await tx.thesisFile.create({
+          data: {
+            thesisInfoId: preThesisInfo.id,
+            type: ThesisFileType.PRESENTATION,
+          },
+        });
+        await tx.thesisFile.create({
+          data: {
+            thesisInfoId: preThesisInfo.id,
+            type: ThesisFileType.THESIS,
+          },
+        });
+        await tx.thesisFile.create({
+          data: {
+            thesisInfoId: mainThesisInfo.id,
+            type: ThesisFileType.PRESENTATION,
+          },
+        });
+        await tx.thesisFile.create({
+          data: {
+            thesisInfoId: mainThesisInfo.id,
+            type: ThesisFileType.THESIS,
+          },
+        });
+
+        // 논문 심사 (review) : 각 논문 정보(예심/본심)에 대해 (지도교수들 심사(심사위원장 포함) + 최종심사) 생성
+        await tx.review.createMany({
+          data: reviewerIds.map((reviewerId) => {
+            return {
+              thesisInfoId: preThesisInfo.id,
+              reviewerId,
+              status: ReviewStatus.UNEXAMINED,
+            };
+          }),
+        });
+        await tx.review.createMany({
+          data: reviewerIds.map((reviewerId) => {
+            return {
+              thesisInfoId: mainThesisInfo.id,
+              reviewerId,
+              status: ReviewStatus.UNEXAMINED,
+            };
+          }),
+        });
+
+        // TODO(최종 심사) : 심사위원장의 심사/최종판정 구분 불가능 이슈 해결 후 확정
+        /** 
+        const preFinalReview = await tx.review.create({
+          data: {
+            thesisInfoId: preThesisInfo.id,
+            reviewerId: headReviewerId,
+            status: ReviewStatus.UNEXAMINED,
+          },
+        });
+        const mainFinalReview = await tx.review.create({
+          data: {
+            thesisInfoId: mainThesisInfo.id,
+            reviewerId: headReviewerId,
+            status: ReviewStatus.UNEXAMINED,
+          },
+        });
+        */
+
+        return await tx.user.findUnique({
+          where: {
+            id: user.id,
+            type: UserType.STUDENT,
+          },
+          include: {
+            department: true,
+            studentProcess: {
+              include: {
+                phase: true,
+              },
+            },
+          },
+        });
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(error.meta?.target);
+    }
   }
 
   async createStudentExcel() {

@@ -14,8 +14,6 @@ export class StudentDto {
     this.email = studentData.email;
     this.phone = studentData.phone;
     this.department = studentData.department;
-    // this.phase.id = studentData.studentProcess.phase.id;
-    // this.phase.title = studentData.studentProcess.phase.title;
     this.phase = {
       id: studentData.studentProcess.phase.id,
       title: studentData.studentProcess.phase.title,
