@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo '🏛🏛🏛🏛... Before push, Trying to build now. 🏛🏛🏛🏛'
+
+npm run build ||
+(
+    echo '❌👷🔨❌ Better call Bob... Because your build failed ❌👷🔨❌
+            Nest build failed: View the errors above to see why.
+    '
+    false;
+)
+
+echo '✅✅✅✅ You win this time... I am pushing this now. ✅✅✅✅'
