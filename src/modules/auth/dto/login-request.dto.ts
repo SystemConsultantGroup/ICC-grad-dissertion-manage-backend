@@ -1,5 +1,5 @@
-import { UserType } from '@prisma/client';
-import { IsString, IsNotEmpty, IsEnum } from 'class-validator';
+import { UserType } from "@prisma/client";
+import { IsString, IsNotEmpty, IsEnum } from "class-validator";
 
 export class LoginRequestDto {
   @IsNotEmpty()
