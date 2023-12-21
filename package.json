@@ -20,7 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prepare": "husky install",
     "check-types": "tsc --pretty --noEmit",
-    "check-format": "prettier --check .",
+    "check-format": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "check-lint": "eslint . --ext ts --ext tsx --ext js"
   },
   "dependencies": {
