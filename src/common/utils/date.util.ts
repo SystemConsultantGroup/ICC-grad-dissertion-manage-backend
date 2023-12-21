@@ -24,13 +24,13 @@ export function getCurrentTime() {
     minute: currentMinute,
     fullDateTime:
       currentYear +
-      (currentMonth < 10 ? '0' : '') +
+      (currentMonth < 10 ? "0" : "") +
       currentMonth +
-      (currentDate < 10 ? '0' : '') +
+      (currentDate < 10 ? "0" : "") +
       currentDate +
-      (currentHour < 10 ? '0' : '') +
+      (currentHour < 10 ? "0" : "") +
       currentHour +
-      (currentMinute < 10 ? '0' : '') +
+      (currentMinute < 10 ? "0" : "") +
       currentMinute,
   };
 }

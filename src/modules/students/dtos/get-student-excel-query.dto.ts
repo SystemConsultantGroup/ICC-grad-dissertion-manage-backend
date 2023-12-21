@@ -1,7 +1,4 @@
-import { OmitType } from '@nestjs/mapped-types';
-import { StudentPageQuery } from './student-page-query.dto';
+import { OmitType } from "@nestjs/mapped-types";
+import { StudentPageQuery } from "./student-page-query.dto";
 
-export class GetStudentExcelQuery extends OmitType(StudentPageQuery, [
-  'pageSize',
-  'pageNumber',
-] as const) {}
+export class GetStudentExcelQuery extends OmitType(StudentPageQuery, ["pageSize", "pageNumber"] as const) {}

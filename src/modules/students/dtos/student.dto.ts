@@ -1,11 +1,11 @@
-import { Department, Phase, Process, User } from '@prisma/client';
+import { Department, Phase, Process, User } from "@prisma/client";
 
 export class StudentDto {
   constructor(
     studentData: User & {
       department: Department;
       studentProcess: Process & { phase: Phase };
-    },
+    }
   ) {
     this.id = studentData.id;
     this.loginId = studentData.loginId;

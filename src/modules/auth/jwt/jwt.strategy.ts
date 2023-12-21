@@ -1,9 +1,9 @@
-import { PassportStrategy } from '@nestjs/passport';
-import { PrismaService } from 'src/config/database/prisma.service';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { Payload } from './jwt.payload';
-import { User } from '@prisma/client';
+import { PassportStrategy } from "@nestjs/passport";
+import { PrismaService } from "src/config/database/prisma.service";
+import { ExtractJwt, Strategy } from "passport-jwt";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Payload } from "./jwt.payload";
+import { User } from "@prisma/client";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       },
     });
     if (!user) {
-      throw new UnauthorizedException('허용되지않은 user입니다');
+      throw new UnauthorizedException("허용되지않은 user입니다");
     }
 
     return user;
