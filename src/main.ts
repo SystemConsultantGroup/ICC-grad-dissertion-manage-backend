@@ -1,15 +1,19 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module";
+import { ValidationPipe, VersioningType } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { winstonLogger } from "./config/logger/winston/winston.config";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: winstonLogger,
+  });
 
   app.enableVersioning({
     type: VersioningType.URI,
   });
-  app.setGlobalPrefix('v1');
+  app.setGlobalPrefix("v1");
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -17,19 +21,28 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true,
       },
-    }),
+    })
   );
 
   app.enableCors({
-    origin: '*',
+    origin: "*",
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ["GET", "POST", "PUT", "DELETE"],
   });
   app.enableShutdownHooks();
 
   const appConfig = app.get(ConfigService);
 
-  await app.listen(appConfig.get('app.port'));
+  const config = new DocumentBuilder()
+    .setTitle("ICE GS THESIS Backend")
+    .setDescription("API Description")
+    .setVersion("1.0")
+    .addTag("API")
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup("api", app, document);
+
+  await app.listen(appConfig.get("app.port"));
   console.log(`==== Running as ${process.env.APP_ENV} ====`);
 }
 bootstrap();
