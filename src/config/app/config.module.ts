@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import configuration from './configuration';
-import { PrismaModule } from '../database/prisma.module';
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import configuration from "./configuration";
+import { PrismaModule } from "../database/prisma.module";
 
 @Module({
   imports: [
@@ -9,7 +9,7 @@ import { PrismaModule } from '../database/prisma.module';
       isGlobal: true,
       cache: true,
       load: [configuration],
-      ...(process.env.APP_ENV !== 'production' && { envFilePath: '.env' }),
+      ...(process.env.APP_ENV !== "production" && { envFilePath: ".env" }),
     }),
     PrismaModule,
   ],

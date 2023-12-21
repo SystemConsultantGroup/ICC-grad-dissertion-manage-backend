@@ -1,7 +1,7 @@
-import { ConfigService } from '@nestjs/config';
-import { BadRequestException, Injectable } from '@nestjs/common';
-import * as Minio from 'minio';
-import { MinioService } from 'nestjs-minio-client';
+import { ConfigService } from "@nestjs/config";
+import { BadRequestException, Injectable } from "@nestjs/common";
+import * as Minio from "minio";
+import { MinioService } from "nestjs-minio-client";
 
 @Injectable()
 export class MinioClientService {
@@ -10,22 +10,15 @@ export class MinioClientService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly minioService: MinioService,
+    private readonly minioService: MinioService
   ) {
     this.minioClient = this.minioService.client;
-    this.bucket = this.configService.get('MINIO_BUCKET_NAME');
+    this.bucket = this.configService.get("MINIO_BUCKET_NAME");
   }
 
-  async uploadFile(
-    key: string,
-    file: Buffer,
-    size: number,
-    createdAt: Date,
-    originalName: string,
-    mimeType: string,
-  ) {
+  async uploadFile(key: string, file: Buffer, size: number, createdAt: Date, originalName: string, mimeType: string) {
     const metaData = {
-      'Content-Type': mimeType,
+      "Content-Type": mimeType,
       createdAt: createdAt.toUTCString(),
       originalName: encodeURI(originalName),
     };
