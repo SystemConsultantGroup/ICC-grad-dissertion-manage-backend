@@ -7,8 +7,8 @@ export class CreateDepartmentDto {
     description: "Name of the department",
     example: "소프트웨어학과",
   })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: "학과 이름을 입력해주세요." })
   @IsString()
   @Type(() => String)
   name: string;
-}  
+}
