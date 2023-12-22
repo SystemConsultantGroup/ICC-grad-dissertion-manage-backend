@@ -1,23 +1,39 @@
-import { PrismaService } from 'src/config/database/prisma.service';
-import { Injectable } from "@nestjs/common";
-import { CreateDepartmentDto } from './dtos/create-deparment.dto';
+import { PrismaService } from "src/config/database/prisma.service";
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { CreateDepartmentDto } from "./dtos/create-deparment.dto";
 
 @Injectable()
 export class DepartmentsService {
-    constructor(private readonly prismaService: PrismaService) {}
-    async getAllDepartments() {
-        return this.prismaService.department.findMany();
+  constructor(private readonly prismaService: PrismaService) {}
+  async getAllDepartments() {
+    return await this.prismaService.department.findMany();
+  }
+
+  async createDepartment(createDepartmentDto: CreateDepartmentDto) {
+    const department = await this.prismaService.department.findUnique({
+      where: { name: createDepartmentDto.name },
+    });
+
+    if (department) {
+      throw new BadRequestException("이미 존재하는 학과입니다.");
     }
 
-    async createDepartment(createDepartmentDto: CreateDepartmentDto) {
-        return this.prismaService.department.create({
-            data: createDepartmentDto,
-        });
+    return this.prismaService.department.create({
+      data: createDepartmentDto,
+    });
+  }
+
+  async deleteDepartment(id: number) {
+    const department = await this.prismaService.department.findUnique({
+      where: { id },
+    });
+
+    if (!department) {
+      throw new BadRequestException("존재하지 않는 학과입니다.");
     }
 
-    async deleteDepartment(id: number) {
-        return this.prismaService.department.delete({
-            where: { id },
-        });
-    }
+    return this.prismaService.department.delete({
+      where: { id },
+    });
+  }
 }
