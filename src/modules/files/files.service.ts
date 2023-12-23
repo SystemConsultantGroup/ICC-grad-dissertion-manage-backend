@@ -46,20 +46,19 @@ export class FilesService {
     }
   }
 
-  async getFile(key: string): Promise<any> {
+  async deleteFile(uuid: string) {
     try {
-      const [fileName, stream] = await this.prismaService.$transaction(async (tx) => {
-        const file = await tx.file.findFirst({
+      return await this.prismaService.$transaction(async (tx) => {
+        await tx.file.delete({
           where: {
-            uuid: key,
+            uuid,
           },
         });
-        const stream = await this.minioClientService.getFile(key);
-        return [file.name, stream];
+
+        return await this.minioClientService.removeFile(uuid);
       });
-      return { fileName, stream };
     } catch (error) {
-      throw new InternalServerErrorException("파일 탐색에 문제가 발생하였습니다");
+      throw new InternalServerErrorException("파일 삭제에 문제가 발생하였습니다");
     }
   }
 
