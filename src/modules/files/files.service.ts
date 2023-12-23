@@ -1,4 +1,6 @@
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import * as path from "path";
+import * as fs from "fs";
 import { PrismaService } from "src/config/database/prisma.service";
 import { MinioClientService } from "src/config/file/minio-client.service";
 import { v1 } from "uuid";
@@ -40,7 +42,6 @@ export class FilesService {
         }
       );
     } catch (error) {
-      console.log(error);
       throw new InternalServerErrorException("파일 업로드에 문제가 발생하였습니다");
     }
   }
@@ -58,8 +59,18 @@ export class FilesService {
       });
       return { fileName, stream };
     } catch (error) {
-      console.log(error);
       throw new InternalServerErrorException("파일 탐색에 문제가 발생하였습니다");
+    }
+  }
+
+  async getLocalFile(directory: string, filename: string) {
+    const filePath = path.join("resources", directory, filename);
+    if (fs.existsSync(filePath)) {
+      const stream = fs.createReadStream(filePath);
+
+      return stream;
+    } else {
+      throw new InternalServerErrorException("파일을 찾을 수 없습니다.");
     }
   }
 }
