@@ -128,6 +128,7 @@ model Review {
   id        Int      @id @default(autoincrement())
   status    Status?
   comment   String?  @db.Text
+  isFinal   Boolean
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
