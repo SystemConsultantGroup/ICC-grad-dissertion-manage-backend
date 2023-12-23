@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, UploadedFile, UseGuards, Response } from "@nestjs/common";
+import { Controller, Get, Param, Post, UploadedFile, UseGuards, Response, Delete } from "@nestjs/common";
 import { FilesService } from "./files.service";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
@@ -23,14 +23,14 @@ export class FilesController {
     return new CommonResponseDto(savedFile);
   }
 
-  @Get(":uuid")
+  @Delete(":key")
   @ApiBearerAuth("access-token")
-  @ApiOperation({ summary: " 파일 다운로드" })
+  @ApiOperation({ summary: " 파일 삭제 " })
   @ApiFile("file")
-  async getFile(@Param("key") key: string, @Response() res) {
-    const { fileName, stream } = await this.filesService.getFile(key);
-    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURI(fileName)}`);
-    stream.pipe(res);
+  async deleteFile(@Param("key") key: string) {
+    await this.filesService.deleteFile(key);
+
+    return new CommonResponseDto();
   }
 
   @Get("excels/student")
