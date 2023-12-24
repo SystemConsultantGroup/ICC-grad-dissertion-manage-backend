@@ -12,7 +12,6 @@ export class StudentDto {
   ) {
     this.id = studentData.id;
     this.loginId = studentData.loginId;
-    this.password = studentData.password;
     this.name = studentData.name;
     this.email = studentData.email;
     this.phone = studentData.phone;
@@ -26,8 +25,6 @@ export class StudentDto {
   id: number;
   @ApiProperty({ description: "로그인 아이디(학번)" })
   loginId: string;
-  @ApiProperty({ description: "비밀번호" })
-  password: string;
   @ApiProperty({ description: "이름" })
   name: string;
   @ApiProperty({ description: "이메일" })
