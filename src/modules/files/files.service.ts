@@ -42,6 +42,7 @@ export class FilesService {
         }
       );
     } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException("파일 업로드에 문제가 발생하였습니다");
     }
   }

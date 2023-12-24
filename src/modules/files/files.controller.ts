@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, UploadedFile, UseGuards, Response, Delete } from "@nestjs/common";
+import { Controller, Get, Param, Post, UploadedFile, UseGuards, Response, Delete, ParseUUIDPipe } from "@nestjs/common";
 import { FilesService } from "./files.service";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import {
@@ -37,7 +37,7 @@ export class FilesController {
   @ApiFile("file")
   @ApiResponse({ type: CommonResponseDto, status: 200 })
   @ApiInternalServerErrorResponse({ description: "파일 삭제 실패" })
-  async deleteFile(@Param("key") key: string) {
+  async deleteFile(@Param("key", ParseUUIDPipe) key: string) {
     await this.filesService.deleteFile(key);
 
     return new CommonResponseDto();
