@@ -22,8 +22,8 @@ export class StudentsService {
     private readonly authService: AuthService
   ) {}
 
-  async getStudentList(studentPageQuery: StudentSearchPageQuery) {
-    const { studentNumber, name, email, phone, departmentId, phaseId, isLock } = studentPageQuery;
+  async getStudentList(studentSearchPageQuery: StudentSearchPageQuery) {
+    const { studentNumber, name, email, phone, departmentId, phaseId, isLock } = studentSearchPageQuery;
 
     if (departmentId) {
       const foundDept = await this.prismaService.department.findUnique({
@@ -70,8 +70,8 @@ export class StudentsService {
           },
         },
       },
-      skip: studentPageQuery.getOffset(),
-      take: studentPageQuery.getLimit(),
+      skip: studentSearchPageQuery.getOffset(),
+      take: studentSearchPageQuery.getLimit(),
     });
 
     const totalCount = await this.prismaService.user.count({
@@ -95,8 +95,8 @@ export class StudentsService {
     return { totalCount, students };
   }
 
-  async getStudentExcel(studentExcelQuery: StudentSearchQuery) {
-    const { studentNumber, name, email, phone, departmentId, phaseId, isLock } = studentExcelQuery;
+  async getStudentExcel(studentSearchQuery: StudentSearchQuery) {
+    const { studentNumber, name, email, phone, departmentId, phaseId, isLock } = studentSearchQuery;
 
     if (departmentId) {
       const foundDept = await this.prismaService.department.findUnique({

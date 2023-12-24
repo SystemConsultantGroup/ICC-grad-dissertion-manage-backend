@@ -17,7 +17,6 @@ import {
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
   getSchemaPath,
