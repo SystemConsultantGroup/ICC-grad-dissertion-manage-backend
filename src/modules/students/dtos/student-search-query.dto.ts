@@ -1,9 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
-import { PageQuery } from "src/common/dtos/pagination.dto";
 
-export class StudentPageQuery extends PageQuery {
+export class StudentSearchQuery {
   @ApiProperty({ description: "학번", required: false })
   @IsOptional()
   @IsNotEmpty()
