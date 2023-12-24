@@ -6,11 +6,19 @@ import { CreateDepartmentDto } from "./dtos/create-department.dto";
 export class DepartmentsService {
   constructor(private readonly prismaService: PrismaService) {}
   async getAllDepartments() {
-    return await this.prismaService.department.findMany({
+    const departments = await this.prismaService.department.findMany({
+      include: {
+        users: true,
+      },
       orderBy: {
         id: "asc",
       },
     });
+
+    return departments.map(({ users, ...department }) => ({
+      ...department,
+      userCount: users.length,
+    }));
   }
 
   async createDepartment(createDepartmentDto: CreateDepartmentDto) {

@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 
-class DepartmentDto {
+class DepartmentInfoDto {
   @ApiProperty({
     description: "ID of the department",
     example: 1,
@@ -12,16 +12,21 @@ class DepartmentDto {
     example: "소프트웨어학과",
   })
   name: string;
+  @ApiProperty({
+    description: "Number of users in the department",
+    example: 1,
+  })
+  userCount: number;
 }
 
 export class GetDepartmentsResponseDto {
   @ApiProperty({
     description: "List of departments",
-    type: [DepartmentDto],
+    type: [DepartmentInfoDto],
   })
-  departments: DepartmentDto[];
+  departments: DepartmentInfoDto[];
 
-  constructor(departments: DepartmentDto[]) {
+  constructor(departments: DepartmentInfoDto[]) {
     this.departments = departments;
   }
 }
