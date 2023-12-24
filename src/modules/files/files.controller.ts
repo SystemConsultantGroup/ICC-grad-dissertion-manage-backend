@@ -1,22 +1,31 @@
 import { Controller, Get, Param, Post, UploadedFile, UseGuards, Response, Delete } from "@nestjs/common";
 import { FilesService } from "./files.service";
 import { JwtGuard } from "../auth/guards/jwt.guard";
-import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiInternalServerErrorResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from "@nestjs/swagger";
 import { ApiFile } from "./decorators/api-file.decorator";
 import { CommonResponseDto } from "../../common/dtos/common-response.dto";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
 import { UserType } from "@prisma/client";
 
 @ApiTags("파일 API")
+@ApiBearerAuth("access-token")
 @UseGuards(JwtGuard)
 @Controller("files")
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
   @Post()
-  @ApiBearerAuth("access-token")
   @ApiOperation({ summary: " 파일 업로드" })
   @ApiFile("file")
+  @ApiResponse({ type: CommonResponseDto, status: 201 })
+  @ApiInternalServerErrorResponse({ description: "파일 업로드 실패" })
   async uploadFile(@UploadedFile() uploadedFile: Express.Multer.File) {
     const savedFile = await this.filesService.createFile(uploadedFile);
 
@@ -24,9 +33,10 @@ export class FilesController {
   }
 
   @Delete(":key")
-  @ApiBearerAuth("access-token")
   @ApiOperation({ summary: " 파일 삭제 " })
   @ApiFile("file")
+  @ApiResponse({ type: CommonResponseDto, status: 200 })
+  @ApiInternalServerErrorResponse({ description: "파일 삭제 실패" })
   async deleteFile(@Param("key") key: string) {
     await this.filesService.deleteFile(key);
 
@@ -35,8 +45,9 @@ export class FilesController {
 
   @Get("excels/student")
   @ApiOperation({ summary: "학생 일괄등록 엑셀 양식 다운로드" })
-  @ApiBearerAuth("access-token")
   @UseUserTypeGuard([UserType.ADMIN])
+  @ApiResponse({ description: "학생 일괄등록 엑셀 양식", status: 200 })
+  @ApiBadRequestResponse({ description: "파일 다운로드 실패" })
   async getStudentExcelForm(@Response() res) {
     const fileName = "정통대대학원논문심사_학생_일괄등록_엘섹_양식.xlsx";
     const stream = await this.filesService.getLocalFile("format", fileName);
@@ -45,10 +56,11 @@ export class FilesController {
     stream.pipe(res);
   }
 
-  @Get("excels/professors")
+  @Get("excels/professor")
   @ApiOperation({ summary: "교수 일괄등록 엑셀 양식 다운로드" })
-  @ApiBearerAuth("access-token")
   @UseUserTypeGuard([UserType.ADMIN])
+  @ApiResponse({ description: "교수 일괄등록 엑셀 양식", status: 200 })
+  @ApiBadRequestResponse({ description: "파일 다운로드 실패" })
   async getProfessorExcelForm(@Response() res) {
     const fileName = "정통대대학원논문심사_교수_일괄등록_양식.xlsx";
     const stream = await this.filesService.getLocalFile("format", fileName);
