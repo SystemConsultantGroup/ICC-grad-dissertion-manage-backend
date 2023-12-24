@@ -164,17 +164,17 @@ export class StudentsService {
       record["본심 논문 제목"] = thesisInfos[1].title ? thesisInfos[1].title : "미제출";
       record["본심 심사 상태"] = thesisInfos[1].summary;
 
+      // 시스템 정보
+      record["시스템 단계"] = phase.title;
+      record["시스템 락 여부"] = process.isLock;
+
       // 교수 배정 정보
       record["심사위원장"] = headReviewer.name;
       reviewers.forEach((reviewerInfo, index) => {
         record[`심사위원-${index + 1}`] = reviewerInfo.reviewer.name;
       });
 
-      // 시스템 정보
-      record["시스템 단계"] = phase.title;
-      record["시스템 락 여부"] = process.isLock;
-
-      // TODO (제출 상태) : 넣을까 말까.. 솦 졸논에 비슷한 기능이 있는데 행정실에서 먼저 요청하지 않으면 굳이 포함하지 않는 것도 방법일 듯...ㅎ
+      // TODO (제출 상태) : 넣을까 말까.. 솦 졸논에 비슷한 기능이 있는데 행정실에서 먼저 요청하지 않으면 굳이 포함하지 않는 것도 방법일 듯합니다...ㅎ
       // record['예심 논문 파일 상태'];
       // record['예심 논문 발표 파일 상태'];
       // record['본심 논문 파일 상태'];
@@ -381,6 +381,7 @@ export class StudentsService {
               thesisInfoId: preThesisInfo.id,
               reviewerId,
               status: ReviewStatus.UNEXAMINED,
+              isFinal: false,
             };
           }),
         });
@@ -390,27 +391,27 @@ export class StudentsService {
               thesisInfoId: mainThesisInfo.id,
               reviewerId,
               status: ReviewStatus.UNEXAMINED,
+              isFinal: false,
             };
           }),
         });
-
-        // TODO(최종 심사) : 심사위원장의 심사/최종판정 구분 불가능 이슈 해결 후 확정
-        /** 
-        const preFinalReview = await tx.review.create({
+        // 최종 심사
+        await tx.review.create({
           data: {
             thesisInfoId: preThesisInfo.id,
             reviewerId: headReviewerId,
             status: ReviewStatus.UNEXAMINED,
+            isFinal: true,
           },
         });
-        const mainFinalReview = await tx.review.create({
+        await tx.review.create({
           data: {
             thesisInfoId: mainThesisInfo.id,
             reviewerId: headReviewerId,
             status: ReviewStatus.UNEXAMINED,
+            isFinal: true,
           },
         });
-        */
 
         return await tx.user.findUnique({
           where: {
