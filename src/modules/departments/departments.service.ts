@@ -1,12 +1,16 @@
 import { PrismaService } from "src/config/database/prisma.service";
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { CreateDepartmentDto } from "./dtos/create-deparment.dto";
+import { CreateDepartmentDto } from "./dtos/create-department.dto";
 
 @Injectable()
 export class DepartmentsService {
   constructor(private readonly prismaService: PrismaService) {}
   async getAllDepartments() {
-    return await this.prismaService.department.findMany();
+    return await this.prismaService.department.findMany({
+      orderBy: {
+        id: "asc",
+      },
+    });
   }
 
   async createDepartment(createDepartmentDto: CreateDepartmentDto) {
