@@ -1,9 +1,8 @@
 import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
 import { UserType } from "src/common/enums/user-type.enum";
 import { PrismaService } from "src/config/database/prisma.service";
-import { StudentPageQuery } from "./dtos/student-page-query.dto";
+import { StudentSearchPageQuery } from "./dtos/student-search-page-query.dto";
 import { User } from "@prisma/client";
-import { GetStudentExcelQuery } from "./dtos/get-student-excel-query.dto";
 import * as XLSX from "xlsx";
 import * as DateUtil from "../../common/utils/date.util";
 import * as path from "path";
@@ -14,6 +13,7 @@ import { Stage } from "src/common/enums/stage.enum";
 import { Summary } from "src/common/enums/summary.enum";
 import { ThesisFileType } from "src/common/enums/thesis-file-type.enum";
 import { ReviewStatus } from "src/common/enums/review-status.enum";
+import { StudentSearchQuery } from "./dtos/student-search-query.dto";
 
 @Injectable()
 export class StudentsService {
@@ -21,7 +21,8 @@ export class StudentsService {
     private readonly prismaService: PrismaService,
     private readonly authService: AuthService
   ) {}
-  async getStudentList(studentPageQuery: StudentPageQuery) {
+
+  async getStudentList(studentPageQuery: StudentSearchPageQuery) {
     const { studentNumber, name, email, phone, departmentId, phaseId, isLock } = studentPageQuery;
 
     if (departmentId) {
@@ -94,7 +95,7 @@ export class StudentsService {
     return { totalCount, students };
   }
 
-  async getStudentExcel(studentExcelQuery: GetStudentExcelQuery) {
+  async getStudentExcel(studentExcelQuery: StudentSearchQuery) {
     const { studentNumber, name, email, phone, departmentId, phaseId, isLock } = studentExcelQuery;
 
     if (departmentId) {

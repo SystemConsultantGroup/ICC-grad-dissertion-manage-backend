@@ -3,10 +3,18 @@ import { Type } from "class-transformer";
 import { IsInt, IsPositive } from "class-validator";
 
 export class PageDto<T> {
+  @ApiProperty({ description: "페이지 번호" })
   pageNumber: number;
+
+  @ApiProperty({ description: "페이지 크기" })
   pageSize: number;
+
+  @ApiProperty({ description: "총 콘텐츠 수" })
   totalCount: number;
+
+  @ApiProperty({ description: "총 페이지 수" })
   totalPages: number;
+
   content: T[];
 
   constructor(pageNumber: number, pageSize: number, totalCount: number, content: T[]) {
