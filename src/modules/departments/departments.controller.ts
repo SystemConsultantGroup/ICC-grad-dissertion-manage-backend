@@ -1,47 +1,58 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, UseGuards } from "@nestjs/common";
 import { DepartmentsService } from "./departments.service";
-import { ApiBadRequestResponse, ApiInternalServerErrorResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiInternalServerErrorResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CommonResponseDto } from "src/common/dtos/common-response.dto";
-import { CreateDepartmentDto } from "./dtos/create-deparment.dto";
+import { CreateDepartmentDto } from "./dtos/create-department.dto";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
 import { UserType } from "@prisma/client";
 import { JwtGuard } from "../auth/guards/jwt.guard";
+import { GetDepartmentsResponseDto } from "./dtos/get-departments.dto";
 
-@UseUserTypeGuard([UserType.ADMIN])
-@UseGuards(JwtGuard)
-@ApiTags("departments API")
+@ApiBearerAuth("access-token")
+@ApiTags("학과 API")
 @Controller("departments")
 export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}
 
   @Get("")
   @ApiOperation({
-    summary: "Get all departments",
-    description: "Get all departments",
+    summary: "학과 조회",
+    description: "학과 조회",
   })
-  @ApiBadRequestResponse({ description: "Bad Request" })
+  @UseUserTypeGuard([UserType.ADMIN])
+  @UseGuards(JwtGuard)
   @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
   async getAllDepartments() {
-    return new CommonResponseDto(await this.departmentsService.getAllDepartments());
+    const departments = await this.departmentsService.getAllDepartments();
+
+    return new CommonResponseDto(new GetDepartmentsResponseDto(departments));
   }
 
   @Post("")
   @ApiOperation({
-    summary: "Create a department",
-    description: "Create a department",
+    summary: "학과 생성",
+    description: "학과 생성",
   })
+  @UseUserTypeGuard([UserType.ADMIN])
+  @UseGuards(JwtGuard)
   @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
   async createDepartment(@Body() createDepartmentDto: CreateDepartmentDto) {
-    return new CommonResponseDto(await this.departmentsService.createDepartment(createDepartmentDto));
+    const department = await this.departmentsService.createDepartment(createDepartmentDto);
+
+    return new CommonResponseDto(department);
   }
 
   @Delete(":id")
   @ApiOperation({
-    summary: "Delete a department",
-    description: "Delete a department",
+    summary: "학과 삭제",
+    description: "학과 삭제",
   })
+  @UseUserTypeGuard([UserType.ADMIN])
+  @UseGuards(JwtGuard)
   @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
   async deleteDepartment(@Param("id", ParseIntPipe) id: number) {
-    return new CommonResponseDto(await this.departmentsService.deleteDepartment(id));
+    await this.departmentsService.deleteDepartment(id);
+
+    return new CommonResponseDto();
   }
 }
