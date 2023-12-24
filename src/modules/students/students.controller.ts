@@ -23,7 +23,7 @@ import {
 } from "@nestjs/swagger";
 import { StudentSearchPageQuery } from "./dtos/student-search-page-query.dto";
 import { StudentSearchQuery } from "./dtos/student-search-query.dto";
-import { ApiPaginationOKResponse } from "src/common/decorators/api-page-response.decorator";
+import { ApiPaginationOKResponse } from "src/common/decorators/api-pagination-ok-response.decorator";
 
 @Controller("students")
 @UseGuards(JwtGuard)
