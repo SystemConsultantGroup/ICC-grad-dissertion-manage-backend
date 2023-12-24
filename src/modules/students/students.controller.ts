@@ -23,11 +23,12 @@ import {
 } from "@nestjs/swagger";
 import { StudentSearchPageQuery } from "./dtos/student-search-page-query.dto";
 import { StudentSearchQuery } from "./dtos/student-search-query.dto";
+import { ApiPaginationOKResponse } from "src/common/decorators/api-page-response.decorator";
 
 @Controller("students")
 @UseGuards(JwtGuard)
 @ApiTags("학생 API")
-@ApiExtraModels(PageDto, StudentDto, CommonResponseDto)
+@ApiExtraModels(StudentDto, CommonResponseDto)
 @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
 @ApiBearerAuth("access-token")
 export class StudentsController {
@@ -41,23 +42,7 @@ export class StudentsController {
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiBadRequestResponse({ description: "학과 ID 또는 시스템 단계 ID 오류" })
-  @ApiOkResponse({
-    description: "학생 리스트 조회 성공",
-    schema: {
-      allOf: [
-        { $ref: getSchemaPath(CommonResponseDto) },
-        { $ref: getSchemaPath(PageDto) },
-        {
-          properties: {
-            contents: {
-              type: "array",
-              items: { $ref: getSchemaPath(StudentDto) },
-            },
-          },
-        },
-      ],
-    },
-  })
+  @ApiPaginationOKResponse({ description: "학생 리스트 조회 성공", dto: StudentDto })
   async getStudentList(@Query() studentPageQuery: StudentSearchPageQuery) {
     const { totalCount, students } = await this.studentsService.getStudentList(studentPageQuery);
     const contents = (await students).map((student) => new StudentDto(student));
@@ -74,6 +59,7 @@ export class StudentsController {
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiBadRequestResponse({ description: "학과 ID 또는 시스템 단계 ID 오류" })
+  @ApiOkResponse({ description: "엑셀 다운로드 성공" })
   async getStudentExcel(@Query() studentExcelQuery: StudentSearchQuery, @Response() res) {
     const { fileName, stream } = await this.studentsService.getStudentExcel(studentExcelQuery);
 
@@ -124,12 +110,14 @@ export class StudentsController {
 
   @Post("/excel")
   @UseUserTypeGuard([UserType.ADMIN])
+  @ApiOperation({ summary: "개발중" })
   async createStudentExcel() {
     return "createStudentExcel";
   }
 
   @Put()
   @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT])
+  @ApiOperation({ summary: "개발중" })
   async updateStudent() {
     return "updateStudent";
   }
