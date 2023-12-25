@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Put, UseGuards } from "@nestjs/common";
 import { PhasesService } from "./phases.service";
 import {
-  ApiBadGatewayResponse,
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiInternalServerErrorResponse,
@@ -41,7 +41,7 @@ export class PhasesController {
 
   @UseUserTypeGuard([UserType.ADMIN])
   @Get("current")
-  @ApiOperation({ description: "현재 시스템 단계 조회" })
+  @ApiOperation({ summary: "현재 시스템 단계 조회" })
   @ApiOkResponse({
     description: "현재 시스템 단계 조회 성공",
     type: PhaseDto,
@@ -57,7 +57,8 @@ export class PhasesController {
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({ summary: "시스템 일정 수정" })
   @ApiBody({ type: UpdatePhaseDto })
-  @ApiBadGatewayResponse({ description: "존재하지 않는 단계거나 기간설정 오류" })
+  @ApiOkResponse({ description: "시스템 단계 업데이트 성공" })
+  @ApiBadRequestResponse({ description: "존재하지 않는 단계거나 기간설정 오류" })
   async updatePhase(@Param("id", ParseIntPipe) id: number, @Body() updatePhaseDto: UpdatePhaseDto) {
     await this.phasesService.updatePhase(id, updatePhaseDto);
 
