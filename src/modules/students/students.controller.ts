@@ -25,8 +25,8 @@ import { StudentSearchQuery } from "./dtos/student-search-query.dto";
 import { ApiPaginationOKResponse } from "src/common/decorators/api-pagination-ok-response.decorator";
 import { UserDto } from "../users/dtos/user.dto";
 import { UpdateStudentDto } from "./dtos/update-student.dto";
-import { PhaseDto } from "../phases/dtos/phase.dto";
 import { SystemDto } from "./dtos/system.dto";
+import { UpdateSystemDto } from "./dtos/update-system.dto";
 
 @Controller("students")
 @UseGuards(JwtGuard)
@@ -159,7 +159,22 @@ export class StudentsController {
   }
 
   @Put("/:id/system")
-  async updateStudentSystem() {
-    return "get student system";
+  @UseUserTypeGuard([UserType.ADMIN])
+  @ApiOperation({
+    summary: "학생 시스템 정보 수정 API",
+    description: "아이디에 해당하는 학생의 시스템 정보를 수정할 수 있다.",
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiBadRequestResponse({ description: "요청 양식 오류" })
+  @ApiOkResponse({
+    description: "학생 시스템 정보 수정 성공",
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(SystemDto) }],
+    },
+  })
+  async updateStudentSystem(@Param("id", PositiveIntPipe) studentId: number, @Body() updateSystemDto: UpdateSystemDto) {
+    const updatedSystem = await this.studentsService.updateStudentSystem(studentId, updateSystemDto);
+    const systemDto = new SystemDto(updatedSystem);
+    return new CommonResponseDto(systemDto);
   }
 }
