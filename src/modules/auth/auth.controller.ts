@@ -7,6 +7,7 @@ import { UserType } from "@prisma/client";
 import { ApiBadRequestResponse, ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { LoginResponseDto } from "./dto/login-response.dto";
 
+
 @ApiTags("Auth(로그인) API")
 @Controller("auth")
 export class AuthController {
