@@ -85,11 +85,11 @@ model Phase {
 
 /// 논문 정보
 model ThesisInfo {
-  id       Int      @id @default(autoincrement())
-  title    String?  @db.VarChar(255)
-  abstract String?  @db.Text
-  stage    Stage?
-  summary  Summary?
+  id       Int     @id @default(autoincrement())
+  title    String? @db.VarChar(255)
+  abstract String? @db.Text
+  stage    Stage
+  summary  Summary
 
   processId Int?
   process   Process? @relation(fields: [processId], references: [id])
@@ -108,7 +108,7 @@ enum Stage {
 enum Summary {
   PASS
   FAIL
-  UNEXMAINED
+  UNEXAMINED
 }
 
 /// 심사 위원
