@@ -8,8 +8,8 @@ import { UserType } from "@prisma/client";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { GetDepartmentsResponseDto } from "./dtos/get-departments.dto";
 
-@ApiBearerAuth("access-token")
 @ApiTags("학과 API")
+@ApiBearerAuth("access-token")
 @Controller("departments")
 export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}

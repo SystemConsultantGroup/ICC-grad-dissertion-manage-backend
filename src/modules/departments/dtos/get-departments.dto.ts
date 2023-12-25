@@ -2,18 +2,18 @@ import { ApiProperty } from "@nestjs/swagger";
 
 class DepartmentInfoDto {
   @ApiProperty({
-    description: "ID of the department",
+    description: "학과 ID",
     example: 1,
   })
   id: number;
 
   @ApiProperty({
-    description: "Name of the department",
+    description: "학과 이름",
     example: "소프트웨어학과",
   })
   name: string;
   @ApiProperty({
-    description: "Number of users in the department",
+    description: "학과 사용자 수",
     example: 1,
   })
   userCount: number;
