@@ -29,7 +29,7 @@ export class UserDto {
   email: string;
   @ApiProperty({ description: "연락처" })
   phone: string;
-  @ApiProperty({ description: "사용자 유형" })
+  @ApiProperty({ description: "사용자 유형", enum: UserType })
   type: UserType;
   @ApiProperty({ description: "학과", type: () => DepartmentDto })
   department: DepartmentDto;
