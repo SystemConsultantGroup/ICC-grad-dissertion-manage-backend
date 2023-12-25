@@ -41,6 +41,7 @@ export class AuthService {
       type: user.type,
     });
   }
+
   createHash(password: string) {
     const saltRounds = 10;
     const salt = bcrypt.genSaltSync(saltRounds);
