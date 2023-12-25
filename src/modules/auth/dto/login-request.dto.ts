@@ -1,20 +1,14 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { UserType } from "@prisma/client";
-import { IsString, IsNotEmpty, IsEnum } from "class-validator";
+import { IsString, IsNotEmpty } from "class-validator";
 
 export class LoginRequestDto {
-  @ApiProperty()
+  @ApiProperty({ example: "admin", required: true })
   @IsNotEmpty()
   @IsString()
   loginId: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: "123", required: true })
   @IsNotEmpty()
   @IsString()
   password: string;
-
-  @ApiProperty()
-  @IsEnum(UserType)
-  @IsNotEmpty()
-  type: UserType;
 }
