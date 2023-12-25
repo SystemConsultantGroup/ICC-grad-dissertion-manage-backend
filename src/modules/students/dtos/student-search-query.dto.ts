@@ -7,25 +7,25 @@ export class StudentSearchQuery {
   @IsOptional()
   @IsNotEmpty()
   @IsString()
-  studentNumber: string;
+  studentNumber?: string;
 
   @ApiProperty({ description: "이름", required: false })
   @IsOptional()
   @IsNotEmpty()
   @IsString()
-  name: string;
+  name?: string;
 
   @ApiProperty({ description: "이메일", required: false })
   @IsOptional()
   @IsNotEmpty()
   @IsString()
-  email: string;
+  email?: string;
 
   @ApiProperty({ description: '전화번호 ("-" 제외)', required: false })
   @IsOptional()
   @IsNotEmpty()
   @IsString()
-  phone: string;
+  phone?: string;
 
   @ApiProperty({ description: "학과 아이디", required: false })
   @IsOptional()
@@ -33,7 +33,7 @@ export class StudentSearchQuery {
   @Type(() => Number)
   @IsInt()
   @IsPositive()
-  departmentId: number;
+  departmentId?: number;
 
   @ApiProperty({ description: "시스템 단계 아이디", required: false })
   @IsOptional()
@@ -41,11 +41,11 @@ export class StudentSearchQuery {
   @Type(() => Number)
   @IsInt()
   @IsPositive()
-  phaseId: number;
+  phaseId?: number;
 
   @ApiProperty({ description: "시스템 락 여부", required: false })
   @IsOptional()
   @IsNotEmpty()
   @Type(() => Boolean)
-  isLock: boolean;
+  isLock?: boolean;
 }
