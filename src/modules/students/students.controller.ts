@@ -24,6 +24,7 @@ import { StudentSearchPageQuery } from "./dtos/student-search-page-query.dto";
 import { StudentSearchQuery } from "./dtos/student-search-query.dto";
 import { ApiPaginationOKResponse } from "src/common/decorators/api-pagination-ok-response.decorator";
 import { UserDto } from "../users/dtos/user.dto";
+import { UpdateStudentDto } from "./dtos/update-student.dto";
 
 @Controller("students")
 @UseGuards(JwtGuard)
@@ -42,7 +43,7 @@ export class StudentsController {
       "학생의 회원 정보, 논문 과정 정보, 심사 위원 정보, 논문 정보를 생성한다. 학생의 회원 가입 역할을 한다.",
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
-  @ApiBadRequestResponse({ description: "학과 ID 또는 시스템 단계 ID 오류" })
+  @ApiBadRequestResponse({ description: "요청 양식 오류" })
   @ApiCreatedResponse({
     description: "학생 생성 성공",
     schema: {
@@ -70,7 +71,7 @@ export class StudentsController {
       "모든 학생 리스트를 엑셀 형태로 다운로드 받는다. 학생 회원 정보, 논문 정보, 배정 교수, 시스템 정보를 조회할 수 있다.",
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
-  @ApiBadRequestResponse({ description: "학과 ID 또는 시스템 단계 ID 오류" })
+  @ApiBadRequestResponse({ description: "요청 양식 오류" })
   @ApiOkResponse({ description: "엑셀 다운로드 성공" })
   async getStudentExcel(@Query() studentExcelQuery: StudentSearchQuery, @Response() res) {
     const { fileName, stream } = await this.studentsService.getStudentExcel(studentExcelQuery);
@@ -86,7 +87,7 @@ export class StudentsController {
     description: "모든 학생 리스트를 조회한다. 학생 회원 정보를 조회할 수 있다.",
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
-  @ApiBadRequestResponse({ description: "학과 ID 또는 시스템 단계 ID 오류" })
+  @ApiBadRequestResponse({ description: "요청 양식 오류" })
   @ApiPaginationOKResponse({ description: "학생 리스트 조회 성공", dto: UserDto })
   async getStudentList(@Query() studentPageQuery: StudentSearchPageQuery) {
     const { totalCount, students } = await this.studentsService.getStudentList(studentPageQuery);
@@ -102,9 +103,9 @@ export class StudentsController {
     description: "아이디에 해당하는 학생의 회원 정보를 조회할 수 있다.",
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
-  @ApiBadRequestResponse({ description: "학과 ID 또는 시스템 단계 ID 오류" })
+  @ApiBadRequestResponse({ description: "요청 양식 오류" })
   @ApiOkResponse({
-    description: "단일 학생 조회 성공",
+    description: "학생 회원 정보 조회 성공",
     schema: {
       allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(UserDto) }],
     },
@@ -115,10 +116,23 @@ export class StudentsController {
     return new CommonResponseDto(userDto);
   }
 
-  @Put()
+  @Put("/:id")
   @UseUserTypeGuard([UserType.ADMIN])
-  @ApiOperation({ summary: "개발중" })
-  async updateStudent() {
-    return "updateStudent";
+  @ApiOperation({
+    summary: "학생 회원 정보 수정 API",
+    description: "아이디에 해당하는 학생의 회원 정보를 수정할 수 있다.",
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiBadRequestResponse({ description: "요청 양식 오류" })
+  @ApiOkResponse({
+    description: "학생 회원 정보 수정 성공",
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(UserDto) }],
+    },
+  })
+  async updateStudent(@Param("id", PositiveIntPipe) studentId: number, @Body() updateStudentDto: UpdateStudentDto) {
+    const updateStudent = await this.studentsService.updateStudent(studentId, updateStudentDto);
+    const userDto = new UserDto(updateStudent);
+    return new CommonResponseDto(userDto);
   }
 }
