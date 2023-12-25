@@ -1,8 +1,7 @@
-import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { UserType } from "src/common/enums/user-type.enum";
 import { PrismaService } from "src/config/database/prisma.service";
 import { StudentSearchPageQuery } from "./dtos/student-search-page-query.dto";
-import { User } from "@prisma/client";
 import * as XLSX from "xlsx";
 import * as DateUtil from "../../common/utils/date.util";
 import * as path from "path";
@@ -435,19 +434,17 @@ export class StudentsService {
     }
 
     try {
-      return await this.prismaService.$transaction(async (tx) => {
-        return await tx.user.update({
-          where: { id: studentId },
-          data: {
-            loginId: loginId ? loginId : undefined,
-            password: password ? this.authService.createHash(password) : undefined,
-            name: name ? name : undefined,
-            email: email ? email : undefined,
-            phone: phone ? phone : undefined,
-            deptId: deptId ? deptId : undefined,
-          },
-          include: { department: true },
-        });
+      return await this.prismaService.user.update({
+        where: { id: studentId },
+        data: {
+          loginId: loginId ?? undefined,
+          password: password ? this.authService.createHash(password) : undefined,
+          name: name ?? undefined,
+          email: email ?? undefined,
+          phone: phone ?? undefined,
+          deptId: deptId ?? undefined,
+        },
+        include: { department: true },
       });
     } catch (error) {
       throw new InternalServerErrorException("학생 정보 업데이트 실패");
@@ -490,7 +487,6 @@ export class StudentsService {
       throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
     }
 
-    // 잘 업데이트
     try {
       return await this.prismaService.process.update({
         where: { studentId },
@@ -501,7 +497,7 @@ export class StudentsService {
         include: { phase: true },
       });
     } catch (error) {
-      throw new InternalServerErrorException("학생 시스템 업데이트 실패");
+      throw new InternalServerErrorException(`업데이트 실패: ${error.message}`);
     }
   }
 }
