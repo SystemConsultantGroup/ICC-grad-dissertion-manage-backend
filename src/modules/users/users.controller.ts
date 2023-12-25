@@ -1,6 +1,7 @@
-import { Controller, Get, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Put, UseGuards } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiExtraModels,
   ApiInternalServerErrorResponse,
@@ -16,6 +17,7 @@ import { User, UserType } from "@prisma/client";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { CommonResponseDto } from "src/common/dtos/common-response.dto";
 import { UserDto } from "./dtos/user.dto";
+import { UpdateUserDto } from "./dtos/update-user.dto";
 
 @Controller("users")
 @UseGuards(JwtGuard)
@@ -28,7 +30,10 @@ export class UsersController {
 
   @Get("/me")
   @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT, UserType.PROFESSOR])
-  @ApiOperation({ summary: "로그인 유저 정보 조회 API", description: "로그인된 유저의 회원 정보를 조회할 수 있다." })
+  @ApiOperation({
+    summary: "로그인 유저 정보 조회 API",
+    description: "로그인된 유저의 회원 정보를 조회할 수 있다.",
+  })
   @ApiOkResponse({
     description: "조회 성공",
     schema: { allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(UserDto) }] },
@@ -40,8 +45,21 @@ export class UsersController {
     return new CommonResponseDto(userDto);
   }
 
-  @Post("/admin")
-  async updateAdmin() {
-    return "post admin";
+  @Put("/me")
+  @UseUserTypeGuard([UserType.ADMIN, UserType.PROFESSOR, UserType.STUDENT])
+  @ApiOperation({
+    summary: "로그인 유저 정보 수정 API",
+    description: "로그인된 유저의 회원 정보 중 '비밀번호', '연락처', '이메일' 필드를 수정할 수 있다.",
+  })
+  @ApiOkResponse({
+    description: "업데이트 성공",
+    schema: { allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(UserDto) }] },
+  })
+  @ApiUnauthorizedResponse({ description: "로그인 후 이용 가능" })
+  @ApiBadRequestResponse({ description: "이메일 중복 오류" })
+  async updateMe(@Body() updateUserDto: UpdateUserDto, @CurrentUser() currentUser: User) {
+    const updatedMe = await this.usersService.updateMe(updateUserDto, currentUser);
+    const userDto = new UserDto(updatedMe);
+    return new CommonResponseDto(userDto);
   }
 }
