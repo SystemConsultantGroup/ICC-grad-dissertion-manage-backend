@@ -5,10 +5,11 @@ import { AppConfigModule } from "./config/app/config.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { MinioClientModule } from "./config/file/minio-client.module";
 import { DepartmentsModule } from "./modules/departments/departments.module";
+import { UsersModule } from "./modules/users/users.module";
 import { FilesModule } from "./modules/files/files.module";
 
 @Module({
-  imports: [AppConfigModule, AuthModule, MinioClientModule, DepartmentsModule, FilesModule],
+  imports: [AppConfigModule, AuthModule, MinioClientModule, DepartmentsModule, UsersModule, FilesModule],
   controllers: [AppController],
   providers: [AppService],
 })
