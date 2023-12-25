@@ -1,5 +1,17 @@
 import { StudentsService } from "./students.service";
-import { Body, Controller, Get, Param, Post, Put, Query, Response, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  Response,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from "@nestjs/common";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { PositiveIntPipe } from "src/common/pipes/positive-int.pipe";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
@@ -24,6 +36,9 @@ import {
 import { StudentSearchPageQuery } from "./dtos/student-search-page-query.dto";
 import { StudentSearchQuery } from "./dtos/student-search-query.dto";
 import { ApiPaginationOKResponse } from "src/common/decorators/api-pagination-ok-response.decorator";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { multerOptions } from "src/common/utils/multer-options.util";
+import { ExcelFilter } from "src/common/pipes/excel.filter";
 
 @Controller("students")
 @UseGuards(JwtGuard)
@@ -110,8 +125,10 @@ export class StudentsController {
 
   @Post("/excel")
   @UseUserTypeGuard([UserType.ADMIN])
-  @ApiOperation({ summary: "개발중" })
-  async createStudentExcel() {
+  @UseInterceptors(FileInterceptor("file", multerOptions("excel", ExcelFilter)))
+  @ApiOperation({ summary: "학생 엑셀 생성 API" })
+  async createStudentExcel(@UploadedFile() excelFile: Express.Multer.File) {
+    const students = await this.studentsService.createStudentExcel(excelFile);
     return "createStudentExcel";
   }
 
