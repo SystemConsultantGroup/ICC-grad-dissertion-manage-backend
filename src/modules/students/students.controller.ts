@@ -25,11 +25,13 @@ import { StudentSearchQuery } from "./dtos/student-search-query.dto";
 import { ApiPaginationOKResponse } from "src/common/decorators/api-pagination-ok-response.decorator";
 import { UserDto } from "../users/dtos/user.dto";
 import { UpdateStudentDto } from "./dtos/update-student.dto";
+import { PhaseDto } from "../phases/dtos/phase.dto";
+import { SystemDto } from "./dtos/system.dto";
 
 @Controller("students")
 @UseGuards(JwtGuard)
 @ApiTags("학생 API")
-@ApiExtraModels(UserDto, CommonResponseDto)
+@ApiExtraModels(UserDto, CommonResponseDto, SystemDto)
 @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
 @ApiBearerAuth("access-token")
 export class StudentsController {
@@ -134,5 +136,30 @@ export class StudentsController {
     const updateStudent = await this.studentsService.updateStudent(studentId, updateStudentDto);
     const userDto = new UserDto(updateStudent);
     return new CommonResponseDto(userDto);
+  }
+
+  @Get("/:id/system")
+  @UseUserTypeGuard([UserType.ADMIN])
+  @ApiOperation({
+    summary: "학생 시스템 정보 조회 API",
+    description: "아이디에 해당하는 학생의 시스템 단계와 시스템 락 여부를 조회할 수 있다.",
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiBadRequestResponse({ description: "요청 양식 오류" })
+  @ApiOkResponse({
+    description: "학생 시스템 정보 조회 성공",
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(SystemDto) }],
+    },
+  })
+  async getStudentSystem(@Param("id", PositiveIntPipe) studentId: number) {
+    const systemInfo = await this.studentsService.getStudentSystem(studentId);
+    const systemDto = new SystemDto(systemInfo);
+    return new CommonResponseDto(systemDto);
+  }
+
+  @Put("/:id/system")
+  async updateStudentSystem() {
+    return "get student system";
   }
 }

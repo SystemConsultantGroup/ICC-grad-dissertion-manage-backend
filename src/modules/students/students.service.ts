@@ -452,4 +452,20 @@ export class StudentsService {
       throw new InternalServerErrorException("업데이트 실패");
     }
   }
+
+  async getStudentSystem(studentId: number) {
+    // studentId 확인
+    const foundStudent = await this.prismaService.user.findUnique({
+      where: {
+        id: studentId,
+        type: UserType.STUDENT,
+      },
+    });
+    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+
+    return await this.prismaService.process.findUnique({
+      where: { studentId },
+      include: { phase: true },
+    });
+  }
 }
