@@ -8,9 +8,11 @@ import { ApiBadRequestResponse, ApiBody, ApiOperation, ApiResponse, ApiTags } fr
 import { LoginResponseDto } from "./dto/login-response.dto";
 
 @ApiTags("Auth(로그인) API")
+@ApiTags("Auth(로그인) API")
 @Controller("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
   @Post()
   @ApiOperation({ summary: "로그인" })
   @ApiBody({ type: LoginRequestDto })
