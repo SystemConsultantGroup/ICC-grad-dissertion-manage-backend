@@ -15,6 +15,7 @@ import { ThesisFileType } from "src/common/enums/thesis-file-type.enum";
 import { ReviewStatus } from "src/common/enums/review-status.enum";
 import { StudentSearchQuery } from "./dtos/student-search-query.dto";
 import { UpdateStudentDto } from "./dtos/update-student.dto";
+import { UpdateSystemDto } from "./dtos/update-system.dto";
 
 @Injectable()
 export class StudentsService {
@@ -449,7 +450,7 @@ export class StudentsService {
         });
       });
     } catch (error) {
-      throw new InternalServerErrorException("업데이트 실패");
+      throw new InternalServerErrorException("학생 정보 업데이트 실패");
     }
   }
 
@@ -467,5 +468,40 @@ export class StudentsService {
       where: { studentId },
       include: { phase: true },
     });
+  }
+
+  async updateStudentSystem(studentId: number, updateSystemDto: UpdateSystemDto) {
+    const { phaseId, isLock } = updateSystemDto;
+
+    // studentId, phaseId 확인
+    const foundStudent = await this.prismaService.user.findUnique({
+      where: {
+        id: studentId,
+        type: UserType.STUDENT,
+      },
+    });
+    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+    const foundPhase = await this.prismaService.phase.findUnique({
+      where: {
+        id: phaseId,
+      },
+    });
+    if (!foundPhase) {
+      throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
+    }
+
+    // 잘 업데이트
+    try {
+      return await this.prismaService.process.update({
+        where: { studentId },
+        data: {
+          phaseId: phaseId ?? undefined,
+          isLock: isLock ?? undefined,
+        },
+        include: { phase: true },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException("학생 시스템 업데이트 실패");
+    }
   }
 }
