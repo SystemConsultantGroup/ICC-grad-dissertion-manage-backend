@@ -14,6 +14,7 @@ import { Summary } from "src/common/enums/summary.enum";
 import { ThesisFileType } from "src/common/enums/thesis-file-type.enum";
 import { ReviewStatus } from "src/common/enums/review-status.enum";
 import { StudentSearchQuery } from "./dtos/student-search-query.dto";
+import { UpdateStudentDto } from "./dtos/update-student.dto";
 
 @Injectable()
 export class StudentsService {
@@ -209,6 +210,10 @@ export class StudentsService {
     } catch (error) {
       throw new InternalServerErrorException(error.meta?.target);
     }
+  }
+
+  async createStudentExcel() {
+    return "CREATED STUDENTS";
   }
 
   async getStudentList(studentSearchPageQuery: StudentSearchPageQuery) {
@@ -408,11 +413,43 @@ export class StudentsService {
     return student;
   }
 
-  async createStudentExcel() {
-    return "CREATED STUDENTS";
-  }
+  async updateStudent(studentId: number, updateStudentDto: UpdateStudentDto) {
+    const { loginId, password, name, email, phone, deptId } = updateStudentDto;
 
-  async updateStudent() {
-    return "UPDATED STUDENT";
+    // studentId, deptId 확인
+    const foundStudent = await this.prismaService.user.findUnique({
+      where: {
+        id: studentId,
+        type: UserType.STUDENT,
+      },
+    });
+    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+    if (deptId) {
+      const foundDept = await this.prismaService.department.findUnique({
+        where: {
+          id: deptId,
+        },
+      });
+      if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
+    }
+
+    try {
+      return await this.prismaService.$transaction(async (tx) => {
+        return await tx.user.update({
+          where: { id: studentId },
+          data: {
+            loginId: loginId ? loginId : undefined,
+            password: password ? this.authService.createHash(password) : undefined,
+            name: name ? name : undefined,
+            email: email ? email : undefined,
+            phone: phone ? phone : undefined,
+            deptId: deptId ? deptId : undefined,
+          },
+          include: { department: true },
+        });
+      });
+    } catch (error) {
+      throw new InternalServerErrorException("업데이트 실패");
+    }
   }
 }
