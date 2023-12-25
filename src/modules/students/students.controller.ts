@@ -177,4 +177,25 @@ export class StudentsController {
     const systemDto = new SystemDto(updatedSystem);
     return new CommonResponseDto(systemDto);
   }
+
+  @Get("/:id/thesis")
+  async getThesisInfo() {
+    // 접근 권한
+    /**
+     * 학생 : 자기 정보
+     * 교수 : 담당 학생 정보
+     * 관리자 : 모두
+     */
+    // 리턴 바디
+    /**
+     * ThesisInfo + User + ThesisFile
+     */
+    // 뭔가... 예심을 가져올지, 본심을 가져올지 구분해야 하긴 할듯? 요청 쿼리?
+  }
+
+  @Put("/:id/thesis")
+  async updateThesisInfo() {
+    // 접근 권한 : 학생 / 관리자
+    // 로그인 한 타입에 따라 수정할 수 있는 필드의 종류 다름
+  }
 }
