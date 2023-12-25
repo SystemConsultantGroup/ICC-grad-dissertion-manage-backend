@@ -10,7 +10,7 @@ import { FilesModule } from "./modules/files/files.module";
 import { PhasesModule } from "./modules/phases/phases.module";
 
 @Module({
-  imports: [AppConfigModule, AuthModule, MinioClientModule, DepartmentsModule, FilesModule, PhasesModule],
+  imports: [AppConfigModule, AuthModule, MinioClientModule, DepartmentsModule, FilesModule, StudentsModule, PhasesModule],
   controllers: [AppController],
   providers: [AppService],
 })
