@@ -21,7 +21,7 @@ class DepartmentInfoDto {
 
 export class GetDepartmentsResponseDto {
   @ApiProperty({
-    description: "List of departments",
+    description: "학과 정보 리스트",
     type: [DepartmentInfoDto],
   })
   departments: DepartmentInfoDto[];

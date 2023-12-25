@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, UseGuards } from "@nestjs/common";
 import { DepartmentsService } from "./departments.service";
-import { ApiBearerAuth, ApiInternalServerErrorResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiInternalServerErrorResponse, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CommonResponseDto } from "src/common/dtos/common-response.dto";
 import { CreateDepartmentDto } from "./dtos/create-department.dto";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
@@ -21,6 +21,10 @@ export class DepartmentsController {
   })
   @UseUserTypeGuard([UserType.ADMIN])
   @UseGuards(JwtGuard)
+  @ApiOkResponse({
+    description: "학과 조회 성공",
+    type: GetDepartmentsResponseDto,
+  })
   @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
   async getAllDepartments() {
     const departments = await this.departmentsService.getAllDepartments();
