@@ -14,18 +14,10 @@ export class PhaseDto {
   @ApiProperty({ description: "종료일", example: "2024-01-31" })
   end: Date;
 
-  @ApiProperty({ description: "생성 시간", example: "2024-01-01" })
-  createdAt: Date;
-
-  @ApiProperty({ description: "수정 시간", example: "2024-01-01" })
-  updatedAt: Date;
-
   constructor(phase: Phase) {
     this.id = phase.id;
     this.start = phase.start;
     this.end = phase.end;
-    this.createdAt = phase.createdAt;
-    this.updatedAt = phase.updatedAt;
   }
 }
 
