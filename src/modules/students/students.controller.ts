@@ -68,7 +68,7 @@ export class StudentsController {
   }
 
   @Get("/:id")
-  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT])
+  @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
     summary: "단일 학생 조회 API",
     description: "아이디에 해당하는 학생의 회원 정보와 시스템 단계 정보를 조회할 수 있다.",
@@ -116,7 +116,7 @@ export class StudentsController {
   }
 
   @Put()
-  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT])
+  @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({ summary: "개발중" })
   async updateStudent() {
     return "updateStudent";
