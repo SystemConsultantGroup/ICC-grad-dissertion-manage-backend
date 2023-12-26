@@ -6,7 +6,7 @@ import { CreateDepartmentDto } from "./dtos/create-department.dto";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
 import { UserType } from "@prisma/client";
 import { JwtGuard } from "../auth/guards/jwt.guard";
-import { GetDepartmentsResponseDto } from "./dtos/get-departments.dto";
+import { GetDepartmentsDto } from "./dtos/get-departments.dto";
 
 @ApiTags("학과 API")
 @ApiBearerAuth("access-token")
@@ -23,13 +23,13 @@ export class DepartmentsController {
   @UseGuards(JwtGuard)
   @ApiOkResponse({
     description: "학과 조회 성공",
-    type: GetDepartmentsResponseDto,
+    type: GetDepartmentsDto,
   })
   @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
   async getAllDepartments() {
     const departments = await this.departmentsService.getAllDepartments();
 
-    return new CommonResponseDto(new GetDepartmentsResponseDto(departments));
+    return new CommonResponseDto(new GetDepartmentsDto(departments));
   }
 
   @Post("")
