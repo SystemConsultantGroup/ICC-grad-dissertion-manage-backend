@@ -19,7 +19,9 @@ export class ProfessorsController {
   })
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
-  async getProfessorsList() {}
+  async getProfessorsList() {
+    return "test";
+  }
 
   @Get(":id")
   @ApiOperation({
