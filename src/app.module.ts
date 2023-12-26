@@ -9,6 +9,7 @@ import { DepartmentsModule } from "./modules/departments/departments.module";
 import { UsersModule } from "./modules/users/users.module";
 import { FilesModule } from "./modules/files/files.module";
 import { ProfessorsModule } from "./modules/professors/professors.module";
+import { ReviewsModule } from "./modules/reviews/reviews.module";
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ProfessorsModule } from "./modules/professors/professors.module";
     UsersModule,
     StudentsModule,
     ProfessorsModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
