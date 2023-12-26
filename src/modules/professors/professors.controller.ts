@@ -1,9 +1,19 @@
-import { Controller, Get, Param, ParseIntPipe, Post, Put, UseGuards } from "@nestjs/common";
+import { ProfessorDto } from "./dtos/professor.dto";
+import { CommonResponseDto } from "src/common/dtos/common-response.dto";
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, UseGuards } from "@nestjs/common";
 import { ProfessorsService } from "./professors.service";
-import { ApiBearerAuth, ApiInternalServerErrorResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBearerAuth,
+  ApiInternalServerErrorResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from "@nestjs/swagger";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
 import { UserType } from "@prisma/client";
+import { CreateProfessorDto } from "./dtos/create-professor.dto";
 
 @ApiTags("교수 API")
 @UseGuards(JwtGuard)
@@ -18,10 +28,9 @@ export class ProfessorsController {
     description: "교수 목록 조회",
   })
   @UseUserTypeGuard([UserType.ADMIN])
-  @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
-  async getProfessorsList() {
-    return "test";
-  }
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
+  async getProfessorsList() {}
 
   @Get(":id")
   @ApiOperation({
@@ -29,8 +38,17 @@ export class ProfessorsController {
     description: "교수 조회",
   })
   @UseUserTypeGuard([UserType.ADMIN])
-  @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
-  async getProfessor(@Param("id", ParseIntPipe) id: number) {}
+  @ApiOkResponse({
+    description: "교수 조회 성공",
+    type: ProfessorDto,
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
+  async getProfessor(@Param("id", ParseIntPipe) id: number) {
+    const professor = await this.professorsService.getProfessor(id);
+
+    return new CommonResponseDto(new ProfessorDto(professor));
+  }
 
   @Post("")
   @ApiOperation({
@@ -38,8 +56,17 @@ export class ProfessorsController {
     description: "교수 생성",
   })
   @UseUserTypeGuard([UserType.ADMIN])
-  @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
-  async createProfessor() {}
+  @ApiOkResponse({
+    description: "교수 생성 성공",
+    type: ProfessorDto,
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
+  async createProfessor(@Body() createProfessorDto: CreateProfessorDto) {
+    const professor = await this.professorsService.createProfessor(createProfessorDto);
+
+    return new CommonResponseDto(new ProfessorDto(professor));
+  }
 
   @Put(":id")
   @ApiOperation({
@@ -47,24 +74,27 @@ export class ProfessorsController {
     description: "교수 수정",
   })
   @UseUserTypeGuard([UserType.ADMIN])
-  @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
   async updateProfessor(@Param("id", ParseIntPipe) id: number) {}
 
-  @Post("")
+  @Post("/excel")
   @ApiOperation({
     summary: "교수 엑셀 업로드",
     description: "교수 엑셀 업로드",
   })
   @UseUserTypeGuard([UserType.ADMIN])
-  @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
   async uploadProfessorExcel() {}
 
-  @Get("")
+  @Get("/excel")
   @ApiOperation({
     summary: "교수 엑셀 다운로드",
     description: "교수 엑셀 다운로드",
   })
   @UseUserTypeGuard([UserType.ADMIN])
-  @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
   async downloadProfessorExcel() {}
 }
