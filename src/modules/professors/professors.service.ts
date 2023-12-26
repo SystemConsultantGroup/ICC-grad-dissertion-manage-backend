@@ -30,7 +30,11 @@ export class ProfessorsService {
   }
 
   async createProfessor(createProfessorDto: CreateProfessorDto) {
-    const { loginId, email, deptId } = createProfessorDto;
+    const { loginId, password, email, deptId } = createProfessorDto;
+    if (!loginId || !password || !email || !deptId) {
+      throw new BadRequestException("필수 정보를 입력해주세요.");
+    }
+
     const existingLoginId = await this.prismaService.user.findUnique({
       where: { loginId: loginId },
     });
