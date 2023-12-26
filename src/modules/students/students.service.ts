@@ -1,3 +1,4 @@
+import { ThesisInfoQueryDto, ThesisQueryType } from "./dtos/thesis-info-query.dto";
 import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { UserType } from "src/common/enums/user-type.enum";
 import { PrismaService } from "src/config/database/prisma.service";
@@ -15,6 +16,7 @@ import { ReviewStatus } from "src/common/enums/review-status.enum";
 import { StudentSearchQuery } from "./dtos/student-search-query.dto";
 import { UpdateStudentDto } from "./dtos/update-student.dto";
 import { UpdateSystemDto } from "./dtos/update-system.dto";
+import { User } from "@prisma/client";
 
 @Injectable()
 export class StudentsService {
@@ -498,6 +500,68 @@ export class StudentsService {
       });
     } catch (error) {
       throw new InternalServerErrorException(`업데이트 실패: ${error.message}`);
+    }
+  }
+
+  async getThesisInfo(studentId: number, thesisInfoQueryDto: ThesisInfoQueryDto, user: User) {
+    const typeQuery = thesisInfoQueryDto.type;
+    const currentUserType = user.type;
+    const userId = user.id;
+    const process = await this.prismaService.process.findUnique({
+      where: { studentId },
+    });
+
+    // studentId 확인
+    const foundStudent = await this.prismaService.user.findUnique({
+      where: {
+        id: studentId,
+        type: UserType.STUDENT,
+      },
+    });
+    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+
+    // 접근 권한 확인
+    if (currentUserType === UserType.STUDENT && userId !== studentId) {
+      throw new BadRequestException("타 학생의 정보는 열람할 수 없습니다.");
+    } else if (currentUserType === UserType.PROFESSOR) {
+      const foundReviewer = await this.prismaService.reviewer.findFirst({
+        where: { reviewerId: userId, processId: process.id },
+      });
+      if (!foundReviewer) throw new BadRequestException("비지도 학생의 정보는 열람할 수 없습니다.");
+    }
+
+    // 조회할 심사 단계 결정
+    let stage;
+    if (typeQuery === ThesisQueryType.NOW) {
+      // 학생의 현재 시스템 단계 확인
+      /**
+       * phaseId 1, 2 > 예심
+       * phaseId 3, 4, 5 > 본심
+       */
+      stage = process.phaseId in [1, 2] ? Stage.PRELIMINARY : Stage.MAIN;
+    } else {
+      stage = typeQuery === ThesisQueryType.MAIN ? Stage.MAIN : Stage.PRELIMINARY;
+    }
+
+    // 정보 조회
+    try {
+      return this.prismaService.thesisInfo.findFirst({
+        where: {
+          processId: process.id,
+          stage,
+        },
+        include: {
+          process: {
+            include: { student: { include: { department: true } } },
+          },
+          thesisFiles: {
+            orderBy: { type: "desc" },
+            include: { file: true },
+          },
+        },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(`조회 실패: ${error}}`);
     }
   }
 }

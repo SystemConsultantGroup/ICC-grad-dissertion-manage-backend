@@ -27,11 +27,13 @@ import { UserDto } from "../users/dtos/user.dto";
 import { UpdateStudentDto } from "./dtos/update-student.dto";
 import { SystemDto } from "./dtos/system.dto";
 import { UpdateSystemDto } from "./dtos/update-system.dto";
+import { ThesisInfoQueryDto } from "./dtos/thesis-info-query.dto";
+import { ThesisInfoDto } from "./dtos/thesis-info.dto";
 
 @Controller("students")
 @UseGuards(JwtGuard)
 @ApiTags("학생 API")
-@ApiExtraModels(UserDto, CommonResponseDto, SystemDto)
+@ApiExtraModels(UserDto, CommonResponseDto, SystemDto, ThesisInfoDto)
 @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
 @ApiBearerAuth("access-token")
 export class StudentsController {
@@ -179,18 +181,29 @@ export class StudentsController {
   }
 
   @Get("/:id/thesis")
-  async getThesisInfo() {
-    // 접근 권한
-    /**
-     * 학생 : 자기 정보
-     * 교수 : 담당 학생 정보
-     * 관리자 : 모두
-     */
-    // 리턴 바디
-    /**
-     * ThesisInfo + User + ThesisFile
-     */
-    // 뭔가... 예심을 가져올지, 본심을 가져올지 구분해야 하긴 할듯? 요청 쿼리?
+  @UseUserTypeGuard([UserType.ADMIN, UserType.PROFESSOR, UserType.STUDENT])
+  @ApiOperation({
+    summary: "학생 논문 정보 조회 API",
+    description: "아이디에 해당하는 학생의 예심/본심 논문 정보를 조회할 수 있다.",
+  })
+  @ApiUnauthorizedResponse({
+    description: "로그인 후 접근 가능, [학생] 본인 정보만 조회 가능, [교수] 담당 학생 정보만 조회 가능",
+  })
+  @ApiBadRequestResponse({ description: "요청 양식 오류" })
+  @ApiOkResponse({
+    description: "학생 논문 정보 조회 성공",
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(ThesisInfoDto) }],
+    },
+  })
+  async getThesisInfo(
+    @Param("id", PositiveIntPipe) studentId: number,
+    @Query() thesisInfoQuery: ThesisInfoQueryDto,
+    @CurrentUser() currentUser: User
+  ) {
+    const thesisInfo = await this.studentsService.getThesisInfo(studentId, thesisInfoQuery, currentUser);
+    const thesisInfoDto = new ThesisInfoDto(thesisInfo);
+    return new CommonResponseDto(thesisInfoDto);
   }
 
   @Put("/:id/thesis")
