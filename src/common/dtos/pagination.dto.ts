@@ -27,13 +27,13 @@ export class PageDto<T> {
 }
 
 export class PageQuery {
-  @ApiProperty({ description: "페이지 번호" })
+  @ApiProperty({ description: "페이지 번호", example: "2" })
   @Type(() => Number)
   @IsInt()
   @IsPositive()
   pageNumber: number;
 
-  @ApiProperty({ description: "페이지 크기" })
+  @ApiProperty({ description: "페이지 크기", example: "5" })
   @Type(() => Number)
   @IsInt()
   @IsPositive()
