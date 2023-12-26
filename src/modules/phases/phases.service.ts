@@ -71,7 +71,7 @@ export class PhasesService {
           },
         });
 
-        // cron-job task 설정 추가가 필요합니다.
+        // 행정실 문의 확인후 cron task 추가 필요
       });
     } catch (error) {
       throw new BadRequestException("invalid request");
