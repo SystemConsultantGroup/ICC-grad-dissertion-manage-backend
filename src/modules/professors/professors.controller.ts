@@ -14,6 +14,7 @@ import { JwtGuard } from "../auth/guards/jwt.guard";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
 import { UserType } from "@prisma/client";
 import { CreateProfessorDto } from "./dtos/create-professor.dto";
+import { UpdateProfessorDto } from "./dtos/update-professor.dto";
 
 @ApiTags("교수 API")
 @UseGuards(JwtGuard)
@@ -76,7 +77,11 @@ export class ProfessorsController {
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
-  async updateProfessor(@Param("id", ParseIntPipe) id: number) {}
+  async updateProfessor(@Param("id", ParseIntPipe) id: number, @Body() updateProfessorDto: UpdateProfessorDto) {
+    const professor = await this.professorsService.updateProfessor(id, updateProfessorDto);
+
+    return new CommonResponseDto(new ProfessorDto(professor));
+  }
 
   @Post("/excel")
   @ApiOperation({

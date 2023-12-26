@@ -3,6 +3,7 @@ import { UserType } from "@prisma/client";
 import { PrismaService } from "src/config/database/prisma.service";
 import { CreateProfessorDto } from "./dtos/create-professor.dto";
 import { AuthService } from "../auth/auth.service";
+import { UpdateProfessorDto } from "./dtos/update-professor.dto";
 
 @Injectable()
 export class ProfessorsService {
@@ -29,8 +30,9 @@ export class ProfessorsService {
   }
 
   async createProfessor(createProfessorDto: CreateProfessorDto) {
+    const { loginId, email, deptId } = createProfessorDto;
     const existingLoginId = await this.prismaService.user.findUnique({
-      where: { loginId: createProfessorDto.loginId },
+      where: { loginId: loginId },
     });
 
     if (existingLoginId) {
@@ -38,7 +40,7 @@ export class ProfessorsService {
     }
 
     const existingEmail = await this.prismaService.user.findUnique({
-      where: { email: createProfessorDto.email },
+      where: { email: email },
     });
 
     if (existingEmail) {
@@ -46,7 +48,7 @@ export class ProfessorsService {
     }
 
     const checkDepartment = await this.prismaService.department.findUnique({
-      where: { id: createProfessorDto.deptId },
+      where: { id: deptId },
     });
 
     if (!checkDepartment) {
@@ -55,25 +57,61 @@ export class ProfessorsService {
 
     const hashedPassword = await this.authService.createHash(createProfessorDto.password);
 
-    return await this.prismaService.$transaction(async (tx) => {
-      await tx.user.create({
-        data: {
-          ...createProfessorDto,
-          type: UserType.PROFESSOR,
-          password: hashedPassword,
-        },
-      });
-
-      return await tx.user.findUnique({
-        where: { loginId: createProfessorDto.loginId },
-        include: {
-          department: true,
-        },
-      });
+    return await this.prismaService.user.create({
+      data: {
+        ...createProfessorDto,
+        type: UserType.PROFESSOR,
+        password: hashedPassword,
+      },
+      include: {
+        department: true,
+      },
     });
   }
 
-  async updateProfessor(id: number) {}
+  async updateProfessor(id: number, updateProfessorDto: UpdateProfessorDto) {
+    const { loginId, password, email, deptId } = updateProfessorDto;
+    const professor = await this.prismaService.user.findUnique({
+      where: { id, type: UserType.PROFESSOR },
+    });
+
+    if (!professor) throw new BadRequestException("존재하지 않는 교수입니다.");
+
+    if (loginId) {
+      const existingLoginId = await this.prismaService.user.findUnique({
+        where: { loginId: updateProfessorDto.loginId },
+      });
+      if (existingLoginId) throw new BadRequestException("이미 존재하는 아이디입니다.");
+    }
+
+    if (password) {
+      const hashedPassword = await this.authService.createHash(updateProfessorDto.password);
+      updateProfessorDto.password = hashedPassword;
+    }
+
+    if (email) {
+      const existingEmail = await this.prismaService.user.findUnique({
+        where: { email: updateProfessorDto.email },
+      });
+
+      if (existingEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
+    }
+
+    if (deptId) {
+      const checkDepartment = await this.prismaService.department.findUnique({
+        where: { id: updateProfessorDto.deptId },
+      });
+
+      if (!checkDepartment) throw new BadRequestException("존재하지 않는 학과입니다.");
+    }
+    return await this.prismaService.user.update({
+      where: { id },
+      data: updateProfessorDto,
+      include: {
+        department: true,
+      },
+    });
+  }
 
   async uploadProfessorExcel() {}
 

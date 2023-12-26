@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Department, User, UserType } from "@prisma/client";
+import { Department, User } from "@prisma/client";
 import { DepartmentDto } from "src/modules/departments/dtos/department.dto";
 
 export class ProfessorDto {
