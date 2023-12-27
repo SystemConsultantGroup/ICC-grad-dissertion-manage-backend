@@ -213,7 +213,7 @@ export class ProfessorsService {
 
     if (!professors.length) throw new BadRequestException("조회된 교수가 없습니다.");
 
-    const contents = professors.map((professor) => new DownloadProfessorDto(professor));
+    const contents = professors.map((professor) => new DownloadProfessorDto(professor).converDtoToKorean());
     const worksheet = utils.json_to_sheet(contents);
     const workbook = utils.book_new();
     const filename = "정통대_대학원_교수_목록_" + getCurrentTime().fullDateTime + ".xlsx";

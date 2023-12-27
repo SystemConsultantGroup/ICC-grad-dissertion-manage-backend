@@ -1,7 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Department, User } from "@prisma/client";
 import { Type } from "class-transformer";
-import { IsNotEmpty, IsOptional } from "class-validator";
 
 export class DownloadProfessorDto {
   constructor(
@@ -14,7 +13,7 @@ export class DownloadProfessorDto {
     this.name = professor.name;
     this.email = professor.email;
     this.phone = professor.phone;
-    this.departmentName = professor.department.name;
+    this.department = professor.department.name;
   }
 
   @ApiProperty({ description: "아이디" })
@@ -39,5 +38,17 @@ export class DownloadProfessorDto {
 
   @ApiProperty({ description: "학과 이름" })
   @Type(() => String)
-  departmentName?: string;
+  department?: string;
+
+  // ConvertDtoToKorean 함수 정의해줘
+  converDtoToKorean() {
+    return {
+      아이디: this.id,
+      로그인아이디: this.loginId,
+      이름: this.name,
+      이메일: this.email,
+      연락처: this.phone,
+      소속학과: this.department,
+    };
+  }
 }
