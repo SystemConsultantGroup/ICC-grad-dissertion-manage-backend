@@ -4,7 +4,7 @@ import { IsInt, IsNotEmpty, IsOptional, IsPositive } from "class-validator";
 import { PageQuery } from "src/common/dtos/pagination.dto";
 
 export class ProfessorListPaginationQuery extends PageQuery {
-  // 다중 상속이 안됨.... ㅜㅜ
+  // 다중 상속이 안됨....
   @ApiProperty({ description: "아이디", required: false })
   @IsOptional()
   @IsNotEmpty()
