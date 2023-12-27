@@ -1,6 +1,6 @@
 import { ProfessorDto } from "./dtos/professor.dto";
 import { CommonResponseDto } from "src/common/dtos/common-response.dto";
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, Res, UseGuards } from "@nestjs/common";
 import { ProfessorsService } from "./professors.service";
 import {
   ApiBearerAuth,
@@ -19,6 +19,7 @@ import { ApiPaginationOKResponse } from "src/common/decorators/api-pagination-ok
 import { PageDto } from "src/common/dtos/pagination.dto";
 import { ProfessorListPaginationQuery } from "./dtos/professors-list-pagination.dto";
 import { ProfessorListQuery } from "./dtos/professors-list.dto";
+import { Response } from "express";
 
 @ApiTags("교수 API")
 @UseGuards(JwtGuard)
@@ -76,6 +77,31 @@ export class ProfessorsController {
     return new CommonResponseDto();
   }
 
+  @Post("/excel")
+  @ApiOperation({
+    summary: "교수 엑셀 업로드",
+    description: "교수 엑셀 업로드",
+  })
+  @UseUserTypeGuard([UserType.ADMIN])
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
+  async uploadProfessorExcel() {}
+
+  @Get("/excel")
+  @ApiOperation({
+    summary: "교수 엑셀 다운로드",
+    description: "교수 엑셀 다운로드",
+  })
+  @UseUserTypeGuard([UserType.ADMIN])
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
+  async downloadProfessorExcel(@Query() professorListQuery: ProfessorListQuery, @Res() res: Response) {
+    const { stream, filename } = await this.professorsService.downloadProfessorExcel(professorListQuery);
+
+    res.setHeader("Content-Disposition", `attachment; filename=${encodeURI(filename)}`);
+    stream.pipe(res);
+  }
+
   @Get(":id")
   @ApiOperation({
     summary: "교수 조회",
@@ -121,24 +147,4 @@ export class ProfessorsController {
 
     return new CommonResponseDto();
   }
-
-  @Post("/excel")
-  @ApiOperation({
-    summary: "교수 엑셀 업로드",
-    description: "교수 엑셀 업로드",
-  })
-  @UseUserTypeGuard([UserType.ADMIN])
-  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
-  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
-  async uploadProfessorExcel() {}
-
-  @Get("/excel")
-  @ApiOperation({
-    summary: "교수 엑셀 다운로드",
-    description: "교수 엑셀 다운로드",
-  })
-  @UseUserTypeGuard([UserType.ADMIN])
-  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
-  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
-  async downloadProfessorExcel(@Query() professorListQuery: ProfessorListQuery) {}
 }

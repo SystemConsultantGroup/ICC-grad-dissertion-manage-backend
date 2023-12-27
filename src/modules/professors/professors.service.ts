@@ -5,6 +5,11 @@ import { CreateProfessorDto } from "./dtos/create-professor.dto";
 import { AuthService } from "../auth/auth.service";
 import { UpdateProfessorDto } from "./dtos/update-professor.dto";
 import { ProfessorListPaginationQuery } from "./dtos/professors-list-pagination.dto";
+import { ProfessorListQuery } from "./dtos/professors-list.dto";
+import { utils, write } from "xlsx";
+import { DownloadProfessorDto } from "./dtos/download-professor.dto";
+import { Readable } from "stream";
+import { getCurrentTime } from "src/common/utils/date.util";
 
 @Injectable()
 export class ProfessorsService {
@@ -180,5 +185,44 @@ export class ProfessorsService {
 
   async uploadProfessorExcel() {}
 
-  async downloadProfessorExcel() {}
+  async downloadProfessorExcel(professListQuery: ProfessorListQuery) {
+    const { loginId, name, email, phone, deptId } = professListQuery;
+    if (deptId) {
+      const checkDepartment = await this.prismaService.department.findUnique({
+        where: { id: deptId },
+      });
+
+      if (!checkDepartment) {
+        throw new BadRequestException("존재하지 않는 학과입니다.");
+      }
+    }
+
+    const professors = await this.prismaService.user.findMany({
+      where: {
+        type: UserType.PROFESSOR,
+        loginId: { contains: loginId },
+        name: { contains: name },
+        email: { contains: email },
+        phone: { contains: phone },
+        deptId: deptId,
+      },
+      include: {
+        department: true,
+      },
+    });
+
+    if (!professors.length) throw new BadRequestException("조회된 교수가 없습니다.");
+
+    const contents = professors.map((professor) => new DownloadProfessorDto(professor));
+    const worksheet = utils.json_to_sheet(contents);
+    const workbook = utils.book_new();
+    const filename = "정통대_대학원_교수_목록_" + getCurrentTime().fullDateTime + ".xlsx";
+    utils.book_append_sheet(workbook, worksheet, "교수 목록");
+
+    const stream = new Readable();
+    stream.push(await write(workbook, { type: "buffer" }));
+    stream.push(null);
+
+    return { stream, filename };
+  }
 }
