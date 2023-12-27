@@ -14,6 +14,12 @@ export class ProfessorsService {
 
   async getProfessorsList() {}
 
+  async deleteProfessorsList() {
+    return await this.prismaService.user.deleteMany({
+      where: { type: UserType.PROFESSOR },
+    });
+  }
+
   async getProfessor(id: number) {
     const professor = await this.prismaService.user.findUnique({
       where: { id, type: UserType.PROFESSOR },
@@ -114,6 +120,20 @@ export class ProfessorsService {
       include: {
         department: true,
       },
+    });
+  }
+
+  async deleteProfessor(id: number) {
+    const professor = await this.prismaService.user.findUnique({
+      where: { id, type: UserType.PROFESSOR },
+    });
+
+    if (!professor) {
+      throw new BadRequestException("존재하지 않는 교수입니다.");
+    }
+
+    return await this.prismaService.user.delete({
+      where: { id },
     });
   }
 
