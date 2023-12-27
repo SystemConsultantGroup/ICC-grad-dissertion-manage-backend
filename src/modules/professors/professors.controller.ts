@@ -1,6 +1,19 @@
-import { ProfessorDto } from "./dtos/professor.dto";
+import { ProfessorDto, ProfessorListDto } from "./dtos/professor.dto";
 import { CommonResponseDto } from "src/common/dtos/common-response.dto";
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, Res, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+  Res,
+  UploadedFile,
+  UseGuards,
+} from "@nestjs/common";
 import { ProfessorsService } from "./professors.service";
 import {
   ApiBearerAuth,
@@ -20,6 +33,7 @@ import { PageDto } from "src/common/dtos/pagination.dto";
 import { ProfessorListPaginationQuery } from "./dtos/professors-list-pagination.dto";
 import { ProfessorListQuery } from "./dtos/professors-list.dto";
 import { Response } from "express";
+import { ApiFile } from "../files/decorators/api-file.decorator";
 
 @ApiTags("교수 API")
 @UseGuards(JwtGuard)
@@ -78,14 +92,24 @@ export class ProfessorsController {
   }
 
   @Post("/excel")
+  @ApiFile("excelFile")
   @ApiOperation({
     summary: "교수 엑셀 업로드",
     description: "교수 엑셀 업로드",
   })
   @UseUserTypeGuard([UserType.ADMIN])
+  @ApiOkResponse({
+    description: "교수 엑셀 업로드 성공",
+    type: ProfessorListDto,
+  })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
-  async uploadProfessorExcel() {}
+  async uploadProfessorExcel(@UploadedFile() excelFile: Express.Multer.File) {
+    const professors = await this.professorsService.uploadProfessorExcel(excelFile);
+    const contents = professors.map((professor) => new ProfessorDto(professor));
+
+    return new CommonResponseDto(new ProfessorListDto(contents));
+  }
 
   @Get("/excel")
   @ApiOperation({
