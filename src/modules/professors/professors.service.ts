@@ -247,7 +247,7 @@ export class ProfessorsService {
           } else {
             // 존재하지 않는 유저의 경우
             if (!password) throw new BadRequestException(`${index + 2}번째 줄의 비밀번호를 입력해주세요.`);
-            console.log(typeof password);
+
             user = await tx.user.create({
               data: {
                 loginId,
