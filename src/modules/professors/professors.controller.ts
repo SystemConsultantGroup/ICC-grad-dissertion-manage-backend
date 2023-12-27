@@ -1,6 +1,6 @@
 import { ProfessorDto } from "./dtos/professor.dto";
 import { CommonResponseDto } from "src/common/dtos/common-response.dto";
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { ProfessorsService } from "./professors.service";
 import {
   ApiBearerAuth,
@@ -15,6 +15,10 @@ import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
 import { UserType } from "@prisma/client";
 import { CreateProfessorDto } from "./dtos/create-professor.dto";
 import { UpdateProfessorDto } from "./dtos/update-professor.dto";
+import { ApiPaginationOKResponse } from "src/common/decorators/api-pagination-ok-response.decorator";
+import { PageDto } from "src/common/dtos/pagination.dto";
+import { ProfessorListPaginationQuery } from "./dtos/professors-list-pagination.dto";
+import { ProfessorListQuery } from "./dtos/professors-list.dto";
 
 @ApiTags("교수 API")
 @UseGuards(JwtGuard)
@@ -31,7 +35,14 @@ export class ProfessorsController {
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
-  async getProfessorsList() {}
+  @ApiPaginationOKResponse({ description: "교수 목록 조회 성공", dto: ProfessorDto })
+  async getProfessorsList(@Query() professorListPaginationQuery: ProfessorListPaginationQuery) {
+    const { pageNumber, pageSize } = professorListPaginationQuery;
+    const { totalCount, professors } = await this.professorsService.getProfessorsList(professorListPaginationQuery);
+    const contents = professors.map((professor) => new ProfessorDto(professor));
+    const pageDto = new PageDto(pageNumber, pageSize, totalCount, contents);
+    return new CommonResponseDto(pageDto);
+  }
 
   @Post("")
   @ApiOperation({
@@ -129,5 +140,5 @@ export class ProfessorsController {
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
-  async downloadProfessorExcel() {}
+  async downloadProfessorExcel(@Query() professorListQuery: ProfessorListQuery) {}
 }

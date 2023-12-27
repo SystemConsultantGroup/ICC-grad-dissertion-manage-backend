@@ -4,6 +4,7 @@ import { PrismaService } from "src/config/database/prisma.service";
 import { CreateProfessorDto } from "./dtos/create-professor.dto";
 import { AuthService } from "../auth/auth.service";
 import { UpdateProfessorDto } from "./dtos/update-professor.dto";
+import { ProfessorListPaginationQuery } from "./dtos/professors-list-pagination.dto";
 
 @Injectable()
 export class ProfessorsService {
@@ -12,27 +13,52 @@ export class ProfessorsService {
     private readonly authService: AuthService
   ) {}
 
-  async getProfessorsList() {}
+  async getProfessorsList(professorListPaginationQuery: ProfessorListPaginationQuery) {
+    const { loginId, name, email, phone, deptId } = professorListPaginationQuery;
+
+    if (deptId) {
+      const checkDepartment = await this.prismaService.department.findUnique({
+        where: { id: deptId },
+      });
+
+      if (!checkDepartment) {
+        throw new BadRequestException("존재하지 않는 학과입니다.");
+      }
+    }
+    return await this.prismaService.$transaction(async (tx) => {
+      const professors = await tx.user.findMany({
+        where: {
+          type: UserType.PROFESSOR,
+          loginId: { contains: loginId },
+          name: { contains: name },
+          email: { contains: email },
+          phone: { contains: phone },
+          deptId: deptId,
+        },
+        include: {
+          department: true,
+        },
+        skip: professorListPaginationQuery.getOffset(),
+        take: professorListPaginationQuery.getLimit(),
+      });
+      const totalCount = await tx.user.count({
+        where: {
+          type: UserType.PROFESSOR,
+          loginId: { contains: loginId },
+          name: { contains: name },
+          email: { contains: email },
+          phone: { contains: phone },
+          deptId: deptId,
+        },
+      });
+      return { totalCount, professors };
+    });
+  }
 
   async deleteProfessorsList() {
     return await this.prismaService.user.deleteMany({
       where: { type: UserType.PROFESSOR },
     });
-  }
-
-  async getProfessor(id: number) {
-    const professor = await this.prismaService.user.findUnique({
-      where: { id, type: UserType.PROFESSOR },
-      include: {
-        department: true,
-      },
-    });
-
-    if (!professor) {
-      throw new BadRequestException("존재하지 않는 교수입니다.");
-    }
-
-    return professor;
   }
 
   async createProfessor(createProfessorDto: CreateProfessorDto) {
@@ -77,6 +103,21 @@ export class ProfessorsService {
         department: true,
       },
     });
+  }
+
+  async getProfessor(id: number) {
+    const professor = await this.prismaService.user.findUnique({
+      where: { id, type: UserType.PROFESSOR },
+      include: {
+        department: true,
+      },
+    });
+
+    if (!professor) {
+      throw new BadRequestException("존재하지 않는 교수입니다.");
+    }
+
+    return professor;
   }
 
   async updateProfessor(id: number, updateProfessorDto: UpdateProfessorDto) {
