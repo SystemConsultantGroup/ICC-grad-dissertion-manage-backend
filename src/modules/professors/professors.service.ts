@@ -97,13 +97,11 @@ export class ProfessorsService {
       throw new BadRequestException("존재하지 않는 학과입니다.");
     }
 
-    const hashedPassword = await this.authService.createHash(createProfessorDto.password);
-
     return await this.prismaService.user.create({
       data: {
         ...createProfessorDto,
         type: UserType.PROFESSOR,
-        password: hashedPassword,
+        password: await this.authService.createHash(createProfessorDto.password),
       },
       include: {
         department: true,
@@ -136,19 +134,14 @@ export class ProfessorsService {
 
     if (loginId) {
       const existingLoginId = await this.prismaService.user.findUnique({
-        where: { loginId: updateProfessorDto.loginId },
+        where: { loginId },
       });
       if (existingLoginId) throw new BadRequestException("이미 존재하는 아이디입니다.");
     }
 
-    if (password) {
-      const hashedPassword = await this.authService.createHash(updateProfessorDto.password);
-      updateProfessorDto.password = hashedPassword;
-    }
-
     if (email) {
       const existingEmail = await this.prismaService.user.findUnique({
-        where: { email: updateProfessorDto.email },
+        where: { email },
       });
 
       if (existingEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
@@ -156,14 +149,17 @@ export class ProfessorsService {
 
     if (deptId) {
       const checkDepartment = await this.prismaService.department.findUnique({
-        where: { id: updateProfessorDto.deptId },
+        where: { id: deptId },
       });
 
       if (!checkDepartment) throw new BadRequestException("존재하지 않는 학과입니다.");
     }
     return await this.prismaService.user.update({
       where: { id },
-      data: updateProfessorDto,
+      data: {
+        ...updateProfessorDto,
+        password: password ? await this.authService.createHash(password) : undefined,
+      },
       include: {
         department: true,
       },
