@@ -1,4 +1,4 @@
-import { ProfessorDto, ProfessorListDto } from "./dtos/professor.dto";
+import { ProfessorDto } from "./dtos/professor.dto";
 import { CommonResponseDto } from "src/common/dtos/common-response.dto";
 import {
   Body,
@@ -30,8 +30,8 @@ import { CreateProfessorDto } from "./dtos/create-professor.dto";
 import { UpdateProfessorDto } from "./dtos/update-professor.dto";
 import { ApiPaginationOKResponse } from "src/common/decorators/api-pagination-ok-response.decorator";
 import { PageDto } from "src/common/dtos/pagination.dto";
-import { ProfessorListPaginationQuery } from "./dtos/professors-list-pagination.dto";
-import { ProfessorListQuery } from "./dtos/professors-list.dto";
+import { ProfessorListPaginationQuery, ProfessorListQuery } from "./dtos/professors-list-query.dto";
+import { ProfessorListDto } from "./dtos/professors-list.dto";
 import { Response } from "express";
 import { ApiFile } from "../files/decorators/api-file.decorator";
 
