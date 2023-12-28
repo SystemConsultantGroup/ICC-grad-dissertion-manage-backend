@@ -57,7 +57,6 @@ export class PhasesService {
       throw new BadRequestException("기간이 잘못 설정되었습니다.");
     }
 
-    // const endDateTime = new Date(updatePhaseDto.end);
     const endDateTime = UTC2KST(updatePhaseDto.end);
     endDateTime.setUTCHours(23, 59, 59, 0);
     try {
