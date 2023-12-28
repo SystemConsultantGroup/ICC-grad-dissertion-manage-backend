@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "../../config/database/prisma.service";
-import { getKST } from "../../common/utils/date.util";
+import { UTC2KST, getKST } from "../../common/utils/date.util";
 import { UpdatePhaseDto } from "./dtos/update-phase.dto";
 
 @Injectable()
@@ -57,7 +57,8 @@ export class PhasesService {
       throw new BadRequestException("기간이 잘못 설정되었습니다.");
     }
 
-    const endDateTime = new Date(updatePhaseDto.end);
+    // const endDateTime = new Date(updatePhaseDto.end);
+    const endDateTime = UTC2KST(updatePhaseDto.end);
     endDateTime.setUTCHours(23, 59, 59, 0);
     try {
       return await this.prismaService.$transaction(async (tx) => {
