@@ -18,6 +18,7 @@ export class PhaseDto {
     this.id = phase.id;
     this.start = phase.start;
     this.end = phase.end;
+    this.title = phase.title;
   }
 }
 
