@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { UserType } from "@prisma/client";
 import { PrismaService } from "src/config/database/prisma.service";
 import { CreateProfessorDto } from "./dtos/create-professor.dto";
@@ -62,16 +62,17 @@ export class ProfessorsService {
   }
 
   async deleteProfessorsList() {
-    return await this.prismaService.user.deleteMany({
-      where: { type: UserType.PROFESSOR },
-    });
+    try {
+      return await this.prismaService.user.deleteMany({
+        where: { type: UserType.PROFESSOR },
+      });
+    } catch (e) {
+      throw new InternalServerErrorException("교수 목록 삭제에 실패했습니다.");
+    }
   }
 
   async createProfessor(createProfessorDto: CreateProfessorDto) {
     const { loginId, password, email, deptId } = createProfessorDto;
-    if (!loginId || !password || !email || !deptId) {
-      throw new BadRequestException("필수 정보를 입력해주세요.");
-    }
 
     const existingLoginId = await this.prismaService.user.findUnique({
       where: { loginId: loginId },
@@ -97,16 +98,20 @@ export class ProfessorsService {
       throw new BadRequestException("존재하지 않는 학과입니다.");
     }
 
-    return await this.prismaService.user.create({
-      data: {
-        ...createProfessorDto,
-        type: UserType.PROFESSOR,
-        password: await this.authService.createHash(createProfessorDto.password),
-      },
-      include: {
-        department: true,
-      },
-    });
+    try {
+      return await this.prismaService.user.create({
+        data: {
+          ...createProfessorDto,
+          type: UserType.PROFESSOR,
+          password: await this.authService.createHash(password),
+        },
+        include: {
+          department: true,
+        },
+      });
+    } catch (e) {
+      throw new InternalServerErrorException("교수 생성에 실패했습니다.");
+    }
   }
 
   async getProfessor(id: number) {
@@ -154,16 +159,20 @@ export class ProfessorsService {
 
       if (!checkDepartment) throw new BadRequestException("존재하지 않는 학과입니다.");
     }
-    return await this.prismaService.user.update({
-      where: { id },
-      data: {
-        ...updateProfessorDto,
-        password: password ? await this.authService.createHash(password) : undefined,
-      },
-      include: {
-        department: true,
-      },
-    });
+    try {
+      return await this.prismaService.user.update({
+        where: { id },
+        data: {
+          ...updateProfessorDto,
+          password: password ? await this.authService.createHash(password) : undefined,
+        },
+        include: {
+          department: true,
+        },
+      });
+    } catch (e) {
+      throw new InternalServerErrorException("교수 정보 수정에 실패했습니다.");
+    }
   }
 
   async deleteProfessor(id: number) {
@@ -174,10 +183,13 @@ export class ProfessorsService {
     if (!professor) {
       throw new BadRequestException("존재하지 않는 교수입니다.");
     }
-
-    return await this.prismaService.user.delete({
-      where: { id },
-    });
+    try {
+      return await this.prismaService.user.delete({
+        where: { id },
+      });
+    } catch (e) {
+      throw new InternalServerErrorException("교수 삭제에 실패했습니다.");
+    }
   }
 
   async uploadProfessorExcel(excelFile: Express.Multer.File) {
@@ -198,68 +210,72 @@ export class ProfessorsService {
 
     if (!professors.length) throw new BadRequestException("업로드할 교수가 없습니다.");
 
-    return await this.prismaService.$transaction(async (tx) => {
-      const result = await Promise.all(
-        professors.map(async (professor, index) => {
-          const { loginId, name, password, email, phone, departmentName } = professor;
-          if (!departmentName) throw new BadRequestException(`${index + 2}번째 줄의 소속학과를 입력해주세요.`);
-          if (!email) throw new BadRequestException(`${index + 2}번째 줄의 이메일을 입력해주세요.`);
-          if (!name) throw new BadRequestException(`${index + 2}번째 줄의 이름을 입력해주세요.`);
+    try {
+      return await this.prismaService.$transaction(async (tx) => {
+        const result = await Promise.all(
+          professors.map(async (professor, index) => {
+            const { loginId, name, password, email, phone, departmentName } = professor;
+            if (!departmentName) throw new BadRequestException(`${index + 2}번째 줄의 소속학과를 입력해주세요.`);
+            if (!email) throw new BadRequestException(`${index + 2}번째 줄의 이메일을 입력해주세요.`);
+            if (!name) throw new BadRequestException(`${index + 2}번째 줄의 이름을 입력해주세요.`);
 
-          const dept = await tx.department.findFirst({
-            where: { name: departmentName },
-            select: { id: true },
-          });
+            const dept = await tx.department.findFirst({
+              where: { name: departmentName },
+              select: { id: true },
+            });
 
-          if (!dept) throw new BadRequestException(`${index + 2}번째 줄의 소속학과가 존재하지 않습니다.`);
+            if (!dept) throw new BadRequestException(`${index + 2}번째 줄의 소속학과가 존재하지 않습니다.`);
 
-          // 해당 ID가 존재할 경우 업데이트 진행
-          // 없는 경우 생성 진행
-          const existingUser = await tx.user.findUnique({
-            where: { loginId },
-          });
+            // 해당 ID가 존재할 경우 업데이트 진행
+            // 없는 경우 생성 진행
+            const existingUser = await tx.user.findUnique({
+              where: { loginId },
+            });
 
-          // 존재하는 유저의 경우
-          if (existingUser) {
-            // 이메일의 경우 중복이 아닐 경우 업데이트
-            if (existingUser.email !== email) {
-              await tx.user.update({
+            // 존재하는 유저의 경우
+            if (existingUser) {
+              // 이메일의 경우 중복이 아닐 경우 업데이트
+              if (existingUser.email !== email) {
+                await tx.user.update({
+                  where: { loginId },
+                  data: { email },
+                });
+              }
+              // 중복 허용 되는 값은 그냥 다시 넣어줌 (이름, 연락처, 학과, 비밀번호(undefined))
+              return await tx.user.update({
                 where: { loginId },
-                data: { email },
+                data: {
+                  name,
+                  phone,
+                  deptId: dept.id,
+                  password: password ? await this.authService.createHash(password) : undefined,
+                },
+                include: { department: true },
+              });
+            } else {
+              // 새로 생성하는 유저
+              if (!password) throw new BadRequestException(`${index + 2}번째 줄의 비밀번호를 입력해주세요.`);
+
+              return await tx.user.create({
+                data: {
+                  loginId,
+                  name,
+                  email,
+                  phone,
+                  deptId: dept.id,
+                  password: await this.authService.createHash(password),
+                  type: UserType.PROFESSOR,
+                },
+                include: { department: true },
               });
             }
-            // 중복 허용 되는 값은 그냥 다시 넣어줌 (이름, 연락처, 학과, 비밀번호(undefined))
-            return await tx.user.update({
-              where: { loginId },
-              data: {
-                name,
-                phone,
-                deptId: dept.id,
-                password: password ? await this.authService.createHash(password) : undefined,
-              },
-              include: { department: true },
-            });
-          } else {
-            // 새로 생성하는 유저
-            if (!password) throw new BadRequestException(`${index + 2}번째 줄의 비밀번호를 입력해주세요.`);
-
-            return await tx.user.create({
-              data: {
-                loginId,
-                name,
-                email,
-                phone,
-                deptId: dept.id,
-                password: await this.authService.createHash(password),
-                type: UserType.PROFESSOR,
-              },
-              include: { department: true },
-            });
-          }
-        })
-      );
-      return result;
-    });
+          })
+        );
+        return result;
+      });
+    } catch (e) {
+      throw new InternalServerErrorException("엑셀 파일 업로드에 실패했습니다.");
+    }
   }
 
   async downloadProfessorExcel(professListQuery: ProfessorListQuery) {
