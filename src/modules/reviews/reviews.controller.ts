@@ -7,9 +7,8 @@ import {
   ApiBearerAuth,
   getSchemaPath,
   ApiExtraModels,
-  ApiQuery,
   ApiNoContentResponse,
-  ApiParam,
+  ApiInternalServerErrorResponse,
 } from "@nestjs/swagger";
 import { ApiPaginationOKResponse } from "src/common/decorators/api-pagination-ok-response.decorator";
 import { Put, Query } from "@nestjs/common/decorators";
@@ -28,8 +27,10 @@ import { UpdateReviewReqDto } from "./dtos/update-review.req.dto";
 import { GetReviewFinalResDto } from "./dtos/get-review-final.res.dto";
 import { SearchReviewReqDto } from "./dtos/search-review.req.dto";
 import { SearchResultReqDto } from "./dtos/search-result.req.dto";
+import { getCurrentTime } from "src/common/utils/date.util";
+import { PositiveIntPipe } from "src/common/pipes/positive-int.pipe";
 
-@ApiTags("reviews API")
+@ApiTags("심사정보 API")
 @UseGuards(JwtGuard)
 @ApiBearerAuth("access-token")
 @Controller("reviews")
@@ -41,38 +42,11 @@ export class ReviewsController {
     summary: "심사 대상 논문 리스트 조회 API",
     description: "로그인한 교수가 심사해야하는 논문 리스트를 조회할 수 있다.",
   })
-  @ApiQuery({
-    name: "pageNumber",
-    required: true,
-  })
-  @ApiQuery({
-    name: "pageSize",
-    required: true,
-  })
-  @ApiQuery({
-    name: "author",
-    required: false,
-  })
-  @ApiQuery({
-    name: "department",
-    required: false,
-  })
-  @ApiQuery({
-    name: "stage",
-    required: false,
-  })
-  @ApiQuery({
-    name: "title",
-    required: false,
-  })
-  @ApiQuery({
-    name: "status",
-    required: false,
-  })
   @ApiPaginationOKResponse({
     description: "조회 성공",
     dto: GetReviewListResDto,
   })
+  @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Get()
@@ -89,17 +63,14 @@ export class ReviewsController {
   @ApiOkResponse({
     description: "조회 성공",
   })
+  @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Get("excel")
   async getReviewListExcel(@CurrentUser() user: User, @Res({ passthrough: true }) res: Response) {
     const excel = await this.reviewsService.getReviewListExcel(user);
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = ("0" + (today.getMonth() + 1)).slice(-2);
-    const day = ("0" + today.getDate()).slice(-2);
-    const dateStr = year + month + day;
-    const fileName = encodeURIComponent("심사_대상_논문_목록_" + dateStr + ".xlsx");
+    const dateString = getCurrentTime();
+    const fileName = encodeURIComponent("심사_대상_논문_목록_" + dateString + ".xlsx");
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", "attachment; filename=" + fileName);
     return new StreamableFile(excel);
@@ -109,38 +80,11 @@ export class ReviewsController {
     summary: "최종 심사 대상 논문 리스트 조회 API",
     description: "로그인한 교수가 최종심사해야하는 논문 리스트를 조회할 수 있다.",
   })
-  @ApiQuery({
-    name: "pageNumber",
-    required: true,
-  })
-  @ApiQuery({
-    name: "pageSize",
-    required: true,
-  })
-  @ApiQuery({
-    name: "author",
-    required: false,
-  })
-  @ApiQuery({
-    name: "department",
-    required: false,
-  })
-  @ApiQuery({
-    name: "stage",
-    required: false,
-  })
-  @ApiQuery({
-    name: "title",
-    required: false,
-  })
-  @ApiQuery({
-    name: "status",
-    required: false,
-  })
   @ApiPaginationOKResponse({
     description: "조회 성공",
     dto: GetReviewListResDto,
   })
+  @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Get("final")
@@ -157,17 +101,14 @@ export class ReviewsController {
   @ApiOkResponse({
     description: "조회 성공",
   })
+  @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Get("final/excel")
   async getReviewListFinalExcel(@CurrentUser() user: User, @Res({ passthrough: true }) res: Response) {
     const excel = await this.reviewsService.getReviewListFinalExcel(user);
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = ("0" + (today.getMonth() + 1)).slice(-2);
-    const day = ("0" + today.getDate()).slice(-2);
-    const dateStr = year + month + day;
-    const fileName = encodeURIComponent("최종_심사_대상_논문_목록_" + dateStr + ".xlsx");
+    const dateString = getCurrentTime();
+    const fileName = encodeURIComponent("최종_심사_대상_논문_목록_" + dateString + ".xlsx");
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", "attachment; filename=" + fileName);
     return new StreamableFile(excel);
@@ -177,32 +118,11 @@ export class ReviewsController {
     summary: "전체 심사결과 리스트 조회",
     description: "심사가 끝난 논문의 전체 심사 결과 리스트를 조회할 수 있다.",
   })
-  @ApiQuery({
-    name: "author",
-    required: false,
-  })
-  @ApiQuery({
-    name: "department",
-    required: false,
-  })
-  @ApiQuery({
-    name: "stage",
-    required: false,
-  })
-  @ApiQuery({
-    name: "title",
-    required: false,
-  })
-  @ApiQuery({
-    name: "summary",
-    required: false,
-  })
-  @ApiOkResponse({
+  @ApiPaginationOKResponse({
     description: "조회 성공",
-    schema: {
-      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(GetReviewListResDto) }],
-    },
+    dto: GetReviewListResDto,
   })
+  @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "관리자 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.ADMIN])
   @Get("result")
@@ -216,17 +136,14 @@ export class ReviewsController {
     summary: "전체 심사결과 리스트 엑셀 다운로드 API",
     description: "전체 심사결과 리스트를 엑셀로 다운로드 할 수 있다.",
   })
+  @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "관리자 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.ADMIN])
   @Get("result/excel")
   async getResultExcel(@Res({ passthrough: true }) res: Response) {
     const excel = await this.reviewsService.getResultExcel();
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = ("0" + (today.getMonth() + 1)).slice(-2);
-    const day = ("0" + today.getDate()).slice(-2);
-    const dateStr = year + month + day;
-    const fileName = encodeURIComponent("전체_심사_결과_목록_" + dateStr + ".xlsx");
+    const dateString = getCurrentTime();
+    const fileName = encodeURIComponent("전체_심사_결과_목록_" + dateString + ".xlsx");
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", "attachment; filename=" + fileName);
     return new StreamableFile(excel);
@@ -236,20 +153,18 @@ export class ReviewsController {
     summary: "논문 심사 정보 조회 API",
     description: "심사 정보를 조회할 수 있다.",
   })
-  @ApiParam({
-    name: "id",
-    required: true,
-  })
+  @ApiExtraModels(GetReviewResDto)
   @ApiOkResponse({
     description: "조회 성공",
     schema: {
       allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(GetReviewResDto) }],
     },
   })
+  @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Get(":id")
-  async getReview(@Param("id", ParseIntPipe) id: number, @CurrentUser() user: User) {
+  async getReview(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
     const review = await this.reviewsService.getReview(id, user);
     return new CommonResponseDto(new GetReviewResDto(review));
   }
@@ -258,21 +173,20 @@ export class ReviewsController {
     summary: "논문 심사 정보 수정 API",
     description: "심사 정보를 수정할 수 있다.",
   })
-  @ApiParam({
-    name: "id",
-    required: true,
-  })
+  @ApiExtraModels(GetReviewResDto)
   @ApiNoContentResponse({
     description: "수정 성공",
     schema: {
       allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(GetReviewResDto) }],
     },
   })
+  @ApiInternalServerErrorResponse({ description: "서버 오류" })
+  @ApiInternalServerErrorResponse({ description: "수정 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Put(":id")
   async updateReview(
-    @Param("id", ParseIntPipe) id: number,
+    @Param("id", PositiveIntPipe) id: number,
     @Body() updateReviewDto: UpdateReviewReqDto,
     @CurrentUser() user: User
   ) {
@@ -284,20 +198,18 @@ export class ReviewsController {
     summary: "최종 논문 심사 정보 조회 API",
     description: "최종 심사 정보를 조회할 수 있다.",
   })
-  @ApiParam({
-    name: "id",
-    required: true,
-  })
+  @ApiExtraModels(GetReviewResDto)
   @ApiOkResponse({
     description: "조회 성공",
     schema: {
-      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(GetReviewFinalResDto) }],
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(GetReviewResDto) }],
     },
   })
+  @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Get("final/:id")
-  async getReviewFinal(@Param("id", ParseIntPipe) id: number, @CurrentUser() user: User) {
+  async getReviewFinal(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
     const review = await this.reviewsService.getReviewFinal(id, user);
     return new CommonResponseDto(new GetReviewFinalResDto(review));
   }
@@ -306,21 +218,19 @@ export class ReviewsController {
     summary: "최종 논문 심사 정보 수정 API",
     description: "심사 정보를 수정할 수 있다.",
   })
-  @ApiParam({
-    name: "id",
-    required: true,
-  })
+  @ApiExtraModels(GetReviewResDto)
   @ApiNoContentResponse({
     description: "수정 성공",
     schema: {
-      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(GetReviewFinalResDto) }],
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(GetReviewResDto) }],
     },
   })
+  @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Put("final/:id")
   async updateReviewFinal(
-    @Param("id", ParseIntPipe) id: number,
+    @Param("id", PositiveIntPipe) id: number,
     @Body() updateReviewDto: UpdateReviewReqDto,
     @CurrentUser() user: User
   ) {
