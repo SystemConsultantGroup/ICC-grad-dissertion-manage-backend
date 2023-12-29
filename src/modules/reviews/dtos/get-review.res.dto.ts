@@ -25,7 +25,7 @@ export class GetReviewResDto {
   department: string;
   @ApiProperty({ description: "논문 초록" })
   abstract: string;
-  @ApiProperty({ description: "논문 파일" })
+  @ApiProperty({ description: "논문 파일", type: [ThesisFileDto] })
   thesisFiles: ThesisFileDto[];
   @ApiProperty({ description: "합격 여부", enum: Status })
   status: Status;
