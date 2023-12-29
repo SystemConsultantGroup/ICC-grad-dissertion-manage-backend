@@ -1,9 +1,13 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { File } from "@prisma/client";
 import { IsUUID } from "class-validator";
-import { UUID } from "crypto";
 
 export class FileDto {
-  // TODO: 요청 형식은 추후 수정
+  constructor(fileData: File) {
+    this.uuid = fileData.uuid;
+    this.name = fileData.name;
+    this.mimeType = fileData.mimeType;
+  }
 
   @ApiProperty({ description: "파일 uuid", example: "11111111-1111-1111-1111-1111111111" })
   @IsUUID()
