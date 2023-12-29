@@ -9,6 +9,7 @@ import { SearchReviewReqDto } from "./dtos/search-review.req.dto";
 import { SearchResultReqDto } from "./dtos/search-result.req.dto";
 import { GetResultListResDto } from "./dtos/get-result-list.res.dto";
 import { ThesisInfoDto } from "./dtos/thesis-info.dto";
+import { InternalServerErrorException } from "@nestjs/common/exceptions";
 
 @Injectable()
 export class ReviewsService {
@@ -20,19 +21,17 @@ export class ReviewsService {
       skip: searchQuery.getOffset(),
       take: searchQuery.getLimit(),
       where: {
-        AND: {
-          reviewerId: id,
-          isFinal: false,
-          ...(searchQuery.author && {
-            thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
-          }),
-          ...(searchQuery.department && {
-            thesisInfo: { process: { student: { department: { name: { contains: searchQuery.department } } } } },
-          }),
-          ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
-          ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
-          ...(searchQuery.status && { status: searchQuery.status }),
-        },
+        reviewerId: id,
+        isFinal: false,
+        ...(searchQuery.author && {
+          thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
+        }),
+        ...(searchQuery.department && {
+          thesisInfo: { process: { student: { department: { name: { contains: searchQuery.department } } } } },
+        }),
+        ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
+        ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
+        ...(searchQuery.status && { status: searchQuery.status }),
       },
       include: {
         reviewer: true,
@@ -138,41 +137,45 @@ export class ReviewsService {
       },
     });
     if (!foundReview) throw new BadRequestException("존재하지 않는 심사정보입니다");
-    const review = await this.prismaService.review.update({
-      where: {
-        id,
-        reviewerId: user.id,
-        isFinal: false,
-      },
-      data: {
-        status: updateReviewDto.status,
-        comment: updateReviewDto.comment,
-        fileId: updateReviewDto.fileUUID,
-      },
-      include: {
-        reviewer: true,
-        file: true,
-        thesisInfo: {
-          include: {
-            process: {
-              include: {
-                student: {
-                  include: {
-                    department: true,
+    try {
+      const review = await this.prismaService.review.update({
+        where: {
+          id,
+          reviewerId: user.id,
+          isFinal: false,
+        },
+        data: {
+          status: updateReviewDto.status,
+          comment: updateReviewDto.comment,
+          fileId: updateReviewDto.fileUUID,
+        },
+        include: {
+          reviewer: true,
+          file: true,
+          thesisInfo: {
+            include: {
+              process: {
+                include: {
+                  student: {
+                    include: {
+                      department: true,
+                    },
                   },
                 },
               },
-            },
-            thesisFiles: {
-              include: {
-                file: true,
+              thesisFiles: {
+                include: {
+                  file: true,
+                },
               },
             },
           },
         },
-      },
-    });
-    return new ReviewDto(review);
+      });
+      return new ReviewDto(review);
+    } catch (error) {
+      throw new InternalServerErrorException("심사정보 수정 오류");
+    }
   }
 
   async getReviewFinalList(searchQuery: SearchReviewReqDto, user: User) {
@@ -181,23 +184,21 @@ export class ReviewsService {
       skip: searchQuery.getOffset(),
       take: searchQuery.getLimit(),
       where: {
-        AND: {
-          thesisInfo: {
-            process: {
-              headReviewerId: id,
-            },
+        thesisInfo: {
+          process: {
+            headReviewerId: id,
           },
-          isFinal: true,
-          ...(searchQuery.author && {
-            thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
-          }),
-          ...(searchQuery.department && {
-            thesisInfo: { process: { student: { department: { name: { contains: searchQuery.department } } } } },
-          }),
-          ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
-          ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
-          ...(searchQuery.status && { status: searchQuery.status }),
         },
+        isFinal: true,
+        ...(searchQuery.author && {
+          thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
+        }),
+        ...(searchQuery.department && {
+          thesisInfo: { process: { student: { department: { name: { contains: searchQuery.department } } } } },
+        }),
+        ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
+        ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
+        ...(searchQuery.status && { status: searchQuery.status }),
       },
       include: {
         reviewer: true,
@@ -313,41 +314,45 @@ export class ReviewsService {
       },
     });
     if (!foundReview) throw new BadRequestException("존재하지 않는 심사정보입니다");
-    const review = await this.prismaService.review.update({
-      where: {
-        id,
-        reviewerId: user.id,
-        isFinal: true,
-      },
-      data: {
-        status: updateReviewDto.status,
-        comment: updateReviewDto.comment,
-        fileId: updateReviewDto.fileUUID,
-      },
-      include: {
-        reviewer: true,
-        file: true,
-        thesisInfo: {
-          include: {
-            process: {
-              include: {
-                student: {
-                  include: {
-                    department: true,
+    try {
+      const review = await this.prismaService.review.update({
+        where: {
+          id,
+          reviewerId: user.id,
+          isFinal: true,
+        },
+        data: {
+          status: updateReviewDto.status,
+          comment: updateReviewDto.comment,
+          fileId: updateReviewDto.fileUUID,
+        },
+        include: {
+          reviewer: true,
+          file: true,
+          thesisInfo: {
+            include: {
+              process: {
+                include: {
+                  student: {
+                    include: {
+                      department: true,
+                    },
                   },
                 },
               },
-            },
-            thesisFiles: {
-              include: {
-                file: true,
+              thesisFiles: {
+                include: {
+                  file: true,
+                },
               },
             },
           },
         },
-      },
-    });
-    return new ReviewDto(review);
+      });
+      return new ReviewDto(review);
+    } catch (error) {
+      throw new InternalServerErrorException("최종 심사정보 수정 오류");
+    }
   }
 
   async getResultList(searchQuery: SearchResultReqDto) {
@@ -355,15 +360,13 @@ export class ReviewsService {
       skip: searchQuery.getOffset(),
       take: searchQuery.getLimit(),
       where: {
-        AND: {
-          ...(searchQuery.author && { process: { student: { name: { contains: searchQuery.author } } } }),
-          ...(searchQuery.department && {
-            process: { student: { department: { name: { contains: searchQuery.department } } } },
-          }),
-          ...(searchQuery.stage && { stage: searchQuery.stage }),
-          ...(searchQuery.title && { title: { contains: searchQuery.title } }),
-          ...(searchQuery.summary && { summary: searchQuery.summary }),
-        },
+        ...(searchQuery.author && { process: { student: { name: { contains: searchQuery.author } } } }),
+        ...(searchQuery.department && {
+          process: { student: { department: { name: { contains: searchQuery.department } } } },
+        }),
+        ...(searchQuery.stage && { stage: searchQuery.stage }),
+        ...(searchQuery.title && { title: { contains: searchQuery.title } }),
+        ...(searchQuery.summary && { summary: searchQuery.summary }),
       },
       include: {
         process: {
