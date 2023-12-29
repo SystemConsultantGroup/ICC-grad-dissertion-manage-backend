@@ -4,7 +4,7 @@ import { PhaseDto } from "src/modules/phases/dtos/phase.dto";
 
 export class SystemDto {
   constructor(systemData: { phase: Phase; isLock: boolean }) {
-    this.phase = systemData.phase;
+    this.phase = new PhaseDto(systemData.phase);
     this.isLock = systemData.isLock;
   }
 

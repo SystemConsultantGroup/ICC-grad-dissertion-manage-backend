@@ -13,9 +13,9 @@ export class ThesisInfoDto {
     this.abstract = thesisInfo.abstract;
     this.stage = thesisInfo.stage;
     this.summary = thesisInfo.summary;
-    this.studentInfo = thesisInfo.process.student;
-    this.thesisFile = thesisInfo.thesisFiles[0].file;
-    this.presentationFile = thesisInfo.thesisFiles[1].file;
+    this.studentInfo = new UserDto(thesisInfo.process.student);
+    this.thesisFile = new FileDto(thesisInfo.thesisFiles[0].file);
+    this.presentationFile = new FileDto(thesisInfo.thesisFiles[1].file);
   }
 
   @ApiProperty({ description: "논문 제목" })

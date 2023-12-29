@@ -1,5 +1,11 @@
 import { ThesisInfoQueryDto, ThesisQueryType } from "./dtos/thesis-info-query.dto";
-import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { UserType } from "src/common/enums/user-type.enum";
 import { PrismaService } from "src/config/database/prisma.service";
 import { StudentSearchPageQuery } from "./dtos/student-search-page-query.dto";
@@ -17,6 +23,7 @@ import { StudentSearchQuery } from "./dtos/student-search-query.dto";
 import { UpdateStudentDto } from "./dtos/update-student.dto";
 import { UpdateSystemDto } from "./dtos/update-system.dto";
 import { User } from "@prisma/client";
+import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
 
 @Injectable()
 export class StudentsService {
@@ -503,10 +510,10 @@ export class StudentsService {
     }
   }
 
-  async getThesisInfo(studentId: number, thesisInfoQueryDto: ThesisInfoQueryDto, user: User) {
+  async getThesisInfo(studentId: number, thesisInfoQueryDto: ThesisInfoQueryDto, currentUser: User) {
     const typeQuery = thesisInfoQueryDto.type;
-    const currentUserType = user.type;
-    const userId = user.id;
+    const currentUserType = currentUser.type;
+    const userId = currentUser.id;
     const process = await this.prismaService.process.findUnique({
       where: { studentId },
     });
@@ -522,12 +529,12 @@ export class StudentsService {
 
     // 접근 권한 확인
     if (currentUserType === UserType.STUDENT && userId !== studentId) {
-      throw new BadRequestException("타 학생의 정보는 열람할 수 없습니다.");
+      throw new UnauthorizedException("타 학생의 정보는 열람할 수 없습니다.");
     } else if (currentUserType === UserType.PROFESSOR) {
       const foundReviewer = await this.prismaService.reviewer.findFirst({
         where: { reviewerId: userId, processId: process.id },
       });
-      if (!foundReviewer) throw new BadRequestException("비지도 학생의 정보는 열람할 수 없습니다.");
+      if (!foundReviewer) throw new UnauthorizedException("비지도 학생의 정보는 열람할 수 없습니다.");
     }
 
     // 조회할 심사 단계 결정
@@ -562,6 +569,98 @@ export class StudentsService {
       });
     } catch (error) {
       throw new InternalServerErrorException(`조회 실패: ${error}}`);
+    }
+  }
+
+  async updateThesisInfo(studentId: number, updateThesisInfoDto: UpdateThesisInfoDto, currentUser: User) {
+    const currentUserType = currentUser.type;
+    const { title, abstract, thesisFileUUID, presentationFileUUID } = updateThesisInfoDto;
+    const userId = currentUser.id;
+
+    // studentId, thesisFileUUID, presentationFileUUID 확인
+    const foundStudent = await this.prismaService.user.findUnique({
+      where: {
+        id: studentId,
+        type: UserType.STUDENT,
+      },
+    });
+    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+
+    if (thesisFileUUID) {
+      const foundThesisFile = await this.prismaService.file.findUnique({
+        where: { uuid: thesisFileUUID },
+      });
+      if (!foundThesisFile) throw new BadRequestException("논문 파일이 존재하지 않습니다.");
+    }
+
+    if (presentationFileUUID) {
+      const foundPresentationFile = await this.prismaService.file.findUnique({
+        where: { uuid: presentationFileUUID },
+      });
+      if (!foundPresentationFile) throw new BadRequestException("논문 발표 파일이 존재하지 않습니다.");
+    }
+
+    // 접근 권한 확인
+    if (currentUserType === UserType.STUDENT && userId !== studentId) {
+      throw new UnauthorizedException("타 학생의 정보는 수정할 수 없습니다.");
+    }
+    if (currentUserType === UserType.ADMIN) {
+      if (abstract || thesisFileUUID || presentationFileUUID) {
+        throw new BadRequestException("관리자는 논문 제목만 수정할 수 있습니다.");
+      }
+    }
+
+    // 수정할 학생의 현재 심사 단계[예심 or 본심] 정보 가져오기
+    const process = await this.prismaService.process.findUnique({
+      where: { studentId },
+      include: {
+        thesisInfos: {
+          orderBy: { stage: "asc" },
+          include: {
+            thesisFiles: {
+              orderBy: { type: "asc" },
+            },
+          },
+        },
+      },
+    });
+    const stage = process.phaseId in [1, 2] ? Stage.PRELIMINARY : Stage.MAIN;
+    const currentThesisInfo = stage === Stage.PRELIMINARY ? process.thesisInfos[0] : process.thesisInfos[1];
+    const currentPresentationFile = currentThesisInfo.thesisFiles[0];
+    const currentThesisFile = currentThesisInfo.thesisFiles[1];
+
+    // 업데이트 진행
+    try {
+      return await this.prismaService.thesisInfo.update({
+        where: { id: currentThesisInfo.id },
+        data: {
+          title: title ?? undefined,
+          abstract: abstract ?? undefined,
+          thesisFiles: {
+            update: [
+              {
+                where: { id: currentPresentationFile.id },
+                data: { fileId: presentationFileUUID ?? undefined },
+              },
+              {
+                where: { id: currentThesisFile.id },
+                data: { fileId: thesisFileUUID ?? undefined },
+              },
+            ],
+          },
+        },
+        include: {
+          process: {
+            include: { student: { include: { department: true } } },
+          },
+          thesisFiles: {
+            orderBy: { type: "desc" },
+            include: { file: true },
+          },
+        },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(`업데이트 실패: ${error}`);
     }
   }
 }

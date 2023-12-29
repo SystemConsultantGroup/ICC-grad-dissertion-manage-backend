@@ -29,6 +29,7 @@ import { SystemDto } from "./dtos/system.dto";
 import { UpdateSystemDto } from "./dtos/update-system.dto";
 import { ThesisInfoQueryDto } from "./dtos/thesis-info-query.dto";
 import { ThesisInfoDto } from "./dtos/thesis-info.dto";
+import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
 
 @Controller("students")
 @UseGuards(JwtGuard)
@@ -207,8 +208,27 @@ export class StudentsController {
   }
 
   @Put("/:id/thesis")
-  async updateThesisInfo() {
-    // 접근 권한 : 학생 / 관리자
-    // 로그인 한 타입에 따라 수정할 수 있는 필드의 종류 다름
+  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT])
+  @ApiOperation({
+    summary: "학생 논문 정보 수정 API",
+    description:
+      "아이디에 해당하는 학생의 현재 단계에 해당하는 논문 정보를 수정할 수 있다.\n\n[관리자] '논문 제목' 수정 가능.\n\n[학생] '논문 제목', '논문 초록', '논문 파일', 발표 파일' 수정 가능",
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자 | 학생] 로그인 후 접근 가능, 학생은 본인의 정보만 수정 가능," })
+  @ApiBadRequestResponse({ description: "[관리자] 논문 제목만 업데이트 가능'" })
+  @ApiOkResponse({
+    description: "학생 논문 정보 수정 성공",
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(ThesisInfoDto) }],
+    },
+  })
+  async updateThesisInfo(
+    @Param("id", PositiveIntPipe) studentId: number,
+    @Body() updateThesisInfoDto: UpdateThesisInfoDto,
+    @CurrentUser() currentUser: User
+  ) {
+    const updatedThesisInfo = await this.studentsService.updateThesisInfo(studentId, updateThesisInfoDto, currentUser);
+    const thesisInfoDto = new ThesisInfoDto(updatedThesisInfo);
+    return new CommonResponseDto(thesisInfoDto);
   }
 }
