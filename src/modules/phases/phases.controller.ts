@@ -16,6 +16,7 @@ import { JwtGuard } from "../auth/guards/jwt.guard";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
 import { UserType } from "@prisma/client";
 import { UpdatePhaseDto } from "./dtos/update-phase.dto";
+import { PositiveIntPipe } from "../../common/pipes/positive-int.pipe";
 
 @ApiTags("시스템 일정 API")
 @ApiBearerAuth("access-token")
@@ -56,10 +57,9 @@ export class PhasesController {
   @Put(":id")
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({ summary: "시스템 일정 수정" })
-  @ApiBody({ type: UpdatePhaseDto })
   @ApiOkResponse({ description: "시스템 단계 업데이트 성공" })
   @ApiBadRequestResponse({ description: "존재하지 않는 단계거나 기간설정 오류" })
-  async updatePhase(@Param("id", ParseIntPipe) id: number, @Body() updatePhaseDto: UpdatePhaseDto) {
+  async updatePhase(@Param("id", PositiveIntPipe) id: number, @Body() updatePhaseDto: UpdatePhaseDto) {
     await this.phasesService.updatePhase(id, updatePhaseDto);
 
     return new CommonResponseDto();
