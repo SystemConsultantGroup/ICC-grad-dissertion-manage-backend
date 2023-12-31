@@ -1,5 +1,16 @@
 import { StudentsService } from "./students.service";
-import { Body, Controller, Get, Param, Post, Put, Query, Response, UseGuards } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  Response,
+  UseGuards,
+} from "@nestjs/common";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { PositiveIntPipe } from "src/common/pipes/positive-int.pipe";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
@@ -30,16 +41,18 @@ import { UpdateSystemDto } from "./dtos/update-system.dto";
 import { ThesisInfoQueryDto } from "./dtos/thesis-info-query.dto";
 import { ThesisInfoDto } from "./dtos/thesis-info.dto";
 import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
+import { ReviewersDto } from "./dtos/reviewers.dto";
 
 @Controller("students")
 @UseGuards(JwtGuard)
 @ApiTags("학생 API")
-@ApiExtraModels(UserDto, CommonResponseDto, SystemDto, ThesisInfoDto)
+@ApiExtraModels(UserDto, CommonResponseDto, SystemDto, ThesisInfoDto, ReviewersDto)
 @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
 @ApiBearerAuth("access-token")
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
+  // 학생 생성 API
   @Post()
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
@@ -68,6 +81,7 @@ export class StudentsController {
     return "createStudentExcel";
   }
 
+  // 학생 대량 조회 API
   @Get("/excel")
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
@@ -101,6 +115,7 @@ export class StudentsController {
     return new CommonResponseDto(pageDto);
   }
 
+  // 학생 기본 정보 조회/수정 API
   @Get("/:id")
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
@@ -141,6 +156,7 @@ export class StudentsController {
     return new CommonResponseDto(userDto);
   }
 
+  // 학생 시스템 정보 조회/수정 API
   @Get("/:id/system")
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
@@ -181,6 +197,7 @@ export class StudentsController {
     return new CommonResponseDto(systemDto);
   }
 
+  // 학생 논문 정보 조회/수정 API
   @Get("/:id/thesis")
   @UseUserTypeGuard([UserType.ADMIN, UserType.PROFESSOR, UserType.STUDENT])
   @ApiOperation({
@@ -230,5 +247,26 @@ export class StudentsController {
     const updatedThesisInfo = await this.studentsService.updateThesisInfo(studentId, updateThesisInfoDto, currentUser);
     const thesisInfoDto = new ThesisInfoDto(updatedThesisInfo);
     return new CommonResponseDto(thesisInfoDto);
+  }
+
+  // 학생 지도 정보 조회/수정/삭제 API
+  @Get("/:id/reviewers")
+  @UseUserTypeGuard([UserType.ADMIN])
+  @ApiOperation({
+    summary: "학생 지도 정보 조회 API",
+    description: "아이디에 해당하는 학생의 지도교수 리스트를 조회할 수 있다.",
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiBadRequestResponse({ description: "잘못된 요청" })
+  @ApiOkResponse({
+    description: "조회 성공",
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(ReviewersDto) }],
+    },
+  })
+  async getReviewerList(@Param("id", PositiveIntPipe) studentId: number) {
+    const { headReviewer, reviewers } = await this.studentsService.getReviewerList(studentId);
+    const reviewersDto = new ReviewersDto(headReviewer, reviewers);
+    return new CommonResponseDto(reviewersDto);
   }
 }

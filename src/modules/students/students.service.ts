@@ -1,11 +1,5 @@
 import { ThesisInfoQueryDto, ThesisQueryType } from "./dtos/thesis-info-query.dto";
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  InternalServerErrorException,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
 import { UserType } from "src/common/enums/user-type.enum";
 import { PrismaService } from "src/config/database/prisma.service";
 import { StudentSearchPageQuery } from "./dtos/student-search-page-query.dto";
@@ -32,6 +26,7 @@ export class StudentsService {
     private readonly authService: AuthService
   ) {}
 
+  // 학생 생성 API
   async createStudent(createStudentDto: CreateStudentDto) {
     const {
       loginId,
@@ -225,6 +220,7 @@ export class StudentsService {
     return "CREATED STUDENTS";
   }
 
+  // 학생 대량 조회 API
   async getStudentList(studentSearchPageQuery: StudentSearchPageQuery) {
     const { studentNumber, name, email, phone, departmentId, phaseId, isLock } = studentSearchPageQuery;
 
@@ -407,6 +403,7 @@ export class StudentsService {
     }
   }
 
+  // 학생 기본 정보 조회/수정 API
   async getStudent(studentId: number) {
     const student = await this.prismaService.user.findUnique({
       where: {
@@ -460,6 +457,7 @@ export class StudentsService {
     }
   }
 
+  // 학생 시스템 정보 조회/수정 API
   async getStudentSystem(studentId: number) {
     // studentId 확인
     const foundStudent = await this.prismaService.user.findUnique({
@@ -510,6 +508,7 @@ export class StudentsService {
     }
   }
 
+  // 학생 논문 정보 조회/수정 API
   async getThesisInfo(studentId: number, thesisInfoQueryDto: ThesisInfoQueryDto, currentUser: User) {
     const typeQuery = thesisInfoQueryDto.type;
     const currentUserType = currentUser.type;
@@ -663,4 +662,34 @@ export class StudentsService {
       throw new InternalServerErrorException(`업데이트 실패: ${error}`);
     }
   }
+
+  // 학생 지도 정보 조회/수정 API
+  async getReviewerList(studentId: number) {
+    // studentId 확인
+    const foundStudent = await this.prismaService.user.findUnique({
+      where: {
+        id: studentId,
+        type: UserType.STUDENT,
+      },
+    });
+    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+
+    const process = await this.prismaService.process.findUnique({
+      where: { studentId },
+      include: { headReviewer: { include: { department: true } } },
+    });
+    const headReviewer = process.headReviewer;
+
+    const reviewerInfos = await this.prismaService.reviewer.findMany({
+      where: { processId: process.id },
+      include: { reviewer: { include: { department: true } } },
+    });
+    const reviewers = reviewerInfos.map((reviewerInfo) => {
+      return reviewerInfo.reviewer;
+    });
+
+    return { headReviewer, reviewers };
+  }
+
+  async getHeadReviewer() {}
 }
