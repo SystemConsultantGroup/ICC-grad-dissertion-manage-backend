@@ -714,7 +714,7 @@ export class StudentsService {
         processId: foundStudent.studentProcess.id,
       },
     });
-    if (foundReviewer) throw new BadRequestException("이미 해당 학생과 지도 관계에 있습니다.");
+    if (foundReviewer) throw new BadRequestException("이미 해당 학생에 배정된 교수입니다.");
 
     // 지도교수/심사위원 추가
     try {
@@ -726,6 +726,47 @@ export class StudentsService {
       });
     } catch (error) {
       throw new InternalServerErrorException(`업데이트 실패 : ${error}`);
+    }
+  }
+
+  async deleteReviewer(studentId: number, reviewerId: number) {
+    // studentId, reviewerId 확인
+    const foundStudent = await this.prismaService.user.findUnique({
+      where: {
+        id: studentId,
+        type: UserType.STUDENT,
+      },
+      include: { studentProcess: true },
+    });
+    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+    const foundProfessor = await this.prismaService.user.findUnique({
+      where: {
+        id: reviewerId,
+        type: UserType.PROFESSOR,
+      },
+    });
+    if (!foundProfessor) throw new BadRequestException("존재하지 않는 교수입니다.");
+
+    // 배정된 관계가 맞는지 확인
+    const foundReviewer = await this.prismaService.reviewer.findFirst({
+      where: {
+        reviewerId,
+        processId: foundStudent.studentProcess.id,
+      },
+    });
+    if (!foundReviewer) throw new BadRequestException("배정 상태인 교수가 아닙니다.");
+
+    // 심사위원장인지 확인
+    if (foundStudent.studentProcess.headReviewerId === reviewerId)
+      throw new BadRequestException("심사위원장은 배정 취소할 수 없습니다.");
+
+    // 배정 취소
+    try {
+      await this.prismaService.reviewer.delete({
+        where: { id: foundReviewer.id },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(`배정 취소 실패 : ${error}`);
     }
   }
 
@@ -767,6 +808,4 @@ export class StudentsService {
       throw new InternalServerErrorException(`업데이트 실패: ${error}`);
     }
   }
-
-  async deleteReviewer() {}
 }

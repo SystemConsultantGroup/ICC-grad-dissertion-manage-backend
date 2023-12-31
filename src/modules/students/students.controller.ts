@@ -3,6 +3,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -290,6 +291,26 @@ export class StudentsController {
     return new CommonResponseDto();
   }
 
+  @Delete("/:id/reviewers/:reviewerId")
+  @UseUserTypeGuard([UserType.ADMIN])
+  @ApiOperation({
+    summary: "심사위원/지도교수 배정 취소 API",
+    description:
+      "기존에 배정된 심사위원/지도교수를 배정 취소한다. 심사위원장은 배정 취소할 수 없다. 심사위원을 배정 취소하고자 할 경우, 우선 심사위원을 교체한 후 배정 취소할 수 있다.",
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiBadRequestResponse({ description: "잘못된 요청" })
+  @ApiCreatedResponse({
+    description: "배정 취소 성공",
+    type: CommonResponseDto,
+  })
+  async deleteReviewer(
+    @Param("id", PositiveIntPipe) studentId: number,
+    @Param("reviewerId", PositiveIntPipe) reviewerId: number
+  ) {
+    await this.studentsService.deleteReviewer(studentId, reviewerId);
+  }
+
   @Put("/:id/headReviewer/:headReviewerId")
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
@@ -310,6 +331,4 @@ export class StudentsController {
     await this.studentsService.updateHeadReviewer(studentId, headReviewerId);
     return new CommonResponseDto();
   }
-
-  async deleteReviewer() {}
 }
