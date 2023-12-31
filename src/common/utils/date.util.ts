@@ -34,3 +34,8 @@ export function getCurrentTime() {
       currentMinute,
   };
 }
+
+export function UTC2KST(UTC) {
+  const KST = UTC.setHours(UTC.getHours() + 9);
+  return new Date(KST);
+}

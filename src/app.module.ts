@@ -8,6 +8,7 @@ import { StudentsModule } from "./modules/students/students.module";
 import { DepartmentsModule } from "./modules/departments/departments.module";
 import { UsersModule } from "./modules/users/users.module";
 import { FilesModule } from "./modules/files/files.module";
+import { PhasesModule } from "./modules/phases/phases.module";
 import { ProfessorsModule } from "./modules/professors/professors.module";
 
 @Module({
@@ -19,6 +20,7 @@ import { ProfessorsModule } from "./modules/professors/professors.module";
     FilesModule,
     UsersModule,
     StudentsModule,
+    PhasesModule,
     ProfessorsModule,
   ],
   controllers: [AppController],
