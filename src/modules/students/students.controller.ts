@@ -289,4 +289,27 @@ export class StudentsController {
     await this.studentsService.updateReviewer(studentId, reviewerId);
     return new CommonResponseDto();
   }
+
+  @Put("/:id/headReviewer/:headReviewerId")
+  @UseUserTypeGuard([UserType.ADMIN])
+  @ApiOperation({
+    summary: "심사위원장 교체 API",
+    description:
+      "심사위원장을 교체할 수 있다. 해당학생의 기존 심사위원/지도교수 리스트에 존재하는 교수만 심사위원장으로 등록할 수 있다.",
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiBadRequestResponse({ description: "잘못된 요청" })
+  @ApiCreatedResponse({
+    description: "교체 성공",
+    type: CommonResponseDto,
+  })
+  async updateHeadReviewer(
+    @Param("id", PositiveIntPipe) studentId: number,
+    @Param("headReviewerId", PositiveIntPipe) headReviewerId: number
+  ) {
+    await this.studentsService.updateHeadReviewer(studentId, headReviewerId);
+    return new CommonResponseDto();
+  }
+
+  async deleteReviewer() {}
 }
