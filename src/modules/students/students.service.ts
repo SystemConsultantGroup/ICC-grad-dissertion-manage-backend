@@ -717,11 +717,56 @@ export class StudentsService {
     if (foundReviewer) throw new BadRequestException("이미 해당 학생과 지도 관계에 있습니다.");
 
     // 지도교수/심사위원 추가
-    await this.prismaService.reviewer.create({
-      data: {
-        reviewerId,
+    try {
+      await this.prismaService.reviewer.create({
+        data: {
+          reviewerId,
+          processId: foundStudent.studentProcess.id,
+        },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(`업데이트 실패 : ${error}`);
+    }
+  }
+
+  async updateHeadReviewer(studentId: number, headReviewerId: number) {
+    // studentId, headReviewerId 확인
+    const foundStudent = await this.prismaService.user.findUnique({
+      where: {
+        id: studentId,
+        type: UserType.STUDENT,
+      },
+      include: { studentProcess: true },
+    });
+    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+    const foundProfessor = await this.prismaService.user.findUnique({
+      where: {
+        id: headReviewerId,
+        type: UserType.PROFESSOR,
+      },
+    });
+    if (!foundProfessor) throw new BadRequestException("존재하지 않는 교수입니다.");
+
+    // 지도교수/심사위원 리스트에 존재하는 교수인지 확인
+    const foundReviewer = await this.prismaService.reviewer.findFirst({
+      where: {
+        reviewerId: headReviewerId,
         processId: foundStudent.studentProcess.id,
       },
     });
+    if (!foundReviewer)
+      throw new BadRequestException("심사위원/지도교수 리스트에 등록 후 심사위원장으로 등록 가능합니다.");
+
+    // 심사위원장 교체
+    try {
+      await this.prismaService.process.update({
+        where: { id: foundStudent.studentProcess.id },
+        data: { headReviewerId },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(`업데이트 실패: ${error}`);
+    }
   }
+
+  async deleteReviewer() {}
 }
