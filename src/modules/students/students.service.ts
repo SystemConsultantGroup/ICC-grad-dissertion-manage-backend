@@ -192,7 +192,7 @@ export class StudentsService {
     }
   }
 
-  async createStudentExcel() {
+  async createStudentExcel(excelFile: Express.Multer.File) {
     return "CREATED STUDENTS";
   }
 
