@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Department } from "@prisma/client";
 
 export class DepartmentDto {
-  constructor(departmentData: Department) {
+  constructor(departmentData: Partial<Department>) {
     this.id = departmentData.id;
     this.name = departmentData.name;
   }
