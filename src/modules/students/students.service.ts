@@ -689,5 +689,39 @@ export class StudentsService {
     return { headReviewer, reviewers };
   }
 
-  async getHeadReviewer() {}
+  async updateReviewer(studentId: number, reviewerId: number) {
+    // studentId, reviewerId 확인
+    const foundStudent = await this.prismaService.user.findUnique({
+      where: {
+        id: studentId,
+        type: UserType.STUDENT,
+      },
+      include: { studentProcess: true },
+    });
+    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+    const foundProfessor = await this.prismaService.user.findUnique({
+      where: {
+        id: reviewerId,
+        type: UserType.PROFESSOR,
+      },
+    });
+    if (!foundProfessor) throw new BadRequestException("존재하지 않는 교수입니다.");
+
+    // 이미 reviewer인 경우
+    const foundReviewer = await this.prismaService.reviewer.findFirst({
+      where: {
+        reviewerId,
+        processId: foundStudent.studentProcess.id,
+      },
+    });
+    if (foundReviewer) throw new BadRequestException("이미 해당 학생과 지도 관계에 있습니다.");
+
+    // 지도교수/심사위원 추가
+    await this.prismaService.reviewer.create({
+      data: {
+        reviewerId,
+        processId: foundStudent.studentProcess.id,
+      },
+    });
+  }
 }
