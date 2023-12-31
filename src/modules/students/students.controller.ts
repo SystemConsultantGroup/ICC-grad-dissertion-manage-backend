@@ -269,4 +269,24 @@ export class StudentsController {
     const reviewersDto = new ReviewersDto(headReviewer, reviewers);
     return new CommonResponseDto(reviewersDto);
   }
+
+  @Post("/:id/reviewers/:reviewerId")
+  @UseUserTypeGuard([UserType.ADMIN])
+  @ApiOperation({
+    summary: "학생 지도 정보 추가 API",
+    description: "심사위원/지도교수를 추가할 수 있다.",
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiBadRequestResponse({ description: "잘못된 요청" })
+  @ApiCreatedResponse({
+    description: "추가 성공",
+    type: CommonResponseDto,
+  })
+  async updateReviewer(
+    @Param("id", PositiveIntPipe) studentId: number,
+    @Param("reviewerId", PositiveIntPipe) reviewerId: number
+  ) {
+    await this.studentsService.updateReviewer(studentId, reviewerId);
+    return new CommonResponseDto();
+  }
 }
