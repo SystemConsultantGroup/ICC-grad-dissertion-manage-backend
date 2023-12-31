@@ -43,31 +43,29 @@ export class StudentsService {
       mainThesisTitle,
     } = createStudentDto;
 
-    // 학생 존재 확인
-    const foundStudent = await this.prismaService.user.findUnique({
-      where: {
-        loginId,
-        type: UserType.STUDENT,
-      },
+    // 로그인 아이디, 이메일 존재 여부 확인
+    const foundId = await this.prismaService.user.findUnique({
+      where: { loginId },
     });
-    if (foundStudent) {
-      throw new BadRequestException("이미 존재하는 학생입니다.");
+    if (foundId) {
+      throw new BadRequestException("이미 존재하는 아이디입니다.");
     }
-
+    const foundEmail = await this.prismaService.user.findUnique({
+      where: { email },
+    });
+    if (foundEmail) {
+      throw new BadRequestException("이미 존재하는 이메일입니다.");
+    }
     // deptId, phaseId, headReviewerId, reviewerIds 올바른지 확인
     const foundDept = await this.prismaService.department.findUnique({
-      where: {
-        id: deptId,
-      },
+      where: { id: deptId },
     });
     if (!foundDept) {
       throw new BadRequestException("해당하는 학과가 없습니다.");
     }
 
     const foundPhase = await this.prismaService.phase.findUnique({
-      where: {
-        id: phaseId,
-      },
+      where: { id: phaseId },
     });
     if (!foundPhase) {
       throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
