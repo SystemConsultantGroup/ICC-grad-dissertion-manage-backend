@@ -28,48 +28,28 @@ export class StudentsService {
 
   // 학생 생성 API
   async createStudent(createStudentDto: CreateStudentDto) {
-    const {
-      loginId,
-      password,
-      name,
-      email,
-      phone,
-      deptId,
-      isLock,
-      headReviewerId,
-      phaseId,
-      reviewerIds,
-      preThesisTitle,
-      mainThesisTitle,
-    } = createStudentDto;
+    const { loginId, password, name, email, phone, deptId, isLock, headReviewerId, phaseId, reviewerIds, thesisTitle } =
+      createStudentDto;
 
     // 로그인 아이디, 이메일 존재 여부 확인
     const foundId = await this.prismaService.user.findUnique({
       where: { loginId },
     });
-    if (foundId) {
-      throw new BadRequestException("이미 존재하는 아이디입니다.");
-    }
+    if (foundId) throw new BadRequestException("이미 존재하는 아이디입니다.");
     const foundEmail = await this.prismaService.user.findUnique({
       where: { email },
     });
-    if (foundEmail) {
-      throw new BadRequestException("이미 존재하는 이메일입니다.");
-    }
+    if (foundEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
+
     // deptId, phaseId, headReviewerId, reviewerIds 올바른지 확인
     const foundDept = await this.prismaService.department.findUnique({
       where: { id: deptId },
     });
-    if (!foundDept) {
-      throw new BadRequestException("해당하는 학과가 없습니다.");
-    }
-
+    if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
     const foundPhase = await this.prismaService.phase.findUnique({
       where: { id: phaseId },
     });
-    if (!foundPhase) {
-      throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
-    }
+    if (!foundPhase) throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
 
     if (!reviewerIds.includes(headReviewerId)) {
       throw new BadRequestException("지도교수 리스트에 심사위원장이 포함되어야 합니다.");
@@ -81,9 +61,7 @@ export class StudentsService {
           type: UserType.PROFESSOR,
         },
       });
-      if (!foundProfessor) {
-        throw new BadRequestException(`[ID:${reviewerId}]에 해당하는 교수가 없습니다.`);
-      }
+      if (!foundProfessor) throw new BadRequestException(`[ID:${reviewerId}]에 해당하는 교수가 없습니다.`);
     }
 
     try {
@@ -122,7 +100,7 @@ export class StudentsService {
         const preThesisInfo = await tx.thesisInfo.create({
           data: {
             processId: process.id,
-            title: preThesisTitle,
+            title: [1, 2].includes(phaseId) ? thesisTitle : null,
             stage: Stage.PRELIMINARY,
             summary: Summary.UNEXAMINED,
           },
@@ -130,7 +108,7 @@ export class StudentsService {
         const mainThesisInfo = await tx.thesisInfo.create({
           data: {
             processId: process.id,
-            title: mainThesisTitle,
+            title: [3, 4, 5].includes(phaseId) ? thesisTitle : null,
             stage: Stage.MAIN,
             summary: Summary.UNEXAMINED,
           },
@@ -224,23 +202,15 @@ export class StudentsService {
 
     if (departmentId) {
       const foundDept = await this.prismaService.department.findUnique({
-        where: {
-          id: departmentId,
-        },
+        where: { id: departmentId },
       });
-      if (!foundDept) {
-        throw new BadRequestException("해당하는 학과가 없습니다.");
-      }
+      if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
     }
     if (phaseId) {
       const foundPhase = await this.prismaService.phase.findUnique({
-        where: {
-          id: phaseId,
-        },
+        where: { id: phaseId },
       });
-      if (!foundPhase) {
-        throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
-      }
+      if (!foundPhase) throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
     }
 
     const students = await this.prismaService.user.findMany({
@@ -290,23 +260,15 @@ export class StudentsService {
 
     if (departmentId) {
       const foundDept = await this.prismaService.department.findUnique({
-        where: {
-          id: departmentId,
-        },
+        where: { id: departmentId },
       });
-      if (!foundDept) {
-        throw new BadRequestException("해당하는 학과가 없습니다.");
-      }
+      if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
     }
     if (phaseId) {
       const foundPhase = await this.prismaService.phase.findUnique({
-        where: {
-          id: phaseId,
-        },
+        where: { id: phaseId },
       });
-      if (!foundPhase) {
-        throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
-      }
+      if (!foundPhase) throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
     }
 
     const processes = await this.prismaService.process.findMany({
@@ -451,7 +413,7 @@ export class StudentsService {
         include: { department: true },
       });
     } catch (error) {
-      throw new InternalServerErrorException("학생 정보 업데이트 실패");
+      throw new InternalServerErrorException(`학생 정보 업데이트 실패: ${error}`);
     }
   }
 
@@ -488,9 +450,7 @@ export class StudentsService {
         id: phaseId,
       },
     });
-    if (!foundPhase) {
-      throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
-    }
+    if (!foundPhase) throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
 
     try {
       return await this.prismaService.process.update({
@@ -502,7 +462,7 @@ export class StudentsService {
         include: { phase: true },
       });
     } catch (error) {
-      throw new InternalServerErrorException(`업데이트 실패: ${error.message}`);
+      throw new InternalServerErrorException(`업데이트 실패: ${error}`);
     }
   }
 
@@ -542,7 +502,7 @@ export class StudentsService {
        * phaseId 1, 2 > 예심
        * phaseId 3, 4, 5 > 본심
        */
-      stage = process.phaseId in [1, 2] ? Stage.PRELIMINARY : Stage.MAIN;
+      stage = [1, 2].includes(process.phaseId) ? Stage.PRELIMINARY : Stage.MAIN;
     } else {
       stage = typeQuery === ThesisQueryType.MAIN ? Stage.MAIN : Stage.PRELIMINARY;
     }
@@ -621,7 +581,7 @@ export class StudentsService {
         },
       },
     });
-    const stage = process.phaseId in [1, 2] ? Stage.PRELIMINARY : Stage.MAIN;
+    const stage = [1, 2].includes(process.phaseId) ? Stage.PRELIMINARY : Stage.MAIN;
     const currentThesisInfo = stage === Stage.PRELIMINARY ? process.thesisInfos[0] : process.thesisInfos[1];
     const currentPresentationFile = currentThesisInfo.thesisFiles[0];
     const currentThesisFile = currentThesisInfo.thesisFiles[1];

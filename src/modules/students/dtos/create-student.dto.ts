@@ -67,13 +67,8 @@ export class CreateStudentDto {
   reviewerIds: number[];
 
   // 논문 정보
-  @ApiProperty({ description: "예심 논문 제목", required: false })
-  @IsOptional()
+  @ApiProperty({ description: "논문 제목" })
+  @IsNotEmpty()
   @IsString()
-  preThesisTitle?: string;
-
-  @ApiProperty({ description: "본심 논문 제목", required: false })
-  @IsOptional()
-  @IsString()
-  mainThesisTitle?: string;
+  thesisTitle: string;
 }

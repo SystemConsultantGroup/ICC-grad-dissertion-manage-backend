@@ -1,17 +1,5 @@
 import { StudentsService } from "./students.service";
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-  Response,
-  UseGuards,
-} from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Response, UseGuards } from "@nestjs/common";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { PositiveIntPipe } from "src/common/pipes/positive-int.pipe";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
