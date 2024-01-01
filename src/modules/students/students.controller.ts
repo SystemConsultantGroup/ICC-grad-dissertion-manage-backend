@@ -24,6 +24,8 @@ import { CreateStudentDto } from "./dtos/create-student.dto";
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiExtraModels,
   ApiInternalServerErrorResponse,
@@ -82,10 +84,46 @@ export class StudentsController {
   @Post("/excel")
   @UseUserTypeGuard([UserType.ADMIN])
   @UseInterceptors(FileInterceptor("file", multerOptions("excel", ExcelFilter)))
-  @ApiOperation({ summary: "학생 엑셀 생성 API" })
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          format: "binary",
+        },
+      },
+    },
+  })
+  @ApiOperation({
+    summary: "학생 엑셀 생성 API",
+    description: "엑셀을 업로드하여 학생을 생성한다. 학번 기준 기존 학생인 경우 업데이트를 진행한다.",
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiBadRequestResponse({ description: "엑셀 양식 오류" })
+  @ApiCreatedResponse({
+    description: "생성 및 업데이트 성공",
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(CommonResponseDto) },
+        { $ref: getSchemaPath(PageDto) },
+        {
+          properties: {
+            content: {
+              type: "array",
+              items: { $ref: getSchemaPath(UserDto) },
+            },
+          },
+        },
+      ],
+    },
+  })
   async createStudentExcel(@UploadedFile() excelFile: Express.Multer.File) {
     const students = await this.studentsService.createStudentExcel(excelFile);
-    return "createStudentExcel";
+    const contents = students.map((student) => new UserDto(student));
+    const pageDto = new PageDto(0, 0, contents.length, contents);
+    return new CommonResponseDto(pageDto);
   }
 
   // 학생 대량 조회 API

@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsArray, IsBoolean, IsEmail, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
+import { IsArray, IsBoolean, IsEmail, IsInt, IsNotEmpty, IsPositive, IsString } from "class-validator";
 
 export class CreateStudentDto {
   // 사용자 정보
