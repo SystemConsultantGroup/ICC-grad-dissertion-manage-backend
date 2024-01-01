@@ -1,14 +1,23 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, UseGuards } from "@nestjs/common";
 import { DepartmentsService } from "./departments.service";
-import { ApiBearerAuth, ApiInternalServerErrorResponse, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBearerAuth,
+  ApiInternalServerErrorResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from "@nestjs/swagger";
 import { CommonResponseDto } from "src/common/dtos/common-response.dto";
 import { CreateDepartmentDto } from "./dtos/create-department.dto";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
 import { UserType } from "@prisma/client";
 import { JwtGuard } from "../auth/guards/jwt.guard";
-import { GetDepartmentsResponseDto } from "./dtos/get-departments.dto";
+import { GetDepartmentsDto } from "./dtos/get-departments.dto";
+import { DepartmentDto } from "./dtos/department.dto";
 
 @ApiTags("학과 API")
+@UseGuards(JwtGuard)
 @ApiBearerAuth("access-token")
 @Controller("departments")
 export class DepartmentsController {
@@ -16,20 +25,20 @@ export class DepartmentsController {
 
   @Get("")
   @ApiOperation({
-    summary: "학과 조회",
-    description: "학과 조회",
+    summary: "학과 리스트 조회",
+    description: "학과 리스트 조회",
   })
   @UseUserTypeGuard([UserType.ADMIN])
-  @UseGuards(JwtGuard)
   @ApiOkResponse({
-    description: "학과 조회 성공",
-    type: GetDepartmentsResponseDto,
+    description: "학과 리스트 조회 성공",
+    type: GetDepartmentsDto,
   })
-  @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
   async getAllDepartments() {
     const departments = await this.departmentsService.getAllDepartments();
 
-    return new CommonResponseDto(new GetDepartmentsResponseDto(departments));
+    return new CommonResponseDto(new GetDepartmentsDto(departments));
   }
 
   @Post("")
@@ -38,8 +47,12 @@ export class DepartmentsController {
     description: "학과 생성",
   })
   @UseUserTypeGuard([UserType.ADMIN])
-  @UseGuards(JwtGuard)
-  @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
+  @ApiOkResponse({
+    description: "학과 생성 성공",
+    type: DepartmentDto,
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
   async createDepartment(@Body() createDepartmentDto: CreateDepartmentDto) {
     const department = await this.departmentsService.createDepartment(createDepartmentDto);
 
@@ -52,8 +65,8 @@ export class DepartmentsController {
     description: "학과 삭제",
   })
   @UseUserTypeGuard([UserType.ADMIN])
-  @UseGuards(JwtGuard)
-  @ApiInternalServerErrorResponse({ description: "Internal Server Error" })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
   async deleteDepartment(@Param("id", ParseIntPipe) id: number) {
     await this.departmentsService.deleteDepartment(id);
 
