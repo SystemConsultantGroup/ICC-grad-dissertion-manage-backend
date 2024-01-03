@@ -67,13 +67,15 @@ export class ReviewsController {
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Get("excel")
-  async getReviewListExcel(@CurrentUser() user: User, @Res({ passthrough: true }) res: Response) {
-    const excel = await this.reviewsService.getReviewListExcel(user);
-    const dateString = getCurrentTime();
-    const fileName = encodeURIComponent("심사_대상_논문_목록_" + dateString + ".xlsx");
+  async getReviewListExcel(
+    @Query() searchQuery: SearchReviewReqDto,
+    @CurrentUser() user: User,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const file = await this.reviewsService.getReviewListExcel(searchQuery, user);
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", "attachment; filename=" + fileName);
-    return new StreamableFile(excel);
+    res.setHeader("Content-Disposition", "attachment; filename=" + file["filename"]);
+    return new StreamableFile(file["file"]);
   }
 
   @ApiOperation({
@@ -105,13 +107,15 @@ export class ReviewsController {
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Get("final/excel")
-  async getReviewListFinalExcel(@CurrentUser() user: User, @Res({ passthrough: true }) res: Response) {
-    const excel = await this.reviewsService.getReviewListFinalExcel(user);
-    const dateString = getCurrentTime();
-    const fileName = encodeURIComponent("최종_심사_대상_논문_목록_" + dateString + ".xlsx");
+  async getReviewListFinalExcel(
+    @Query() searchQuery: SearchReviewReqDto,
+    @CurrentUser() user: User,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const file = await this.reviewsService.getReviewListFinalExcel(searchQuery, user);
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", "attachment; filename=" + fileName);
-    return new StreamableFile(excel);
+    res.setHeader("Content-Disposition", "attachment; filename=" + file["filename"]);
+    return new StreamableFile(file["file"]);
   }
 
   @ApiOperation({
@@ -140,13 +144,11 @@ export class ReviewsController {
   @ApiUnauthorizedResponse({ description: "관리자 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.ADMIN])
   @Get("result/excel")
-  async getResultExcel(@Res({ passthrough: true }) res: Response) {
-    const excel = await this.reviewsService.getResultExcel();
-    const dateString = getCurrentTime();
-    const fileName = encodeURIComponent("전체_심사_결과_목록_" + dateString + ".xlsx");
+  async getResultExcel(@Query() searchQuery: SearchResultReqDto, @Res({ passthrough: true }) res: Response) {
+    const file = await this.reviewsService.getResultExcel(searchQuery);
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", "attachment; filename=" + fileName);
-    return new StreamableFile(excel);
+    res.setHeader("Content-Disposition", "attachment; filename=" + file["filename"]);
+    return new StreamableFile(file["file"]);
   }
 
   @ApiOperation({
