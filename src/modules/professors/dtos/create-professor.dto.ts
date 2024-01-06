@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsEmail, IsNotEmpty, IsString } from "class-validator";
 
 export class CreateProfessorDto {
   @ApiProperty({
@@ -35,7 +35,7 @@ export class CreateProfessorDto {
     example: "skku@skku.edu",
   })
   @IsNotEmpty({ message: "이메일을 입력해주세요." })
-  @IsString()
+  @IsEmail()
   @Type(() => String)
   email: string;
 
