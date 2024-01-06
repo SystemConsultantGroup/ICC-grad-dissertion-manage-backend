@@ -1,19 +1,6 @@
 import { ProfessorDto } from "./dtos/professor.dto";
 import { CommonResponseDto } from "src/common/dtos/common-response.dto";
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseIntPipe,
-  Post,
-  Put,
-  Query,
-  Res,
-  UploadedFile,
-  UseGuards,
-} from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UploadedFile, UseGuards } from "@nestjs/common";
 import { ProfessorsService } from "./professors.service";
 import {
   ApiBearerAuth,
@@ -34,6 +21,7 @@ import { ProfessorListPaginationQuery, ProfessorListQuery } from "./dtos/profess
 import { ProfessorListDto } from "./dtos/professors-list.dto";
 import { Response } from "express";
 import { ApiFile } from "../files/decorators/api-file.decorator";
+import { PositiveIntPipe } from "src/common/pipes/positive-int.pipe";
 
 @ApiTags("교수 API")
 @UseGuards(JwtGuard)
@@ -138,7 +126,7 @@ export class ProfessorsController {
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
-  async getProfessor(@Param("id", ParseIntPipe) id: number) {
+  async getProfessor(@Param("id", PositiveIntPipe) id: number) {
     const professor = await this.professorsService.getProfessor(id);
 
     return new CommonResponseDto(new ProfessorDto(professor));
@@ -152,7 +140,7 @@ export class ProfessorsController {
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
-  async updateProfessor(@Param("id", ParseIntPipe) id: number, @Body() updateProfessorDto: UpdateProfessorDto) {
+  async updateProfessor(@Param("id", PositiveIntPipe) id: number, @Body() updateProfessorDto: UpdateProfessorDto) {
     const professor = await this.professorsService.updateProfessor(id, updateProfessorDto);
 
     return new CommonResponseDto(new ProfessorDto(professor));
@@ -166,7 +154,7 @@ export class ProfessorsController {
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
-  async deleteProfessor(@Param("id", ParseIntPipe) id: number) {
+  async deleteProfessor(@Param("id", PositiveIntPipe) id: number) {
     await this.professorsService.deleteProfessor(id);
 
     return new CommonResponseDto();
