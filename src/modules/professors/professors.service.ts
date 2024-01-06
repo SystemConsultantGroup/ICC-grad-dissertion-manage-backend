@@ -242,6 +242,8 @@ export class ProfessorsService {
                   where: { loginId },
                   data: { email },
                 });
+              } else if (existingEmail.loginId !== loginId) {
+                throw new BadRequestException(`${index + 2}번째 줄의 이메일은 다른 유저가 사용 중입니다.`);
               }
               // 중복 허용 되는 값은 그냥 다시 넣어줌 (이름, 연락처, 학과, 비밀번호(undefined))
               return await tx.user.update({
