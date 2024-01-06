@@ -232,10 +232,14 @@ export class ProfessorsService {
               where: { loginId },
             });
 
+            const existingEmail = await tx.user.findUnique({
+              where: { email },
+            });
+
             // 존재하는 유저의 경우
             if (existingUser) {
               // 이메일의 경우 중복이 아닐 경우 업데이트
-              if (existingUser.email !== email) {
+              if (!existingEmail) {
                 await tx.user.update({
                   where: { loginId },
                   data: { email },
