@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsEmail, IsNotEmpty, IsString } from "class-validator";
+import { IsKoreanPhoneNumber } from "src/common/decorators/is-kr-phone-number.decorator";
 
 export class CreateProfessorDto {
   @ApiProperty({
@@ -45,6 +46,7 @@ export class CreateProfessorDto {
   })
   @IsNotEmpty({ message: "연락처를 입력해주세요." })
   @IsString()
+  @IsKoreanPhoneNumber()
   @Type(() => String)
   phone: string;
 
