@@ -279,8 +279,9 @@ export class ProfessorsService {
         );
         return result;
       });
-    } catch (e) {
-      throw new InternalServerErrorException("엑셀 파일 업로드에 실패했습니다.");
+    } catch (error) {
+      if (error.status === 400) throw new BadRequestException(error.message);
+      else throw new InternalServerErrorException("엑셀 파일 업로드에 실패했습니다.");
     }
   }
 
