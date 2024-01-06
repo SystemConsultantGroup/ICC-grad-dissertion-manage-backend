@@ -31,14 +31,9 @@ export class UploadProfessorDto {
   @ApiProperty({ description: "연락처" })
   @Type(() => String)
   @IsOptional()
-  phone?: string;
+  phone: string;
 
   @ApiProperty({ description: "소속학과" })
   @Type(() => String)
   departmentName: string;
-
-  @ApiProperty({ description: "소속학과ID" })
-  @Type(() => Number)
-  @IsOptional()
-  deptId?: number;
 }

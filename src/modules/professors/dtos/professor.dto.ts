@@ -1,7 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Department, User } from "@prisma/client";
 import { Type } from "class-transformer";
-import { IsOptional } from "class-validator";
 import { DepartmentDto } from "src/modules/departments/dtos/department.dto";
 
 export class ProfessorDto {
@@ -34,8 +33,7 @@ export class ProfessorDto {
   email: string;
   @ApiProperty({ description: "연락처" })
   @Type(() => String)
-  @IsOptional()
-  phone?: string;
+  phone: string;
   @ApiProperty({ description: "학과", type: () => DepartmentDto })
   department: DepartmentDto;
   @ApiProperty({ description: "생성일" })
