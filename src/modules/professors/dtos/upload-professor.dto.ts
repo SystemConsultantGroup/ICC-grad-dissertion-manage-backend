@@ -1,6 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsOptional } from "class-validator";
 
 export class UploadProfessorDto {
   constructor(excelRecord) {
@@ -30,7 +29,6 @@ export class UploadProfessorDto {
 
   @ApiProperty({ description: "연락처" })
   @Type(() => String)
-  @IsOptional()
   phone: string;
 
   @ApiProperty({ description: "소속학과" })
