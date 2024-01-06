@@ -238,12 +238,25 @@ export class ProfessorsService {
             if (existingUser) {
               // 이메일의 경우 중복이 아닐 경우 업데이트
               if (!existingEmail) {
+                if (email) {
+                  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                  if (!regex.test(email)) {
+                    throw new BadRequestException(`${index + 2}번째 줄의 이메일 형식이 잘못되었습니다.`);
+                  }
+                }
+
                 await tx.user.update({
                   where: { loginId },
                   data: { email },
                 });
               } else if (existingEmail.loginId !== loginId) {
                 throw new BadRequestException(`${index + 2}번째 줄의 이메일은 다른 유저가 사용 중입니다.`);
+              }
+              if (phone) {
+                const regex = /^\d{3}-\d{4}-\d{4}$/;
+                if (!(await regex.test(phone))) {
+                  throw new BadRequestException(`${index + 2}번째 줄의 연락처 형식이 잘못되었습니다. (000-0000-0000)`);
+                }
               }
               // 중복 허용 되는 값은 그냥 다시 넣어줌 (이름, 연락처, 학과, 비밀번호(undefined))
               return await tx.user.update({
@@ -263,6 +276,15 @@ export class ProfessorsService {
               if (!email) throw new BadRequestException(`${index + 2}번째 줄의 이메일을 입력해주세요.`);
               if (!name) throw new BadRequestException(`${index + 2}번째 줄의 이름을 입력해주세요.`);
               if (!password) throw new BadRequestException(`${index + 2}번째 줄의 비밀번호를 입력해주세요.`);
+              if (existingEmail)
+                throw new BadRequestException(`${index + 2}번째 줄의 이메일은 다른 유저가 사용 중입니다.`);
+
+              if (phone) {
+                const regex = /^\d{3}-\d{4}-\d{4}$/;
+                if (!(await regex.test(phone))) {
+                  throw new BadRequestException(`${index + 2}번째 줄의 연락처 형식이 잘못되었습니다. (000-0000-0000)`);
+                }
+              }
 
               return await tx.user.create({
                 data: {
