@@ -215,9 +215,6 @@ export class ProfessorsService {
         const result = await Promise.all(
           professors.map(async (professor, index) => {
             const { loginId, name, password, email, phone, departmentName } = professor;
-            if (!departmentName) throw new BadRequestException(`${index + 2}번째 줄의 소속학과를 입력해주세요.`);
-            if (!email) throw new BadRequestException(`${index + 2}번째 줄의 이메일을 입력해주세요.`);
-            if (!name) throw new BadRequestException(`${index + 2}번째 줄의 이름을 입력해주세요.`);
 
             const dept = await tx.department.findFirst({
               where: { name: departmentName },
@@ -232,6 +229,7 @@ export class ProfessorsService {
               where: { loginId },
             });
 
+            // 해당 이메일 존재 여부 확인
             const existingEmail = await tx.user.findUnique({
               where: { email },
             });
@@ -258,6 +256,10 @@ export class ProfessorsService {
               });
             } else {
               // 새로 생성하는 유저
+              if (!departmentName) throw new BadRequestException(`${index + 2}번째 줄의 소속학과를 입력해주세요.`);
+              if (!phone) throw new BadRequestException(`${index + 2}번째 줄의 연락처를 입력해주세요`);
+              if (!email) throw new BadRequestException(`${index + 2}번째 줄의 이메일을 입력해주세요.`);
+              if (!name) throw new BadRequestException(`${index + 2}번째 줄의 이름을 입력해주세요.`);
               if (!password) throw new BadRequestException(`${index + 2}번째 줄의 비밀번호를 입력해주세요.`);
 
               return await tx.user.create({
