@@ -6,6 +6,7 @@ import { ThesisFileDto } from "./thesis-file.dto";
 export class GetReviewResDto {
   constructor(review: ReviewDto) {
     this.id = review.id;
+    this.title = review.thesisInfo.title;
     this.student = review.thesisInfo.process.student.name;
     this.department = review.thesisInfo.process.student.department.name;
     this.abstract = review.thesisInfo.abstract;

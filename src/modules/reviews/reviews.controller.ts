@@ -51,8 +51,8 @@ export class ReviewsController {
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Get()
   async getReviewList(@Query() searchQuery: SearchReviewReqDto, @CurrentUser() user: User) {
-    const reviews = await this.reviewsService.getReviewList(searchQuery, user);
-    const pageDto = new PageDto(searchQuery.pageNumber, searchQuery.pageSize, reviews.length, reviews);
+    const { reviews, totalCount } = await this.reviewsService.getReviewList(searchQuery, user);
+    const pageDto = new PageDto(searchQuery.pageNumber, searchQuery.pageSize, totalCount, reviews);
     return new CommonResponseDto(pageDto);
   }
 
@@ -91,8 +91,8 @@ export class ReviewsController {
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Get("final")
   async getReviewFinalList(@Query() searchQuery: SearchReviewReqDto, @CurrentUser() user: User) {
-    const reviews = await this.reviewsService.getReviewFinalList(searchQuery, user);
-    const pageDto = new PageDto(searchQuery.pageNumber, searchQuery.pageSize, reviews.length, reviews);
+    const { reviews, totalCount } = await this.reviewsService.getReviewFinalList(searchQuery, user);
+    const pageDto = new PageDto(searchQuery.pageNumber, searchQuery.pageSize, totalCount, reviews);
     return new CommonResponseDto(pageDto);
   }
 
@@ -131,8 +131,8 @@ export class ReviewsController {
   @UseUserTypeGuard([UserType.ADMIN])
   @Get("result")
   async getResultList(@Query() searchQuery: SearchResultReqDto) {
-    const results = await this.reviewsService.getResultList(searchQuery);
-    const pageDto = new PageDto(searchQuery.pageNumber, searchQuery.pageSize, results.length, results);
+    const { results, totalCount } = await this.reviewsService.getResultList(searchQuery);
+    const pageDto = new PageDto(searchQuery.pageNumber, searchQuery.pageSize, totalCount, results);
     return new CommonResponseDto(pageDto);
   }
 
