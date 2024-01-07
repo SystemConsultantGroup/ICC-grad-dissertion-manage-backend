@@ -482,9 +482,18 @@ export class ReviewsService {
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
         ...(searchQuery.summary && { summary: searchQuery.summary }),
-        NOT: {
-          summary: Summary.UNEXAMINED,
-        },
+        AND: [
+          {
+            NOT: {
+              summary: Summary.UNEXAMINED,
+            },
+          },
+          {
+            NOT: {
+              summary: Summary.PENDING,
+            },
+          },
+        ],
       },
       include: {
         process: {
@@ -533,9 +542,18 @@ export class ReviewsService {
           ...(searchQuery.stage && { stage: searchQuery.stage }),
           ...(searchQuery.title && { title: { contains: searchQuery.title } }),
           ...(searchQuery.summary && { summary: searchQuery.summary }),
-          NOT: {
-            summary: Summary.UNEXAMINED,
-          },
+          AND: [
+            {
+              NOT: {
+                summary: Summary.UNEXAMINED,
+              },
+            },
+            {
+              NOT: {
+                summary: Summary.PENDING,
+              },
+            },
+          ],
         },
         include: {
           process: {
