@@ -108,6 +108,7 @@ enum Stage {
 enum Summary {
   PASS
   FAIL
+  PENDING
   UNEXAMINED
 }
 
