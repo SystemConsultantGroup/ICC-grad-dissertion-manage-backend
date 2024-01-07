@@ -80,7 +80,25 @@ export class ReviewsService {
         },
       },
     });
-    return reviews.map((review) => new GetReviewListResDto(new ReviewDto(review)));
+    const totalCount = await this.prismaService.review.count({
+      where: {
+        reviewerId: id,
+        isFinal: false,
+        ...(searchQuery.author && {
+          thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
+        }),
+        ...(searchQuery.department && {
+          thesisInfo: { process: { student: { department: { name: { contains: searchQuery.department } } } } },
+        }),
+        ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
+        ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
+        ...(searchQuery.status && { status: searchQuery.status }),
+      },
+    });
+    return {
+      reviews: reviews.map((review) => new GetReviewListResDto(new ReviewDto(review))),
+      totalCount: totalCount,
+    };
   }
   async getReviewListExcel(searchQuery: SearchReviewReqDto, user: User) {
     const { id } = user;
@@ -273,7 +291,29 @@ export class ReviewsService {
         },
       },
     });
-    return reviews.map((review) => new GetReviewListResDto(new ReviewDto(review)));
+    const totalCount = await this.prismaService.review.count({
+      where: {
+        thesisInfo: {
+          process: {
+            headReviewerId: id,
+          },
+        },
+        isFinal: true,
+        ...(searchQuery.author && {
+          thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
+        }),
+        ...(searchQuery.department && {
+          thesisInfo: { process: { student: { department: { name: { contains: searchQuery.department } } } } },
+        }),
+        ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
+        ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
+        ...(searchQuery.status && { status: searchQuery.status }),
+      },
+    });
+    return {
+      reviews: reviews.map((review) => new GetReviewListResDto(new ReviewDto(review))),
+      totalCount: totalCount,
+    };
   }
   async getReviewListFinalExcel(searchQuery: SearchReviewReqDto, user: User) {
     const { id } = user;
@@ -463,7 +503,24 @@ export class ReviewsService {
         },
       },
     });
-    return results.map((result) => new GetResultListResDto(new ThesisInfoDto(result)));
+    const totalCount = await this.prismaService.thesisInfo.count({
+      where: {
+        ...(searchQuery.author && { process: { student: { name: { contains: searchQuery.author } } } }),
+        ...(searchQuery.department && {
+          process: { student: { department: { name: { contains: searchQuery.department } } } },
+        }),
+        ...(searchQuery.stage && { stage: searchQuery.stage }),
+        ...(searchQuery.title && { title: { contains: searchQuery.title } }),
+        ...(searchQuery.summary && { summary: searchQuery.summary }),
+        NOT: {
+          summary: Summary.UNEXAMINED,
+        },
+      },
+    });
+    return {
+      results: results.map((result) => new GetResultListResDto(new ThesisInfoDto(result))),
+      totalCount: totalCount,
+    };
   }
   async getResultExcel(searchQuery: SearchResultReqDto) {
     const results = (
