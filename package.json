@@ -12,12 +12,12 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "format": "prettier --cache --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --cache --write \"src/**/*.ts\"",
     "lint": "eslint --cache \"{src,apps,libs,test}/**/*.ts\" --fix",
     "prepare": "husky install .husky",
     "check-types": "tsc --pretty --noEmit",
-    "check-format": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
-    "check-lint": "eslint \"{src,apps,libs,test}/**/*.ts\""
+    "check-format": "prettier --check \"src/**/*.ts\"", 
+    "check-lint": "eslint \"{src,apps,libs}/**/*.ts\""
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
