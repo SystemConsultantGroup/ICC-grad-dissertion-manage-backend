@@ -1,7 +1,16 @@
-import { Module } from '@nestjs/common';
-import { TaskController } from './task.controller';
+import { Module, OnApplicationBootstrap } from "@nestjs/common";
+import { TaskService } from "./task.service";
+import { ScheduleModule } from "@nestjs/schedule";
 
 @Module({
-  controllers: [TaskController]
+  imports: [ScheduleModule.forRoot()],
+  providers: [TaskService],
+  exports: [TaskService],
 })
-export class TaskModule {}
+export class TaskModule implements OnApplicationBootstrap {
+  constructor(private readonly taskService: TaskService) {}
+
+  async onApplicationBootstrap() {
+    await this.taskService.setCronJobs();
+  }
+}
