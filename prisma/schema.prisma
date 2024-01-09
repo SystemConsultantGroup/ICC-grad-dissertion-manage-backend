@@ -41,10 +41,10 @@ enum UserType {
 
 /// 학과
 model Department {
-  id   Int    @id @default(autoincrement())
-  name String @unique @db.VarChar(255)
-
-  users User[]
+  id               Int     @id @default(autoincrement())
+  name             String  @unique @db.VarChar(255)
+  modificationFlag Boolean @default(true)
+  users            User[]
 
   @@map("department")
 }
