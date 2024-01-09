@@ -43,10 +43,10 @@ export class StudentsService {
     if (foundEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
 
     // deptId, phaseId, headReviewerId, reviewerIds 올바른지 확인
-    const foundDept = await this.prismaService.department.findUnique({
-      where: { id: deptId },
-    });
-    if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
+    // const foundDept = await this.prismaService.department.findUnique({
+    //   where: { id: deptId },
+    // });
+    // if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
     const foundPhase = await this.prismaService.phase.findUnique({
       where: { id: phaseId },
     });
@@ -116,68 +116,63 @@ export class StudentsService {
         });
 
         // 논문 파일 생성 (thesis_file) : 각 논문 정보 마다 2개씩(논문 파일, 발표 파일) 생성
-        await tx.thesisFile.create({
-          data: {
-            thesisInfoId: preThesisInfo.id,
-            type: ThesisFileType.PRESENTATION,
-          },
-        });
-        await tx.thesisFile.create({
-          data: {
-            thesisInfoId: preThesisInfo.id,
-            type: ThesisFileType.THESIS,
-          },
-        });
-        await tx.thesisFile.create({
-          data: {
-            thesisInfoId: mainThesisInfo.id,
-            type: ThesisFileType.PRESENTATION,
-          },
-        });
-        await tx.thesisFile.create({
-          data: {
-            thesisInfoId: mainThesisInfo.id,
-            type: ThesisFileType.THESIS,
-          },
+        await tx.thesisFile.createMany({
+          data: [
+            {
+              thesisInfoId: preThesisInfo.id,
+              type: ThesisFileType.PRESENTATION,
+            },
+            {
+              thesisInfoId: preThesisInfo.id,
+              type: ThesisFileType.THESIS,
+            },
+            {
+              thesisInfoId: mainThesisInfo.id,
+              type: ThesisFileType.PRESENTATION,
+            },
+            {
+              thesisInfoId: mainThesisInfo.id,
+              type: ThesisFileType.THESIS,
+            },
+          ],
         });
 
-        // 논문 심사 (review) : 각 논문 정보(예심/본심)에 대해 (지도교수들 심사(심사위원장 포함) + 최종심사) 생성
+        // 논문 심사 (review) : 각 논문 정보(예심/본심)에 대해 (지도교수&심사위원&심사위원장 + 최종심사) 생성
         await tx.review.createMany({
-          data: reviewerIds.map((reviewerId) => {
-            return {
+          data: [
+            // 예심 논문 심사
+            ...reviewerIds.map((reviewerId) => {
+              return {
+                thesisInfoId: preThesisInfo.id,
+                reviewerId,
+                status: ReviewStatus.UNEXAMINED,
+                isFinal: false,
+              };
+            }),
+            // 본심 논문 심사
+            ...reviewerIds.map((reviewerId) => {
+              return {
+                thesisInfoId: mainThesisInfo.id,
+                reviewerId,
+                status: ReviewStatus.UNEXAMINED,
+                isFinal: false,
+              };
+            }),
+            // 예심 최종 심사
+            {
               thesisInfoId: preThesisInfo.id,
-              reviewerId,
+              reviewerId: headReviewerId,
               status: ReviewStatus.UNEXAMINED,
-              isFinal: false,
-            };
-          }),
-        });
-        await tx.review.createMany({
-          data: reviewerIds.map((reviewerId) => {
-            return {
+              isFinal: true,
+            },
+            // 본심 최종 심사
+            {
               thesisInfoId: mainThesisInfo.id,
-              reviewerId,
+              reviewerId: headReviewerId,
               status: ReviewStatus.UNEXAMINED,
-              isFinal: false,
-            };
-          }),
-        });
-        // 최종 심사
-        await tx.review.create({
-          data: {
-            thesisInfoId: preThesisInfo.id,
-            reviewerId: headReviewerId,
-            status: ReviewStatus.UNEXAMINED,
-            isFinal: true,
-          },
-        });
-        await tx.review.create({
-          data: {
-            thesisInfoId: mainThesisInfo.id,
-            reviewerId: headReviewerId,
-            status: ReviewStatus.UNEXAMINED,
-            isFinal: true,
-          },
+              isFinal: true,
+            },
+          ],
         });
 
         return await tx.user.findUnique({
@@ -189,7 +184,7 @@ export class StudentsService {
         });
       });
     } catch (error) {
-      throw new InternalServerErrorException(error.meta?.target);
+      throw new InternalServerErrorException("학생 생성 실패");
     }
   }
 
@@ -689,7 +684,7 @@ export class StudentsService {
       });
       return { fileName, stream };
     } else {
-      throw new InternalServerErrorException("파일을 생성하지 못했습니다.");
+      throw new InternalServerErrorException("파일을 생성 실패");
     }
   }
 
@@ -742,7 +737,7 @@ export class StudentsService {
         include: { department: true },
       });
     } catch (error) {
-      throw new InternalServerErrorException(`학생 정보 업데이트 실패: ${error}`);
+      throw new InternalServerErrorException("학생 정보 업데이트 실패");
     }
   }
 
@@ -791,7 +786,7 @@ export class StudentsService {
         include: { phase: true },
       });
     } catch (error) {
-      throw new InternalServerErrorException(`업데이트 실패: ${error}`);
+      throw new InternalServerErrorException("업데이트 실패");
     }
   }
 
@@ -854,7 +849,7 @@ export class StudentsService {
         },
       });
     } catch (error) {
-      throw new InternalServerErrorException(`조회 실패: ${error}`);
+      throw new InternalServerErrorException("조회 실패");
     }
   }
 
@@ -946,7 +941,7 @@ export class StudentsService {
         },
       });
     } catch (error) {
-      throw new InternalServerErrorException(`업데이트 실패: ${error}`);
+      throw new InternalServerErrorException("업데이트 실패");
     }
   }
 
@@ -1014,7 +1009,7 @@ export class StudentsService {
         },
       });
     } catch (error) {
-      throw new InternalServerErrorException(`업데이트 실패 : ${error}`);
+      throw new InternalServerErrorException("업데이트 실패");
     }
   }
 
@@ -1055,7 +1050,7 @@ export class StudentsService {
         where: { id: foundReviewer.id },
       });
     } catch (error) {
-      throw new InternalServerErrorException(`배정 취소 실패 : ${error}`);
+      throw new InternalServerErrorException("배정 취소 실패");
     }
   }
 
@@ -1094,7 +1089,7 @@ export class StudentsService {
         data: { headReviewerId },
       });
     } catch (error) {
-      throw new InternalServerErrorException(`업데이트 실패: ${error}`);
+      throw new InternalServerErrorException("업데이트 실패");
     }
   }
 }
