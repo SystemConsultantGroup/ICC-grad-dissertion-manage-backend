@@ -517,7 +517,7 @@ export class StudentsService {
           });
           console.log(error);
           if (error.status === 400) {
-            throw new BadRequestException(error);
+            throw new BadRequestException(error.message);
           }
           throw new InternalServerErrorException(`${index + 2} 행에서 에러 발생`);
         }
@@ -722,12 +722,11 @@ export class StudentsService {
     if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
     if (deptId) {
       const foundDept = await this.prismaService.department.findUnique({
-        where: {
-          id: deptId,
-        },
+        where: { id: deptId },
       });
       if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
     }
+    // TODO : loginId, email도 확인해야함
 
     try {
       return await this.prismaService.user.update({
@@ -855,7 +854,7 @@ export class StudentsService {
         },
       });
     } catch (error) {
-      throw new InternalServerErrorException(`조회 실패: ${error}}`);
+      throw new InternalServerErrorException(`조회 실패: ${error}`);
     }
   }
 
