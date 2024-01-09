@@ -103,6 +103,7 @@ model ThesisInfo {
 enum Stage {
   PRELIMINARY
   MAIN
+  MODIFICATION
 }
 
 enum Summary {
