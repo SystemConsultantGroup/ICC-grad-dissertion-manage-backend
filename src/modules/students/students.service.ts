@@ -5,8 +5,6 @@ import { PrismaService } from "src/config/database/prisma.service";
 import { StudentSearchPageQuery } from "./dtos/student-search-page-query.dto";
 import * as XLSX from "xlsx";
 import * as DateUtil from "../../common/utils/date.util";
-import * as path from "path";
-import * as fs from "fs";
 import { CreateStudentDto } from "./dtos/create-student.dto";
 import { AuthService } from "../auth/auth.service";
 import { Stage } from "src/common/enums/stage.enum";

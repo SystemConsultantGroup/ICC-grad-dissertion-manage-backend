@@ -47,7 +47,6 @@ import { ThesisInfoDto } from "./dtos/thesis-info.dto";
 import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
 import { ReviewersDto } from "./dtos/reviewers.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { multerOptions } from "src/common/utils/multer-options.util";
 import { ExcelFilter } from "src/common/pipes/excel.filter";
 
 @Controller("students")
