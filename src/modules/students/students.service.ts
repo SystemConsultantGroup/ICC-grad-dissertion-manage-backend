@@ -43,10 +43,10 @@ export class StudentsService {
     if (foundEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
 
     // deptId, phaseId, headReviewerId, reviewerIds 올바른지 확인
-    // const foundDept = await this.prismaService.department.findUnique({
-    //   where: { id: deptId },
-    // });
-    // if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
+    const foundDept = await this.prismaService.department.findUnique({
+      where: { id: deptId },
+    });
+    if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
     const foundPhase = await this.prismaService.phase.findUnique({
       where: { id: phaseId },
     });
@@ -523,7 +523,7 @@ export class StudentsService {
 
   // 학생 대량 조회 API
   async getStudentList(studentSearchPageQuery: StudentSearchPageQuery) {
-    const { studentNumber, name, email, phone, departmentId, phaseId, isLock } = studentSearchPageQuery;
+    const { studentNumber, name, email, phone, departmentId } = studentSearchPageQuery;
 
     if (departmentId) {
       const foundDept = await this.prismaService.department.findUnique({
@@ -531,28 +531,15 @@ export class StudentsService {
       });
       if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
     }
-    if (phaseId) {
-      const foundPhase = await this.prismaService.phase.findUnique({
-        where: { id: phaseId },
-      });
-      if (!foundPhase) throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
-    }
 
     const students = await this.prismaService.user.findMany({
       where: {
         type: UserType.STUDENT,
-        loginId: studentNumber ? { contains: studentNumber } : undefined,
-        name: name ? { contains: name } : undefined,
-        email: email ? { contains: email } : undefined,
-        phone: phone ? { contains: phone } : undefined,
-        department: departmentId ? { id: departmentId } : undefined,
-        studentProcess:
-          phaseId || isLock !== undefined
-            ? {
-                phase: phaseId ? { id: phaseId } : undefined,
-                isLock: isLock !== undefined ? isLock : undefined,
-              }
-            : undefined,
+        loginId: { contains: studentNumber },
+        name: { contains: name },
+        email: { contains: email },
+        phone: { contains: phone },
+        deptId: departmentId,
       },
       include: { department: true },
       skip: studentSearchPageQuery.getOffset(),
@@ -562,18 +549,11 @@ export class StudentsService {
     const totalCount = await this.prismaService.user.count({
       where: {
         type: UserType.STUDENT,
-        loginId: studentNumber ? { contains: studentNumber } : undefined,
-        name: name ? { contains: name } : undefined,
-        email: email ? { contains: email } : undefined,
-        phone: phone ? { contains: phone } : undefined,
-        department: departmentId ? { id: departmentId } : undefined,
-        studentProcess:
-          phaseId || isLock !== undefined
-            ? {
-                phase: phaseId ? { id: phaseId } : undefined,
-                isLock: isLock !== undefined ? isLock : undefined,
-              }
-            : undefined,
+        loginId: { contains: studentNumber },
+        name: { contains: name },
+        email: { contains: email },
+        phone: { contains: phone },
+        deptId: departmentId,
       },
     });
 
@@ -581,7 +561,7 @@ export class StudentsService {
   }
 
   async getStudentExcel(studentSearchQuery: StudentSearchQuery) {
-    const { studentNumber, name, email, phone, departmentId, phaseId, isLock } = studentSearchQuery;
+    const { studentNumber, name, email, phone, departmentId } = studentSearchQuery;
 
     if (departmentId) {
       const foundDept = await this.prismaService.department.findUnique({
@@ -589,25 +569,17 @@ export class StudentsService {
       });
       if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
     }
-    if (phaseId) {
-      const foundPhase = await this.prismaService.phase.findUnique({
-        where: { id: phaseId },
-      });
-      if (!foundPhase) throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
-    }
 
     const processes = await this.prismaService.process.findMany({
       where: {
         student: {
           type: UserType.STUDENT,
-          loginId: studentNumber ? { contains: studentNumber } : undefined,
-          name: name ? { contains: name } : undefined,
-          email: email ? { contains: email } : undefined,
-          phone: phone ? { contains: phone } : undefined,
-          department: departmentId ? { id: departmentId } : undefined,
+          loginId: { contains: studentNumber },
+          name: { contains: name },
+          email: { contains: email },
+          phone: { contains: phone },
+          deptId: departmentId,
         },
-        phase: phaseId ? { id: phaseId } : undefined,
-        isLock: isLock !== undefined ? isLock : undefined,
       },
       include: {
         student: { include: { department: true } },
@@ -650,12 +622,6 @@ export class StudentsService {
       reviewers.forEach((reviewerInfo, index) => {
         record[`심사위원-${index + 1}`] = reviewerInfo.reviewer.name;
       });
-
-      // TODO (제출 상태) : 넣을까 말까.. 솦 졸논에 비슷한 기능이 있는데 행정실에서 먼저 요청하지 않으면 굳이 포함하지 않는 것도 방법일 듯합니다...ㅎ
-      // record['예심 논문 파일 상태'];
-      // record['예심 논문 발표 파일 상태'];
-      // record['본심 논문 파일 상태'];
-      // record['본심 논문 발표 파일 상태'];
 
       return record;
     });
