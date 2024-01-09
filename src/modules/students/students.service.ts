@@ -19,6 +19,7 @@ import { UpdateSystemDto } from "./dtos/update-system.dto";
 import { User } from "@prisma/client";
 import { validate } from "class-validator";
 import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
+import { Readable } from "stream";
 
 @Injectable()
 export class StudentsService {
@@ -190,7 +191,7 @@ export class StudentsService {
 
   async createStudentExcel(excelFile: Express.Multer.File) {
     if (!excelFile) throw new BadRequestException("파일을 업로드해주세요.");
-    const workBook = XLSX.readFile(excelFile.path);
+    const workBook = XLSX.read(excelFile.buffer, { type: "buffer" });
     const sheetName = workBook.SheetNames[0];
     const sheet = workBook.Sheets[sheetName];
     const studentRecords = XLSX.utils.sheet_to_json(sheet);
@@ -501,12 +502,6 @@ export class StudentsService {
               students.push(user);
             }
           } catch (error) {
-            fs.access(excelFile.path, fs.constants.F_OK, (err) => {
-              if (err) return console.log("삭제할 수 없는 파일입니다.");
-
-              fs.unlink(excelFile.path, (err) => (err ? console.log(err) : console.log("파일을 삭제했습니다.")));
-            });
-            console.log(error);
             if (error.status === 400) {
               throw new BadRequestException(error.message);
             }
@@ -632,26 +627,16 @@ export class StudentsService {
     }
 
     // 엑셀 데이터 생성
-    const excelData = XLSX.utils.json_to_sheet(records);
+    const workSheet = XLSX.utils.json_to_sheet(records);
     const workBook = XLSX.utils.book_new();
     const fileName = "student_list_" + DateUtil.getCurrentTime().fullDateTime + ".xlsx";
-    const filePath = path.join("resources", "excel", fileName);
+    XLSX.utils.book_append_sheet(workBook, workSheet, "학생 목록");
 
-    // `resources/excel`디렉토리에 파일 생성
-    XLSX.utils.book_append_sheet(workBook, excelData, "student_list");
-    await XLSX.writeFile(workBook, filePath);
+    const stream = new Readable();
+    stream.push(await XLSX.write(workBook, { type: "buffer" }));
+    stream.push(null);
 
-    if (fs.existsSync(filePath)) {
-      const stream = fs.createReadStream(filePath);
-      // 파일 삭제
-      fs.access(filePath, fs.constants.F_OK, (err) => {
-        if (err) return console.log("삭제할 수 없는 파일입니다.");
-        fs.unlink(filePath, (err) => (err ? console.log(err) : console.log("파일을 삭제했습니다.")));
-      });
-      return { fileName, stream };
-    } else {
-      throw new InternalServerErrorException("파일을 생성 실패");
-    }
+    return { fileName, stream };
   }
 
   // 학생 기본 정보 조회/수정 API
