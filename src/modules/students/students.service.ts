@@ -707,7 +707,7 @@ export class StudentsService {
   async updateStudent(studentId: number, updateStudentDto: UpdateStudentDto) {
     const { loginId, password, name, email, phone, deptId } = updateStudentDto;
 
-    // studentId, deptId 확인
+    // studentId, deptId, loginId, email 확인
     const foundStudent = await this.prismaService.user.findUnique({
       where: {
         id: studentId,
@@ -721,7 +721,18 @@ export class StudentsService {
       });
       if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
     }
-    // TODO : loginId, email도 확인해야함
+    if (email) {
+      const foundEmail = await this.prismaService.user.findUnique({
+        where: { email },
+      });
+      if (foundEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
+    }
+    if (loginId) {
+      const foundLoginId = await this.prismaService.user.findUnique({
+        where: { loginId },
+      });
+      if (foundLoginId) throw new BadRequestException("이미 존재하는 로그인 아이디 입니다.");
+    }
 
     try {
       return await this.prismaService.user.update({
