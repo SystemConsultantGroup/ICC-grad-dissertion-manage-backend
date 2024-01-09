@@ -83,7 +83,7 @@ export class StudentsController {
 
   @Post("/excel")
   @UseUserTypeGuard([UserType.ADMIN])
-  @UseInterceptors(FileInterceptor("file", multerOptions("excel", ExcelFilter)))
+  @UseInterceptors(FileInterceptor("file", { fileFilter: ExcelFilter }))
   @ApiConsumes("multipart/form-data")
   @ApiBody({
     schema: {
@@ -97,7 +97,7 @@ export class StudentsController {
     },
   })
   @ApiOperation({
-    summary: "학생 엑셀 생성 API",
+    summary: "학생 엑셀 업로드 API",
     description: "엑셀을 업로드하여 학생을 생성한다. 학번 기준 기존 학생인 경우 업데이트를 진행한다.",
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
