@@ -195,330 +195,330 @@ export class StudentsService {
     const sheet = workBook.Sheets[sheetName];
     const studentRecords = XLSX.utils.sheet_to_json(sheet);
 
-    return await this.prismaService.$transaction(async (tx) => {
-      const students = [];
-      for (const [index, studentRecord] of studentRecords.entries()) {
-        try {
-          // 모든 항목 값 받아오기
-          const studentNumber = studentRecord["학번"]?.toString();
-          const password = studentRecord["비밀번호"]?.toString();
-          const name = studentRecord["이름"];
-          const email = studentRecord["이메일"];
-          const phone = studentRecord["연락처"]?.toString();
-          const major = studentRecord["전공"];
-          const thesisTitle = studentRecord["논문 제목"];
-          const phase = studentRecord["시스템 단계"];
-          const systemLock = studentRecord["시스템 락 여부"];
-          const headReviewer = studentRecord["심사위원장 로그인 아이디"]?.toString();
-          const reviewers = studentRecord["심사위원/지도교수 로그인 아이디"]?.toString();
+    return await this.prismaService.$transaction(
+      async (tx) => {
+        const students = [];
+        for (const [index, studentRecord] of studentRecords.entries()) {
+          try {
+            // 모든 항목 값 받아오기
+            const studentNumber = studentRecord["학번"]?.toString();
+            const password = studentRecord["비밀번호"]?.toString();
+            const name = studentRecord["이름"];
+            const email = studentRecord["이메일"];
+            const phone = studentRecord["연락처"]?.toString();
+            const major = studentRecord["전공"];
+            const thesisTitle = studentRecord["논문 제목"];
+            const phase = studentRecord["시스템 단계"];
+            const systemLock = studentRecord["시스템 락 여부"];
+            const headReviewer = studentRecord["심사위원장 로그인 아이디"]?.toString();
+            const reviewers = studentRecord["심사위원/지도교수 로그인 아이디"]?.toString();
 
-          // major, phase, systemLock, headReviewer, reviewers 적절한 값으로 변경
-          let deptId, phaseId, isLock, headReviewerId, reviewerIds;
-          if (major) {
-            const foundDepartment = await this.prismaService.department.findFirst({
-              where: { name: major },
-            });
-            if (!foundDepartment) throw new BadRequestException(`${index + 2} 행의 학과 명을 확인해주세요.`);
-            deptId = foundDepartment.id;
-          }
-          if (phase) {
-            const foundPhase = await this.prismaService.phase.findFirst({
-              where: { title: phase },
-            });
-            if (!foundPhase) throw new BadRequestException(`${index + 2} 행의 시스템 단계 명을 확인해주세요.`);
-            phaseId = foundPhase.id;
-          }
-          if (systemLock) {
-            if (systemLock === "예") {
-              isLock = true;
-            } else if (systemLock === "아니요") {
-              isLock = false;
-            } else {
-              throw new BadRequestException(`${index + 2} 행의 시스템 락 여부를 확인해주세요.`);
-            }
-          }
-          if (headReviewer) {
-            const foundHeadReviewer = await this.prismaService.user.findUnique({
-              where: { loginId: headReviewer },
-            });
-            if (!foundHeadReviewer)
-              throw new BadRequestException(`${index + 2} 행의 심사위원장 로그인 아이디를 확인해주세요.`);
-            headReviewerId = foundHeadReviewer.id;
-          }
-          if (reviewers) {
-            const loginIdArr = reviewers.split(",").map((loginId) => loginId.trim());
-            reviewerIds = [];
-            for (const loginId of loginIdArr) {
-              const foundReviewer = await this.prismaService.user.findUnique({
-                where: { loginId },
+            // major, phase, systemLock, headReviewer, reviewers 적절한 값으로 변경
+            let deptId, phaseId, isLock, headReviewerId, reviewerIds;
+            if (major) {
+              const foundDepartment = await this.prismaService.department.findFirst({
+                where: { name: major },
               });
-              if (!foundReviewer) {
+              if (!foundDepartment) throw new BadRequestException(`${index + 2} 행의 학과 명을 확인해주세요.`);
+              deptId = foundDepartment.id;
+            }
+            if (phase) {
+              const foundPhase = await this.prismaService.phase.findFirst({
+                where: { title: phase },
+              });
+              if (!foundPhase) throw new BadRequestException(`${index + 2} 행의 시스템 단계 명을 확인해주세요.`);
+              phaseId = foundPhase.id;
+            }
+            if (systemLock) {
+              if (systemLock === "예") {
+                isLock = true;
+              } else if (systemLock === "아니요") {
+                isLock = false;
+              } else {
+                throw new BadRequestException(`${index + 2} 행의 시스템 락 여부를 확인해주세요.`);
+              }
+            }
+            if (headReviewer) {
+              const foundHeadReviewer = await this.prismaService.user.findUnique({
+                where: { loginId: headReviewer },
+              });
+              if (!foundHeadReviewer)
+                throw new BadRequestException(`${index + 2} 행의 심사위원장 로그인 아이디를 확인해주세요.`);
+              headReviewerId = foundHeadReviewer.id;
+            }
+            if (reviewers) {
+              const loginIdArr = reviewers.split(",").map((loginId) => loginId.trim());
+              reviewerIds = [];
+              for (const loginId of loginIdArr) {
+                const foundReviewer = await this.prismaService.user.findUnique({
+                  where: { loginId },
+                });
+                if (!foundReviewer) {
+                  throw new BadRequestException(
+                    `${index + 2} 행의 심사위원/지도교수 로그인 아이디 ${loginId}를 찾을 수 없습니다.`
+                  );
+                }
+                reviewerIds.push(foundReviewer.id);
+              }
+              if (!reviewerIds.includes(headReviewerId)) reviewerIds.push(headReviewerId);
+            }
+
+            // 학번으로 기존 학생 여부 판단
+            if (!studentNumber) throw new BadRequestException(`${index + 2}번째 행의 [학번] 항목을 다시 확인해주세요.`);
+            const foundStudent = await this.prismaService.user.findUnique({
+              where: {
+                loginId: studentNumber,
+                type: UserType.STUDENT,
+              },
+            });
+
+            if (foundStudent) {
+              // 학생 업데이트
+              // 학생 지도 정보 >>> 엑셀로 업데이트는x, 생성만 가능
+              if (headReviewer || reviewers) {
                 throw new BadRequestException(
-                  `${index + 2} 행의 심사위원/지도교수 로그인 아이디 ${loginId}를 찾을 수 없습니다.`
+                  `${index + 2} 행 : 기존 학생의 지도 교수 정보는 엑셀로 변경할 수 없습니다.`
                 );
               }
-              reviewerIds.push(foundReviewer.id);
-            }
-            if (!reviewerIds.includes(headReviewerId)) reviewerIds.push(headReviewerId);
-          }
 
-          // 학번으로 기존 학생 여부 판단
-          if (!studentNumber) throw new BadRequestException(`${index + 2}번째 행의 [학번] 항목을 다시 확인해주세요.`);
-          const foundStudent = await this.prismaService.user.findUnique({
-            where: {
-              loginId: studentNumber,
-              type: UserType.STUDENT,
-            },
-          });
+              // 학생 기본 정보
+              const updateStudentDto = new UpdateStudentDto();
+              updateStudentDto.password = password;
+              updateStudentDto.name = name;
+              updateStudentDto.email = email;
+              updateStudentDto.phone = phone;
+              updateStudentDto.deptId = deptId;
+              // 학생 시스템 정보
+              const updateSystemDto = new UpdateSystemDto();
+              updateSystemDto.phaseId = phaseId;
+              updateSystemDto.isLock = isLock;
+              // 학생 논문 정보
+              const updateThesisInfoDto = new UpdateThesisInfoDto();
+              updateThesisInfoDto.title = thesisTitle;
 
-          if (foundStudent) {
-            // 학생 업데이트
-            // 학생 지도 정보 >>> 엑셀로 업데이트는x, 생성만 가능
-            if (headReviewer || reviewers) {
-              throw new BadRequestException(
-                `${index + 2} 행 : 기존 학생의 지도 교수 정보는 엑셀로 변경할 수 없습니다.`
-              );
-            }
+              // Dto 이용 validation 진행
+              const dtos = [updateStudentDto, updateStudentDto, updateThesisInfoDto];
+              for (const dto of dtos) {
+                const validationErrors = await validate(dto);
+                if (validationErrors.length > 0) {
+                  validationErrors.map((error) => console.log(error.constraints));
+                  throw new BadRequestException(`${index + 2} 행의 데이터 입력 형식이 잘못되었습니다.`);
+                }
+              }
 
-            // 학생 기본 정보
-            const updateStudentDto = new UpdateStudentDto();
-            updateStudentDto.password = password;
-            updateStudentDto.name = name;
-            updateStudentDto.email = email;
-            updateStudentDto.phone = phone;
-            updateStudentDto.deptId = deptId;
-            // 학생 시스템 정보
-            const updateSystemDto = new UpdateSystemDto();
-            updateSystemDto.phaseId = phaseId;
-            updateSystemDto.isLock = isLock;
-            // 학생 논문 정보
-            const updateThesisInfoDto = new UpdateThesisInfoDto();
-            updateThesisInfoDto.title = thesisTitle;
+              // 학생 기본 정보 업데이트
+              // 이메일 중복 여부 확인
+              if (updateStudentDto.email) {
+                const foundEmail = await this.prismaService.user.findUnique({
+                  where: { email: updateStudentDto.email },
+                });
+                if (foundEmail && foundEmail.id !== foundStudent.id)
+                  throw new BadRequestException(`${index + 2}행 : 이미 존재하는 이메일로는 변경할 수 없습니다.`);
+              }
 
-            // Dto 이용 validation 진행
-            const dtos = [updateStudentDto, updateStudentDto, updateThesisInfoDto];
-            for (const dto of dtos) {
-              const validationErrors = await validate(dto);
+              const updatedStudent = await tx.user.update({
+                where: { id: foundStudent.id },
+                data: {
+                  loginId: updateStudentDto.loginId ?? undefined,
+                  password: updateStudentDto.password
+                    ? this.authService.createHash(updateStudentDto.password)
+                    : undefined,
+                  name: updateStudentDto.name ?? undefined,
+                  email: updateStudentDto.email ?? undefined,
+                  phone: updateStudentDto.phone ?? undefined,
+                  deptId: updateStudentDto.deptId ?? undefined,
+                },
+                include: { department: true },
+              });
+              // 학생 시스템 정보 업데이트
+              const process = await tx.process.update({
+                where: { studentId: foundStudent.id },
+                data: {
+                  phaseId: updateSystemDto.phaseId ?? undefined,
+                  isLock: updateSystemDto.isLock ?? undefined,
+                },
+                include: {
+                  thesisInfos: {
+                    orderBy: { stage: "asc" },
+                    include: {
+                      thesisFiles: {
+                        orderBy: { type: "asc" },
+                      },
+                    },
+                  },
+                },
+              });
+              // 학생 논문 정보 업데이트
+              const stage = [1, 2].includes(process.phaseId) ? Stage.PRELIMINARY : Stage.MAIN;
+              const currentThesisInfo = stage === Stage.PRELIMINARY ? process.thesisInfos[0] : process.thesisInfos[1];
+              await tx.thesisInfo.update({
+                where: { id: currentThesisInfo.id },
+                data: {
+                  title: updateThesisInfoDto.title ?? undefined,
+                },
+              });
+
+              students.push(updatedStudent);
+            } else {
+              // 신규 학생 생성
+
+              // 모든 항목이 채워져 있는지 확인
+              if (Object.keys(studentRecord).length !== 11)
+                throw new BadRequestException(`${index + 2} 행의 모든 칸이 채워져야 합니다.`);
+
+              // 엑셀 입력 값을 적절한 값으로 맵핑
+              const createStudentDto = new CreateStudentDto();
+              createStudentDto.loginId = studentNumber;
+              createStudentDto.password = password;
+              createStudentDto.name = name;
+              createStudentDto.email = email;
+              createStudentDto.phone = phone;
+              createStudentDto.deptId = deptId;
+              createStudentDto.isLock = isLock;
+              createStudentDto.headReviewerId = headReviewerId;
+              createStudentDto.phaseId = phaseId;
+              createStudentDto.reviewerIds = reviewerIds;
+              createStudentDto.thesisTitle = thesisTitle;
+
+              // CreateStudentDto 이용 validation 진행
+              const validationErrors = await validate(createStudentDto);
               if (validationErrors.length > 0) {
                 validationErrors.map((error) => console.log(error.constraints));
                 throw new BadRequestException(`${index + 2} 행의 데이터 입력 형식이 잘못되었습니다.`);
               }
-            }
 
-            // 학생 기본 정보 업데이트
-            // 이메일 중복 여부 확인
-            if (updateStudentDto.email) {
+              // 이메일 존재 여부 확인
               const foundEmail = await this.prismaService.user.findUnique({
-                where: { email: updateStudentDto.email },
+                where: { email: createStudentDto.email },
               });
-              if (foundEmail && foundEmail.id !== foundStudent.id)
-                throw new BadRequestException(`${index + 2}행 : 이미 존재하는 이메일로는 변경할 수 없습니다.`);
-            }
+              if (foundEmail) throw new BadRequestException(`${index + 2}행 : 이미 존재하는 이메일입니다.`);
 
-            const updatedStudent = await tx.user.update({
-              where: { id: foundStudent.id },
-              data: {
-                loginId: updateStudentDto.loginId ?? undefined,
-                password: updateStudentDto.password
-                  ? this.authService.createHash(updateStudentDto.password)
-                  : undefined,
-                name: updateStudentDto.name ?? undefined,
-                email: updateStudentDto.email ?? undefined,
-                phone: updateStudentDto.phone ?? undefined,
-                deptId: updateStudentDto.deptId ?? undefined,
-              },
-              include: { department: true },
-            });
-            // 학생 시스템 정보 업데이트
-            const process = await tx.process.update({
-              where: { studentId: foundStudent.id },
-              data: {
-                phaseId: updateSystemDto.phaseId ?? undefined,
-                isLock: updateSystemDto.isLock ?? undefined,
-              },
-              include: {
-                thesisInfos: {
-                  orderBy: { stage: "asc" },
-                  include: {
-                    thesisFiles: {
-                      orderBy: { type: "asc" },
-                    },
-                  },
+              // 신규 학생 생성
+              // 사용자(user) 생성
+              const user = await tx.user.create({
+                data: {
+                  deptId: createStudentDto.deptId,
+                  loginId: createStudentDto.loginId,
+                  email: createStudentDto.email,
+                  password: this.authService.createHash(createStudentDto.password),
+                  name: createStudentDto.name,
+                  phone: createStudentDto.phone,
+                  type: UserType.STUDENT,
                 },
-              },
-            });
-            // 학생 논문 정보 업데이트
-            const stage = [1, 2].includes(process.phaseId) ? Stage.PRELIMINARY : Stage.MAIN;
-            const currentThesisInfo = stage === Stage.PRELIMINARY ? process.thesisInfos[0] : process.thesisInfos[1];
-            await tx.thesisInfo.update({
-              where: { id: currentThesisInfo.id },
-              data: {
-                title: updateThesisInfoDto.title ?? undefined,
-              },
-            });
+                include: { department: true },
+              });
+              // 논문 과정(process) 생성
+              const process = await tx.process.create({
+                data: {
+                  studentId: user.id,
+                  headReviewerId: createStudentDto.headReviewerId,
+                  phaseId: createStudentDto.phaseId,
+                  isLock: createStudentDto.isLock,
+                },
+              });
+              // 지도 교수 배정 (reviewer)
+              await tx.reviewer.createMany({
+                data: createStudentDto.reviewerIds.map((reviewerId) => {
+                  return { processId: process.id, reviewerId };
+                }),
+              });
+              // 논문 정보 생성 (thesis_info) : 예심 논문 정보, 본심 논문 정보 총 2개 생성
+              const preThesisInfo = await tx.thesisInfo.create({
+                data: {
+                  processId: process.id,
+                  title: [1, 2].includes(phaseId) ? createStudentDto.thesisTitle : null,
+                  stage: Stage.PRELIMINARY,
+                  summary: Summary.UNEXAMINED,
+                },
+              });
+              const mainThesisInfo = await tx.thesisInfo.create({
+                data: {
+                  processId: process.id,
+                  title: [3, 4, 5].includes(phaseId) ? createStudentDto.thesisTitle : null,
+                  stage: Stage.MAIN,
+                  summary: Summary.UNEXAMINED,
+                },
+              });
+              // 논문 파일 생성 (thesis_file) : 각 논문 정보 마다 2개씩(논문 파일, 발표 파일) 생성
+              await tx.thesisFile.createMany({
+                data: [
+                  {
+                    thesisInfoId: preThesisInfo.id,
+                    type: ThesisFileType.PRESENTATION,
+                  },
+                  {
+                    thesisInfoId: preThesisInfo.id,
+                    type: ThesisFileType.THESIS,
+                  },
+                  {
+                    thesisInfoId: mainThesisInfo.id,
+                    type: ThesisFileType.PRESENTATION,
+                  },
+                  {
+                    thesisInfoId: mainThesisInfo.id,
+                    type: ThesisFileType.THESIS,
+                  },
+                ],
+              });
+              // 논문 심사 (review) : 각 논문 정보(예심/본심)에 대해 (지도교수들 심사(심사위원장 포함) + 최종심사) 생성
+              await tx.review.createMany({
+                data: [
+                  // 예심 논문 심사
+                  ...reviewerIds.map((reviewerId) => {
+                    return {
+                      thesisInfoId: preThesisInfo.id,
+                      reviewerId,
+                      status: ReviewStatus.UNEXAMINED,
+                      isFinal: false,
+                    };
+                  }),
+                  // 본심 논문 심사
+                  ...reviewerIds.map((reviewerId) => {
+                    return {
+                      thesisInfoId: mainThesisInfo.id,
+                      reviewerId,
+                      status: ReviewStatus.UNEXAMINED,
+                      isFinal: false,
+                    };
+                  }),
+                  // 예심 최종 심사
+                  {
+                    thesisInfoId: preThesisInfo.id,
+                    reviewerId: headReviewerId,
+                    status: ReviewStatus.UNEXAMINED,
+                    isFinal: true,
+                  },
+                  // 본심 최종 심사
+                  {
+                    thesisInfoId: mainThesisInfo.id,
+                    reviewerId: headReviewerId,
+                    status: ReviewStatus.UNEXAMINED,
+                    isFinal: true,
+                  },
+                ],
+              });
 
-            students.push(updatedStudent);
-          } else {
-            // 신규 학생 생성
-
-            // 모든 항목이 채워져 있는지 확인
-            if (Object.keys(studentRecord).length !== 11)
-              throw new BadRequestException(`${index + 2} 행의 모든 칸이 채워져야 합니다.`);
-
-            // 엑셀 입력 값을 적절한 값으로 맵핑
-            const createStudentDto = new CreateStudentDto();
-            createStudentDto.loginId = studentNumber;
-            createStudentDto.password = password;
-            createStudentDto.name = name;
-            createStudentDto.email = email;
-            createStudentDto.phone = phone;
-            createStudentDto.deptId = deptId;
-            createStudentDto.isLock = isLock;
-            createStudentDto.headReviewerId = headReviewerId;
-            createStudentDto.phaseId = phaseId;
-            createStudentDto.reviewerIds = reviewerIds;
-            createStudentDto.thesisTitle = thesisTitle;
-
-            // CreateStudentDto 이용 validation 진행
-            const validationErrors = await validate(createStudentDto);
-            if (validationErrors.length > 0) {
-              validationErrors.map((error) => console.log(error.constraints));
-              throw new BadRequestException(`${index + 2} 행의 데이터 입력 형식이 잘못되었습니다.`);
+              students.push(user);
             }
+          } catch (error) {
+            fs.access(excelFile.path, fs.constants.F_OK, (err) => {
+              if (err) return console.log("삭제할 수 없는 파일입니다.");
 
-            // 이메일 존재 여부 확인
-            const foundEmail = await this.prismaService.user.findUnique({
-              where: { email: createStudentDto.email },
+              fs.unlink(excelFile.path, (err) => (err ? console.log(err) : console.log("파일을 삭제했습니다.")));
             });
-            if (foundEmail) throw new BadRequestException(`${index + 2}행 : 이미 존재하는 이메일입니다.`);
-
-            // 신규 학생 생성
-            // 사용자(user) 생성
-            const user = await tx.user.create({
-              data: {
-                deptId: createStudentDto.deptId,
-                loginId: createStudentDto.loginId,
-                email: createStudentDto.email,
-                password: this.authService.createHash(createStudentDto.password),
-                name: createStudentDto.name,
-                phone: createStudentDto.phone,
-                type: UserType.STUDENT,
-              },
-              include: { department: true },
-            });
-            // 논문 과정(process) 생성
-            const process = await tx.process.create({
-              data: {
-                studentId: user.id,
-                headReviewerId: createStudentDto.headReviewerId,
-                phaseId: createStudentDto.phaseId,
-                isLock: createStudentDto.isLock,
-              },
-            });
-            // 지도 교수 배정 (reviewer)
-            await tx.reviewer.createMany({
-              data: createStudentDto.reviewerIds.map((reviewerId) => {
-                return { processId: process.id, reviewerId };
-              }),
-            });
-            // 논문 정보 생성 (thesis_info) : 예심 논문 정보, 본심 논문 정보 총 2개 생성
-            const preThesisInfo = await tx.thesisInfo.create({
-              data: {
-                processId: process.id,
-                title: [1, 2].includes(phaseId) ? createStudentDto.thesisTitle : null,
-                stage: Stage.PRELIMINARY,
-                summary: Summary.UNEXAMINED,
-              },
-            });
-            const mainThesisInfo = await tx.thesisInfo.create({
-              data: {
-                processId: process.id,
-                title: [3, 4, 5].includes(phaseId) ? createStudentDto.thesisTitle : null,
-                stage: Stage.MAIN,
-                summary: Summary.UNEXAMINED,
-              },
-            });
-            // 논문 파일 생성 (thesis_file) : 각 논문 정보 마다 2개씩(논문 파일, 발표 파일) 생성
-            await tx.thesisFile.create({
-              data: {
-                thesisInfoId: preThesisInfo.id,
-                type: ThesisFileType.PRESENTATION,
-              },
-            });
-            await tx.thesisFile.create({
-              data: {
-                thesisInfoId: preThesisInfo.id,
-                type: ThesisFileType.THESIS,
-              },
-            });
-            await tx.thesisFile.create({
-              data: {
-                thesisInfoId: mainThesisInfo.id,
-                type: ThesisFileType.PRESENTATION,
-              },
-            });
-            await tx.thesisFile.create({
-              data: {
-                thesisInfoId: mainThesisInfo.id,
-                type: ThesisFileType.THESIS,
-              },
-            });
-            // 논문 심사 (review) : 각 논문 정보(예심/본심)에 대해 (지도교수들 심사(심사위원장 포함) + 최종심사) 생성
-            await tx.review.createMany({
-              data: createStudentDto.reviewerIds.map((reviewerId) => {
-                return {
-                  thesisInfoId: preThesisInfo.id,
-                  reviewerId,
-                  status: ReviewStatus.UNEXAMINED,
-                  isFinal: false,
-                };
-              }),
-            });
-            await tx.review.createMany({
-              data: createStudentDto.reviewerIds.map((reviewerId) => {
-                return {
-                  thesisInfoId: mainThesisInfo.id,
-                  reviewerId,
-                  status: ReviewStatus.UNEXAMINED,
-                  isFinal: false,
-                };
-              }),
-            });
-            // 최종 심사
-            await tx.review.create({
-              data: {
-                thesisInfoId: preThesisInfo.id,
-                reviewerId: createStudentDto.headReviewerId,
-                status: ReviewStatus.UNEXAMINED,
-                isFinal: true,
-              },
-            });
-            await tx.review.create({
-              data: {
-                thesisInfoId: mainThesisInfo.id,
-                reviewerId: createStudentDto.headReviewerId,
-                status: ReviewStatus.UNEXAMINED,
-                isFinal: true,
-              },
-            });
-
-            students.push(user);
+            console.log(error);
+            if (error.status === 400) {
+              throw new BadRequestException(error.message);
+            }
+            throw new InternalServerErrorException(`${index + 2} 행에서 에러 발생`);
           }
-        } catch (error) {
-          fs.access(excelFile.path, fs.constants.F_OK, (err) => {
-            if (err) return console.log("삭제할 수 없는 파일입니다.");
-
-            fs.unlink(excelFile.path, (err) => (err ? console.log(err) : console.log("파일을 삭제했습니다.")));
-          });
-          console.log(error);
-          if (error.status === 400) {
-            throw new BadRequestException(error.message);
-          }
-          throw new InternalServerErrorException(`${index + 2} 행에서 에러 발생`);
         }
+        return students;
+      },
+      {
+        timeout: 10000,
       }
-      return students;
-    });
+    );
   }
 
   // 학생 대량 조회 API
