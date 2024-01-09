@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../config/database/prisma.service";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
-import { Phase } from "@prisma/client";
+import { Phase, Stage, Status } from "@prisma/client";
 
 @Injectable()
 export class TaskService {
@@ -65,10 +65,193 @@ export class TaskService {
 
   async createCronJob(phase: Phase) {
     switch (phase.id) {
-      // 1 - [신청서 제출 단계] (해줄게 없음)
+      // 1 - [예심 논문 업로드 단계]
       case 1:
         break;
-      // 2
+      // 2 - [예심 논문 심사 단계]
+      case 2:
+        this.addCronJob(phase.title, phase.start, this._02);
+        break;
+      // 3 - [예심 논문 최종 심사 단계]
+      case 3:
+        this.addCronJob(phase.title, phase.start, this._03);
+        break;
+      // 4 - [본심 논문 업로드 단계]
+      case 4:
+        break;
+      // 5 - [본심 논문 심사 단계]
+      case 5:
+        this.addCronJob(phase.title, phase.start, this._05);
+        break;
+      // 6 - [본심 논문 최종 심사 단계]
+      case 6:
+        this.addCronJob(phase.title, phase.start, this._06);
+        break;
+      // 7 - [수정 지시 사항 업로드 단계]
+      case 7:
+        this.addCronJob(phase.title, phase.start, this._07);
+        break;
+      //8 - [수정 지시 사항 심사 단계]
+      case 8:
+        this.addCronJob(phase.title, phase.start, this._08);
+        break;
+      //9 - [논문 실적 제출 단계]
+      case 9:
+        this.addCronJob(phase.title, phase.start, this._09);
+        break;
+      default:
+        console.log("WARNING: Cron작업이 제대로 작동이 안되고 있을 가능성이 있습니다. DB에서 단계를 확인해주세요");
+        break;
     }
   }
+
+  _02 = async () => {
+    console.log("[예심 논문 업로드] 단계인 학생을 [예심 논문 심사] 단계로 업데이트합니다.");
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.process.updateMany({
+        where: {
+          phaseId: 1,
+          thesisInfos: {
+            every: {
+              stage: { equals: Stage.PRELIMINARY },
+              thesisFiles: {
+                some: {},
+              },
+            },
+          },
+        },
+        data: {
+          phaseId: 2,
+        },
+      });
+    });
+  };
+  _03 = async () => {
+    //단계 업데이트에 추가적인 로직이 필요할지 고민입니다.
+    console.log("[예심 논문 심사]] 단계인 학생을 [예심 논문 최종 심사] 단계로 업데이트합니다.");
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.process.updateMany({
+        where: {
+          phaseId: 2,
+        },
+        data: {
+          phaseId: 3,
+        },
+      });
+    });
+  };
+
+  _05 = async () => {
+    console.log("[본심 논문 제출] 단계에서 [본심 논문 심사] 단계로 업데이트합니다.");
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.process.updateMany({
+        where: {
+          phaseId: 4,
+          thesisInfos: {
+            every: {
+              stage: { equals: Stage.MAIN },
+              thesisFiles: {
+                some: {},
+              },
+            },
+          },
+        },
+        data: {
+          phaseId: 5,
+        },
+      });
+    });
+  };
+
+  _06 = async () => {
+    console.log("[본심 논문 심사] 단계인 학생을 [본심 논문 최종 심사] 단계로 업데이트합니다.");
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.process.updateMany({
+        where: {
+          phaseId: 5,
+        },
+        data: {
+          phaseId: 6,
+        },
+      });
+    });
+  };
+
+  _07 = async () => {
+    console.log("[본심 논문 최종 심사] 단계인 학생을 [수정지시사항] 단계나 [논문 실적] 단계로 업데이트합니다.");
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.process.updateMany({
+        where: {
+          phaseId: 6,
+          student: {
+            department: {
+              modificationFlag: true,
+            },
+          },
+        },
+        data: {
+          phaseId: 7,
+        },
+      });
+      await tx.process.updateMany({
+        where: {
+          phaseId: 6,
+          student: {
+            department: {
+              modificationFlag: false,
+            },
+          },
+          thesisInfos: {
+            every: {
+              summary: { equals: Status.PASS },
+            },
+          },
+        },
+        data: {
+          phaseId: 9,
+        },
+      });
+    });
+  };
+
+  _08 = async () => {
+    console.log("[수정 지시 사항 제출] 단계인 학생을 [수정지시사항 심사] 단계로 업데이트합니다.");
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.process.updateMany({
+        where: {
+          phaseId: 7,
+          thesisInfos: {
+            every: {
+              stage: { equals: Stage.MODIFICATION },
+              thesisFiles: {
+                some: {},
+              },
+            },
+          },
+        },
+        data: {
+          phaseId: 8,
+        },
+      });
+    });
+  };
+
+  _09 = async () => {
+    console.log("[수정지시 사항 제출] 단계를 통과한 학생을 [논문 실적 제출] 단계로 업데이트합니다.");
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.process.updateMany({
+        where: {
+          phaseId: 8,
+          thesisInfos: {
+            every: {
+              summary: { equals: Status.PASS },
+            },
+          },
+        },
+        data: {
+          phaseId: 9,
+        },
+      });
+    });
+  };
 }
