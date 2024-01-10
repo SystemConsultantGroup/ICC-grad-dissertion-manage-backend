@@ -14,7 +14,7 @@ import { ReviewStatus } from "src/common/enums/review-status.enum";
 import { StudentSearchQuery } from "./dtos/student-search-query.dto";
 import { UpdateStudentDto } from "./dtos/update-student.dto";
 import { UpdateSystemDto } from "./dtos/update-system.dto";
-import { User } from "@prisma/client";
+import { Role, User } from "@prisma/client";
 import { validate } from "class-validator";
 import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
 import { Readable } from "stream";
@@ -79,6 +79,7 @@ export class StudentsService {
           },
         });
 
+        // TODO : 예심 본심 구분 로직 추가
         // 논문 과정(process) 생성
         const process = await tx.process.create({
           data: {
@@ -86,13 +87,15 @@ export class StudentsService {
             headReviewerId,
             phaseId,
             isLock,
+            stage: Stage.PRELIMINARY, // TODO : 수정 예정
           },
         });
 
+        // TODO : 교수 역할 구분
         // 지도 교수 배정 (reviewer)
         await tx.reviewer.createMany({
           data: reviewerIds.map((reviewerId) => {
-            return { processId: process.id, reviewerId };
+            return { processId: process.id, reviewerId, role: Role.ADVISOR }; // TODO : 수정 예정
           }),
         });
 
@@ -407,18 +410,21 @@ export class StudentsService {
                 include: { department: true },
               });
               // 논문 과정(process) 생성
+              // TODO : 예심 본심 구분 로직 추가
               const process = await tx.process.create({
                 data: {
                   studentId: user.id,
                   headReviewerId: createStudentDto.headReviewerId,
                   phaseId: createStudentDto.phaseId,
                   isLock: createStudentDto.isLock,
+                  stage: Stage.PRELIMINARY, // TODO : 수정 예정
                 },
               });
               // 지도 교수 배정 (reviewer)
+              // TODO : 교수 역할 구분
               await tx.reviewer.createMany({
                 data: createStudentDto.reviewerIds.map((reviewerId) => {
-                  return { processId: process.id, reviewerId };
+                  return { processId: process.id, reviewerId, role: Role.ADVISOR }; // TODO : 수정 예정
                 }),
               });
               // 논문 정보 생성 (thesis_info) : 예심 논문 정보, 본심 논문 정보 총 2개 생성
@@ -961,11 +967,13 @@ export class StudentsService {
     if (foundReviewer) throw new BadRequestException("이미 해당 학생에 배정된 교수입니다.");
 
     // 지도교수/심사위원 추가
+    // TODO : 교수 역할 구분
     try {
       await this.prismaService.reviewer.create({
         data: {
           reviewerId,
           processId: foundStudent.studentProcess.id,
+          role: Role.ADVISOR, // TODO : 수정 예정
         },
       });
     } catch (error) {
