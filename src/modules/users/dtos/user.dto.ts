@@ -4,8 +4,8 @@ import { DepartmentDto } from "src/modules/departments/dtos/department.dto";
 
 export class UserDto {
   constructor(
-    studentData: User & {
-      department: Department;
+    studentData: Partial<User> & {
+      department: Partial<Department>;
     }
   ) {
     this.id = studentData.id;
@@ -14,9 +14,7 @@ export class UserDto {
     this.email = studentData.email;
     this.phone = studentData.phone;
     this.type = studentData.type;
-    this.department = studentData.department;
-    this.createdAt = studentData.createdAt;
-    this.updatedAt = studentData.updatedAt;
+    this.department = new DepartmentDto(studentData.department);
   }
 
   @ApiProperty({ description: "아이디" })
@@ -33,8 +31,4 @@ export class UserDto {
   type: UserType;
   @ApiProperty({ description: "학과", type: () => DepartmentDto })
   department: DepartmentDto;
-  @ApiProperty({ description: "생성일" })
-  createdAt: Date;
-  @ApiProperty({ description: "수정일" })
-  updatedAt: Date;
 }
