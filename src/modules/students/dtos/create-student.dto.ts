@@ -25,7 +25,7 @@ export class CreateStudentDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ description: "학생 전화번호", example: "0101111122224" })
+  @ApiProperty({ description: "학생 전화번호", example: "010-1111-1222" })
   @IsNotEmpty()
   @IsString()
   phone: string;
