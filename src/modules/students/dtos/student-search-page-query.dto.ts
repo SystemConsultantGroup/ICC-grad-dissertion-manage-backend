@@ -23,7 +23,7 @@ export class StudentSearchPageQuery extends PageQuery implements StudentSearchQu
   @IsString()
   email?: string;
 
-  @ApiProperty({ description: '전화번호 ("-" 제외)', required: false })
+  @ApiProperty({ description: '전화번호 ("-" 포함)', required: false })
   @IsOptional()
   @IsNotEmpty()
   @IsString()
