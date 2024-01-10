@@ -183,7 +183,6 @@ export class ReviewsController {
     },
   })
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
-  @ApiInternalServerErrorResponse({ description: "수정 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Put(":id")

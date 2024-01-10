@@ -194,9 +194,11 @@ export class ReviewsService {
       },
     });
     if (!review) throw new BadRequestException("존재하지 않는 심사 정보입니다.");
+    if (review.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     return new ReviewDto(review);
   }
   async updateReview(id: number, updateReviewDto: UpdateReviewReqDto, user: User) {
+    const userId = user.id;
     const foundReview = await this.prismaService.review.findUnique({
       where: {
         id,
@@ -205,6 +207,7 @@ export class ReviewsService {
       },
     });
     if (!foundReview) throw new BadRequestException("존재하지 않는 심사정보입니다");
+    if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     try {
       const review = await this.prismaService.review.update({
         where: {
@@ -418,9 +421,11 @@ export class ReviewsService {
       },
     });
     if (!review) throw new BadRequestException("존재하지 않는 심사 정보입니다.");
+    if (review.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     return new ReviewDto(review);
   }
   async updateReviewFinal(id: number, updateReviewDto: UpdateReviewReqDto, user: User) {
+    const userId = user.id;
     const foundReview = await this.prismaService.review.findUnique({
       where: {
         id,
@@ -429,6 +434,7 @@ export class ReviewsService {
       },
     });
     if (!foundReview) throw new BadRequestException("존재하지 않는 심사정보입니다");
+    if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     try {
       const review = await this.prismaService.review.update({
         where: {
