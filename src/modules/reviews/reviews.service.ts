@@ -15,7 +15,7 @@ import { getCurrentTime } from "src/common/utils/date.util";
 
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) { }
 
   async buildFilename(base, searchQuery) {
     let queryString = "";
@@ -199,6 +199,7 @@ export class ReviewsService {
   }
   async updateReview(id: number, updateReviewDto: UpdateReviewReqDto, user: User) {
     const userId = user.id;
+    const fileUUID = updateReviewDto.fileUUID;
     const foundReview = await this.prismaService.review.findUnique({
       where: {
         id,
@@ -208,6 +209,14 @@ export class ReviewsService {
     });
     if (!foundReview) throw new BadRequestException("존재하지 않는 심사정보입니다");
     if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (fileUUID) {
+      const foundFile = await this.prismaService.file.findUnique({
+        where: {
+          uuid: fileUUID,
+        },
+      });
+      if (!foundFile) throw new BadRequestException("존재하지 않는 심사파일입니다.");
+    }
     try {
       const review = await this.prismaService.review.update({
         where: {
@@ -426,6 +435,7 @@ export class ReviewsService {
   }
   async updateReviewFinal(id: number, updateReviewDto: UpdateReviewReqDto, user: User) {
     const userId = user.id;
+    const fileUUID = updateReviewDto.fileUUID;
     const foundReview = await this.prismaService.review.findUnique({
       where: {
         id,
@@ -435,6 +445,14 @@ export class ReviewsService {
     });
     if (!foundReview) throw new BadRequestException("존재하지 않는 심사정보입니다");
     if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (fileUUID) {
+      const foundFile = await this.prismaService.file.findUnique({
+        where: {
+          uuid: fileUUID,
+        },
+      });
+      if (!foundFile) throw new BadRequestException("존재하지 않는 심사파일입니다.");
+    }
     try {
       const review = await this.prismaService.review.update({
         where: {
