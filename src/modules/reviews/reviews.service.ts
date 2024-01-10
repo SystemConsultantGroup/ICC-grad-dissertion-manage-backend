@@ -51,7 +51,7 @@ export class ReviewsService {
           thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
         }),
         ...(searchQuery.department && {
-          thesisInfo: { process: { student: { department: { name: { contains: searchQuery.department } } } } },
+          thesisInfo: { process: { student: { department: { id: searchQuery.department } } } },
         }),
         ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
         ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
@@ -88,7 +88,7 @@ export class ReviewsService {
           thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
         }),
         ...(searchQuery.department && {
-          thesisInfo: { process: { student: { department: { name: { contains: searchQuery.department } } } } },
+          thesisInfo: { process: { student: { department: { id: searchQuery.department } } } },
         }),
         ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
         ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
@@ -111,7 +111,7 @@ export class ReviewsService {
             thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
           }),
           ...(searchQuery.department && {
-            thesisInfo: { process: { student: { department: { name: { contains: searchQuery.department } } } } },
+            thesisInfo: { process: { student: { department: { id: searchQuery.department } } } },
           }),
           ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
           ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
@@ -262,7 +262,7 @@ export class ReviewsService {
           thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
         }),
         ...(searchQuery.department && {
-          thesisInfo: { process: { student: { department: { name: { contains: searchQuery.department } } } } },
+          thesisInfo: { process: { student: { department: { id: searchQuery.department } } } },
         }),
         ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
         ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
@@ -303,7 +303,7 @@ export class ReviewsService {
           thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
         }),
         ...(searchQuery.department && {
-          thesisInfo: { process: { student: { department: { name: { contains: searchQuery.department } } } } },
+          thesisInfo: { process: { student: { department: { id: searchQuery.department } } } },
         }),
         ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
         ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
@@ -330,7 +330,7 @@ export class ReviewsService {
             thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
           }),
           ...(searchQuery.department && {
-            thesisInfo: { process: { student: { department: { name: { contains: searchQuery.department } } } } },
+            thesisInfo: { process: { student: { department: { id: searchQuery.department } } } },
           }),
           ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
           ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
@@ -477,7 +477,7 @@ export class ReviewsService {
       where: {
         ...(searchQuery.author && { process: { student: { name: { contains: searchQuery.author } } } }),
         ...(searchQuery.department && {
-          process: { student: { department: { name: { contains: searchQuery.department } } } },
+          process: { student: { department: { id: searchQuery.department } } },
         }),
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
@@ -516,7 +516,7 @@ export class ReviewsService {
       where: {
         ...(searchQuery.author && { process: { student: { name: { contains: searchQuery.author } } } }),
         ...(searchQuery.department && {
-          process: { student: { department: { name: { contains: searchQuery.department } } } },
+          process: { student: { department: { id: searchQuery.department } } },
         }),
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
@@ -537,7 +537,7 @@ export class ReviewsService {
         where: {
           ...(searchQuery.author && { process: { student: { name: { contains: searchQuery.author } } } }),
           ...(searchQuery.department && {
-            process: { student: { department: { name: { contains: searchQuery.department } } } },
+            process: { student: { department: { id: searchQuery.department } } },
           }),
           ...(searchQuery.stage && { stage: searchQuery.stage }),
           ...(searchQuery.title && { title: { contains: searchQuery.title } }),
