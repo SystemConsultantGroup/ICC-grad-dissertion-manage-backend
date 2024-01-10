@@ -203,10 +203,7 @@ export class ProfessorsService {
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const contents = utils.sheet_to_json(worksheet, { defval: undefined });
 
-    // professor 객체 중 loginId가 없는 경우 제거
-    const professors = await contents
-      .map((content) => new UploadProfessorDto(content))
-      .filter((professor) => professor.loginId);
+    const professors = await contents.map((content) => new UploadProfessorDto(content));
 
     if (!professors.length) throw new BadRequestException("업로드할 교수가 없습니다.");
 
