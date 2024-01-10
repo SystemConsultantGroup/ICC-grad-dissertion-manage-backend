@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsArray, IsBoolean, IsEmail, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
+import { IsArray, IsBoolean, IsEmail, IsInt, IsNotEmpty, IsPositive, IsString } from "class-validator";
 
 export class CreateStudentDto {
   // 사용자 정보
@@ -25,7 +25,7 @@ export class CreateStudentDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ description: "학생 전화번호", example: "0101111122224" })
+  @ApiProperty({ description: "학생 전화번호", example: "010-1111-1222" })
   @IsNotEmpty()
   @IsString()
   phone: string;
@@ -67,13 +67,8 @@ export class CreateStudentDto {
   reviewerIds: number[];
 
   // 논문 정보
-  @ApiProperty({ description: "예심 논문 제목", required: false })
-  @IsOptional()
+  @ApiProperty({ description: "논문 제목" })
+  @IsNotEmpty()
   @IsString()
-  preThesisTitle?: string;
-
-  @ApiProperty({ description: "본심 논문 제목", required: false })
-  @IsOptional()
-  @IsString()
-  mainThesisTitle?: string;
+  thesisTitle: string;
 }

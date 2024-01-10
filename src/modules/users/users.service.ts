@@ -29,19 +29,17 @@ export class UsersService {
     }
 
     try {
-      return await this.prismaService.$transaction(async (tx) => {
-        return await tx.user.update({
-          where: { id: currentUser.id },
-          data: {
-            email: email ? email : undefined,
-            phone: phone ? phone : undefined,
-            password: password ? this.authService.createHash(password) : undefined,
-          },
-          include: { department: true },
-        });
+      return await this.prismaService.user.update({
+        where: { id: currentUser.id },
+        data: {
+          email: email ?? undefined,
+          phone: phone ?? undefined,
+          password: password ? this.authService.createHash(password) : undefined,
+        },
+        include: { department: true },
       });
-    } catch (e) {
-      throw new InternalServerErrorException("유저 업데이트 문제 발생");
+    } catch (error) {
+      throw new InternalServerErrorException(`유저 업데이트 문제 발생 : ${error.message}`);
     }
   }
 }

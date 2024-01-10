@@ -14,7 +14,7 @@ export const ApiPaginationOKResponse = <TModel extends Type<any>>(options: { des
           { $ref: getSchemaPath(PageDto) },
           {
             properties: {
-              contents: {
+              content: {
                 type: "array",
                 items: { $ref: getSchemaPath(options.dto) },
               },
