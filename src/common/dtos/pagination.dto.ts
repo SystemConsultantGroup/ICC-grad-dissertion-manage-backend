@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsInt, IsPositive } from "class-validator";
+import { IsInt, IsNotEmpty, IsPositive } from "class-validator";
 
 export class PageDto<T> {
   @ApiProperty({ description: "페이지 번호" })
@@ -28,12 +28,14 @@ export class PageDto<T> {
 
 export class PageQuery {
   @ApiProperty({ description: "페이지 번호", example: "2" })
+  @IsNotEmpty({ message: "페이지 번호는 비워둘 수 없습니다." })
   @Type(() => Number)
   @IsInt()
   @IsPositive()
   pageNumber: number;
 
   @ApiProperty({ description: "페이지 크기", example: "5" })
+  @IsNotEmpty({ message: "페이지 크기는 비워둘 수 없습니다." })
   @Type(() => Number)
   @IsInt()
   @IsPositive()
