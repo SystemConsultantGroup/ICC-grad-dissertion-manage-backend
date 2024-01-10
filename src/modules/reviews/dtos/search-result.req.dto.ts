@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Stage, Summary } from "@prisma/client";
-import { IsEnum, IsOptional, IsString } from "class-validator";
+import { IsEnum, IsOptional, IsString, IsPositive } from "class-validator";
 import { PageQuery } from "src/common/dtos/pagination.dto";
 
 export class SearchResultReqDto extends PageQuery {
@@ -11,10 +11,10 @@ export class SearchResultReqDto extends PageQuery {
 
   @ApiProperty({ description: "학과", required: false })
   @IsOptional()
-  @IsString()
-  department: string;
+  @IsPositive()
+  department: number;
 
-  @ApiProperty({ description: "구분", required: false })
+  @ApiProperty({ description: "구분", required: false, enum: ["PRELIMINARY", "MAIN"] })
   @IsOptional()
   @IsEnum(Stage)
   stage: Stage;
@@ -24,7 +24,7 @@ export class SearchResultReqDto extends PageQuery {
   @IsString()
   title: string;
 
-  @ApiProperty({ description: "최종 합격 여부", required: false })
+  @ApiProperty({ description: "최종 합격 여부", required: false, enum: ["PASS", "FAIL", "PENDING", "UNEXAMINED"] })
   @IsOptional()
   @IsEnum(Summary)
   summary: Summary;
