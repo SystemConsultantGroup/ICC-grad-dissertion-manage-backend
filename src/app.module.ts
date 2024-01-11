@@ -10,6 +10,7 @@ import { UsersModule } from "./modules/users/users.module";
 import { FilesModule } from "./modules/files/files.module";
 import { PhasesModule } from "./modules/phases/phases.module";
 import { ProfessorsModule } from "./modules/professors/professors.module";
+import { TaskModule } from "./modules/task/task.module";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ProfessorsModule } from "./modules/professors/professors.module";
     StudentsModule,
     PhasesModule,
     ProfessorsModule,
+    TaskModule
   ],
   controllers: [AppController],
   providers: [AppService],

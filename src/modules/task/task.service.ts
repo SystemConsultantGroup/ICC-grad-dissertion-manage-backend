@@ -17,12 +17,11 @@ export class TaskService {
    * @returns : `${seconds} ${minute} ${hour} ${day} ${month} *`
    */
   getCronExpression(date: Date) {
-    const month = date.getUTCMonth();
+    const month = date.getUTCMonth()+1; //getUTCMonth()는 0-11까지 반환
     const day = date.getUTCDate();
     const hour = date.getUTCHours();
     const minute = date.getUTCMinutes();
     const seconds = date.getUTCSeconds();
-
     return `${seconds} ${minute} ${hour} ${day} ${month} *`;
   }
 
@@ -60,7 +59,8 @@ export class TaskService {
       await this.createCronJob(phase);
     });
 
-    await this.getCronjobs();
+    console.log(`현재 시스템시간: ${new Date()}`)
+    // await this.getCronjobs();
   }
 
   async createCronJob(phase: Phase) {
@@ -115,7 +115,7 @@ export class TaskService {
             every: {
               stage: { equals: Stage.PRELIMINARY },
               thesisFiles: {
-                some: {},
+                some: {},   //논문을 제출한 학생만 단계 업데이트
               },
             },
           },
