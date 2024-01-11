@@ -29,6 +29,18 @@ export class TaskService {
     console.log(this.scheduleRegistry.getCronJobs());
   }
 
+
+  async resetCronJob(phase: Phase) {
+    try {
+      await this.scheduleRegistry.deleteCronJob(phase.title);
+      await this.createCronJob(phase);
+    } catch (e) {
+      console.log(`cronJob 업데이트 실패 ${e}`);
+    }
+
+    const updatedJob = await this.scheduleRegistry.getCronJob(phase.title);
+    console.log(updatedJob);
+  }
   async addCronJob(name: string, time: Date, callback: () => Promise<void>) {
     const job = new CronJob(
       this.getCronExpression(time),
@@ -112,7 +124,7 @@ export class TaskService {
         where: {
           phaseId: 1,
           thesisInfos: {
-            every: {
+            some: {
               stage: { equals: Stage.PRELIMINARY },
               thesisFiles: {
                 some: {}, //논문을 제출한 학생만 단계 업데이트
@@ -148,7 +160,7 @@ export class TaskService {
         where: {
           phaseId: 4,
           thesisInfos: {
-            every: {
+            some: {
               stage: { equals: Stage.MAIN },
               thesisFiles: {
                 some: {},
@@ -203,7 +215,7 @@ export class TaskService {
           },
           thesisInfos: {
             every: {
-              summary: { equals: Status.PASS },
+              summary: { equals: Status.PASS }, // 이경우 thesisinfo는 예심본심 둘다 pass인 상태여야함
             },
           },
         },
@@ -221,7 +233,7 @@ export class TaskService {
         where: {
           phaseId: 7,
           thesisInfos: {
-            every: {
+            some: {
               stage: { equals: Stage.MODIFICATION },
               thesisFiles: {
                 some: {},
