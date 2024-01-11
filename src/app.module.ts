@@ -23,7 +23,7 @@ import { TaskModule } from "./modules/task/task.module";
     StudentsModule,
     PhasesModule,
     ProfessorsModule,
-    TaskModule
+    TaskModule,
   ],
   controllers: [AppController],
   providers: [AppService],
