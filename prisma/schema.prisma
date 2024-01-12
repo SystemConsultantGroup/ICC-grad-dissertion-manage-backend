@@ -160,6 +160,7 @@ enum UserType {
 enum Stage {
   PRELIMINARY
   MAIN
+  REVISION
 }
 
 enum Summary {
