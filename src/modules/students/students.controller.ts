@@ -217,8 +217,9 @@ export class StudentsController {
   })
   async getStudentSystem(@Param("id", PositiveIntPipe) studentId: number) {
     const systemInfo = await this.studentsService.getStudentSystem(studentId);
-    const systemDto = new SystemDto(systemInfo);
-    return new CommonResponseDto(systemDto);
+    // const systemDto = new SystemDto(systemInfo);
+    // return new CommonResponseDto(systemDto);
+    return "수정 예정";
   }
 
   @Put("/:id/system")
@@ -236,9 +237,10 @@ export class StudentsController {
     },
   })
   async updateStudentSystem(@Param("id", PositiveIntPipe) studentId: number, @Body() updateSystemDto: UpdateSystemDto) {
-    const updatedSystem = await this.studentsService.updateStudentSystem(studentId, updateSystemDto);
-    const systemDto = new SystemDto(updatedSystem);
-    return new CommonResponseDto(systemDto);
+    // const updatedSystem = await this.studentsService.updateStudentSystem(studentId, updateSystemDto);
+    // const systemDto = new SystemDto(updatedSystem);
+    // return new CommonResponseDto(systemDto);
+    return "수정 예정";
   }
 
   // 학생 논문 정보 조회/수정 API

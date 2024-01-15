@@ -28,33 +28,41 @@ export class StudentsService {
 
   // 학생 생성 API
   async createStudent(createStudentDto: CreateStudentDto) {
-    const { loginId, password, name, email, phone, deptId, isLock, headReviewerId, phaseId, reviewerIds, thesisTitle } =
-      createStudentDto;
+    const {
+      loginId,
+      password,
+      name,
+      email,
+      phone,
+      deptId,
+      headReviewerId,
+      stage,
+      advisorIds,
+      committeeIds,
+      thesisTitle,
+    } = createStudentDto;
 
     // 로그인 아이디, 이메일 존재 여부 확인
     const foundId = await this.prismaService.user.findUnique({
       where: { loginId },
     });
-    if (foundId) throw new BadRequestException("이미 존재하는 아이디입니다.");
+    if (foundId)
+      throw new BadRequestException("이미 존재하는 아이디입니다. 기존 학생 수정은 학생 수정 페이지를 이용해주세요.");
     const foundEmail = await this.prismaService.user.findUnique({
       where: { email },
     });
     if (foundEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
 
-    // deptId, phaseId, headReviewerId, reviewerIds 올바른지 확인
+    // deptId, headReviewerId, advisorIds, committeeIds 올바른지 확인
     const foundDept = await this.prismaService.department.findUnique({
       where: { id: deptId },
     });
     if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
-    const foundPhase = await this.prismaService.phase.findUnique({
-      where: { id: phaseId },
+    const foundHeadReviewer = await this.prismaService.user.findUnique({
+      where: { id: headReviewerId, type: UserType.PROFESSOR },
     });
-    if (!foundPhase) throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
-
-    if (!reviewerIds.includes(headReviewerId)) {
-      throw new BadRequestException("지도교수 리스트에 심사위원장이 포함되어야 합니다.");
-    }
-    for (const reviewerId of reviewerIds) {
+    if (!foundHeadReviewer) throw new BadRequestException(`[ID:${headReviewerId}]에 해당하는 교수가 없습니다.`);
+    for (const reviewerId of advisorIds) {
       const foundProfessor = await this.prismaService.user.findUnique({
         where: {
           id: reviewerId,
@@ -63,6 +71,16 @@ export class StudentsService {
       });
       if (!foundProfessor) throw new BadRequestException(`[ID:${reviewerId}]에 해당하는 교수가 없습니다.`);
     }
+    for (const reviewerId of committeeIds) {
+      const foundProfessor = await this.prismaService.user.findUnique({
+        where: {
+          id: reviewerId,
+          type: UserType.PROFESSOR,
+        },
+      });
+      if (!foundProfessor) throw new BadRequestException(`[ID:${reviewerId}]에 해당하는 교수가 없습니다.`);
+    }
+    const reviewerIds = [headReviewerId, ...advisorIds, ...committeeIds];
 
     try {
       return await this.prismaService.$transaction(async (tx) => {
@@ -79,82 +97,73 @@ export class StudentsService {
           },
         });
 
-        // TODO : 예심 본심 구분 로직 추가
         // 논문 과정(process) 생성
         const process = await tx.process.create({
           data: {
             studentId: user.id,
             headReviewerId,
-            phaseId,
-            isLock,
-            stage: Stage.PRELIMINARY, // TODO : 수정 예정
+            phaseId: stage === Stage.PRELIMINARY ? 1 : 4, // 1: 예심 논문 제출, 4: 본심 논문 제출
+            stage,
           },
         });
 
-        // TODO : 교수 역할 구분
-        // 지도 교수 배정 (reviewer)
+        // 심사위원장, 지도교수, 심사위원 배정
         await tx.reviewer.createMany({
-          data: reviewerIds.map((reviewerId) => {
-            return { processId: process.id, reviewerId, role: Role.ADVISOR }; // TODO : 수정 예정
-          }),
+          data: [
+            // 심사위원장
+            { processId: process.id, reviewerId: headReviewerId, role: Role.COMMITTEE_CHAIR },
+            // 심사위원
+            ...committeeIds.map((committeeId) => {
+              return { processId: process.id, reviewerId: committeeId, role: Role.COMMITTEE_MEMBER };
+            }),
+            // 지도교수
+            ...advisorIds.map((advisorId) => {
+              return { processId: process.id, reviewerId: advisorId, role: Role.ADVISOR };
+            }),
+          ],
         });
 
-        // 논문 정보 생성 (thesis_info) : 예심 논문 정보, 본심 논문 정보 총 2개 생성
+        // 논문 정보 생성 (thesis_info) : 예심 논문 정보, 본심 논문 정보, 수정지시사항 총 3개 생성
         const preThesisInfo = await tx.thesisInfo.create({
           data: {
             processId: process.id,
-            title: [1, 2].includes(phaseId) ? thesisTitle : null,
+            title: stage === Stage.PRELIMINARY ? thesisTitle : null,
             stage: Stage.PRELIMINARY,
             summary: Summary.UNEXAMINED,
+            thesisFiles: {
+              create: [{ type: ThesisFileType.PRESENTATION }, { type: ThesisFileType.THESIS }],
+            },
           },
         });
         const mainThesisInfo = await tx.thesisInfo.create({
           data: {
             processId: process.id,
-            title: [3, 4, 5].includes(phaseId) ? thesisTitle : null,
+            title: stage === Stage.MAIN ? thesisTitle : null,
             stage: Stage.MAIN,
             summary: Summary.UNEXAMINED,
+            thesisFiles: {
+              create: [{ type: ThesisFileType.PRESENTATION }, { type: ThesisFileType.THESIS }],
+            },
+          },
+        });
+        const revisionThesisInfo = await tx.thesisInfo.create({
+          data: {
+            processId: process.id,
+            stage: Stage.REVISION,
+            summary: Summary.UNEXAMINED,
+            thesisFiles: {
+              create: [{ type: ThesisFileType.REVISION_REPORT }, { type: ThesisFileType.THESIS }],
+            },
           },
         });
 
-        // 논문 파일 생성 (thesis_file) : 각 논문 정보 마다 2개씩(논문 파일, 발표 파일) 생성
-        await tx.thesisFile.createMany({
-          data: [
-            {
-              thesisInfoId: preThesisInfo.id,
-              type: ThesisFileType.PRESENTATION,
-            },
-            {
-              thesisInfoId: preThesisInfo.id,
-              type: ThesisFileType.THESIS,
-            },
-            {
-              thesisInfoId: mainThesisInfo.id,
-              type: ThesisFileType.PRESENTATION,
-            },
-            {
-              thesisInfoId: mainThesisInfo.id,
-              type: ThesisFileType.THESIS,
-            },
-          ],
-        });
-
-        // 논문 심사 (review) : 각 논문 정보(예심/본심)에 대해 (지도교수&심사위원&심사위원장 + 최종심사) 생성
+        // 논문 심사 (review)
         await tx.review.createMany({
           data: [
             // 예심 논문 심사
             ...reviewerIds.map((reviewerId) => {
               return {
                 thesisInfoId: preThesisInfo.id,
-                reviewerId,
-                status: ReviewStatus.UNEXAMINED,
-                isFinal: false,
-              };
-            }),
-            // 본심 논문 심사
-            ...reviewerIds.map((reviewerId) => {
-              return {
-                thesisInfoId: mainThesisInfo.id,
                 reviewerId,
                 status: ReviewStatus.UNEXAMINED,
                 isFinal: false,
@@ -167,6 +176,15 @@ export class StudentsService {
               status: ReviewStatus.UNEXAMINED,
               isFinal: true,
             },
+            // 본심 논문 심사
+            ...reviewerIds.map((reviewerId) => {
+              return {
+                thesisInfoId: mainThesisInfo.id,
+                reviewerId,
+                status: ReviewStatus.UNEXAMINED,
+                isFinal: false,
+              };
+            }),
             // 본심 최종 심사
             {
               thesisInfoId: mainThesisInfo.id,
@@ -174,6 +192,15 @@ export class StudentsService {
               status: ReviewStatus.UNEXAMINED,
               isFinal: true,
             },
+            // 수정지시사항 확인
+            ...reviewerIds.map((reviewerId) => {
+              return {
+                thesisInfoId: revisionThesisInfo.id,
+                reviewerId,
+                status: ReviewStatus.UNEXAMINED,
+                isFinal: false,
+              };
+            }),
           ],
         });
 
@@ -209,14 +236,25 @@ export class StudentsService {
             const email = studentRecord["이메일"];
             const phone = studentRecord["연락처"]?.toString();
             const major = studentRecord["전공"];
-            const thesisTitle = studentRecord["논문 제목"];
-            const phase = studentRecord["시스템 단계"];
-            const systemLock = studentRecord["시스템 락 여부"];
-            const headReviewer = studentRecord["심사위원장 로그인 아이디"]?.toString();
-            const reviewers = studentRecord["심사위원/지도교수 로그인 아이디"]?.toString();
+            const phase = studentRecord["심사과정"];
+            const thesisTitle = studentRecord["작품/논문 제목"];
+            const advisor1 = studentRecord["지도 교수1"];
+            const advisor2 = studentRecord["지도 교수2"];
+            const committee1 = studentRecord["심사위원1"];
+            const committee2 = studentRecord["심사위원2"];
+            const headReviewer = studentRecord["심사위원장"];
 
-            // major, phase, systemLock, headReviewer, reviewers 적절한 값으로 변경
-            let deptId, phaseId, isLock, headReviewerId, reviewerIds;
+            // major, phase, headReviewer, reviewers 적절한 값으로 변경
+            let deptId,
+              phaseId,
+              isLock,
+              headReviewerId,
+              reviewerIds,
+              stage,
+              advisor1Id,
+              advisor2Id,
+              committee1Id,
+              committee2Id;
             if (major) {
               const foundDepartment = await this.prismaService.department.findFirst({
                 where: { name: major },
@@ -225,44 +263,66 @@ export class StudentsService {
               deptId = foundDepartment.id;
             }
             if (phase) {
-              const foundPhase = await this.prismaService.phase.findFirst({
-                where: { title: phase },
-              });
-              if (!foundPhase) throw new BadRequestException(`${index + 2} 행의 시스템 단계 명을 확인해주세요.`);
-              phaseId = foundPhase.id;
-            }
-            if (systemLock) {
-              if (systemLock === "예") {
-                isLock = true;
-              } else if (systemLock === "아니요") {
-                isLock = false;
+              // 예심 | 본심
+              if (phase === "예심") {
+                stage = Stage.PRELIMINARY;
+                phaseId = 1; // 예심 논문 제출 단계
+              } else if (phase === "본심") {
+                stage = Stage.MAIN;
+                phaseId = 4; // 본심 논문 제출 단계
               } else {
-                throw new BadRequestException(`${index + 2} 행의 시스템 락 여부를 확인해주세요.`);
+                throw new BadRequestException(`${index + 2} 행의 심사과정 명을 확인해주세요.`);
               }
+            }
+            if (advisor1) {
+              const foundProfessor = await this.prismaService.user.findMany({
+                where: { name: advisor1 },
+              });
+              if (foundProfessor.length === 0)
+                throw new BadRequestException(`${index + 2}행의 지도 교수1 이름이 존재하지 않습니다.`);
+              else if (foundProfessor.length > 1)
+                throw new BadRequestException(`${index + 2}행의 지도 교수1 항목의 이름을 가진 교수가 2명 이상입니다.`);
+              else advisor1Id = foundProfessor[0].id;
+            }
+            if (advisor2) {
+              const foundProfessor = await this.prismaService.user.findMany({
+                where: { name: advisor2 },
+              });
+              if (foundProfessor.length === 0)
+                throw new BadRequestException(`${index + 2}행의 지도 교수2 이름이 존재하지 않습니다.`);
+              else if (foundProfessor.length > 1)
+                throw new BadRequestException(`${index + 2}행의 지도 교수2 항목의 이름을 가진 교수가 2명 이상입니다.`);
+              else advisor2Id = foundProfessor[0].id;
+            }
+            if (committee1) {
+              const foundProfessor = await this.prismaService.user.findMany({
+                where: { name: committee1 },
+              });
+              if (foundProfessor.length === 0)
+                throw new BadRequestException(`${index + 2}행의 심사위원1 이름이 존재하지 않습니다.`);
+              else if (foundProfessor.length > 1)
+                throw new BadRequestException(`${index + 2}행의 심사위원1 항목의 이름을 가진 교수가 2명 이상입니다.`);
+              else committee1Id = foundProfessor[0].id;
+            }
+            if (committee2) {
+              const foundProfessor = await this.prismaService.user.findMany({
+                where: { name: committee2 },
+              });
+              if (foundProfessor.length === 0)
+                throw new BadRequestException(`${index + 2}행의 심사위원2 이름이 존재하지 않습니다.`);
+              else if (foundProfessor.length > 1)
+                throw new BadRequestException(`${index + 2}행의 심사위원2 항목의 이름을 가진 교수가 2명 이상입니다.`);
+              else committee2Id = foundProfessor[0].id;
             }
             if (headReviewer) {
-              const foundHeadReviewer = await this.prismaService.user.findUnique({
-                where: { loginId: headReviewer },
+              const foundProfessor = await this.prismaService.user.findMany({
+                where: { name: headReviewer },
               });
-              if (!foundHeadReviewer)
-                throw new BadRequestException(`${index + 2} 행의 심사위원장 로그인 아이디를 확인해주세요.`);
-              headReviewerId = foundHeadReviewer.id;
-            }
-            if (reviewers) {
-              const loginIdArr = reviewers.split(",").map((loginId) => loginId.trim());
-              reviewerIds = [];
-              for (const loginId of loginIdArr) {
-                const foundReviewer = await this.prismaService.user.findUnique({
-                  where: { loginId },
-                });
-                if (!foundReviewer) {
-                  throw new BadRequestException(
-                    `${index + 2} 행의 심사위원/지도교수 로그인 아이디 ${loginId}를 찾을 수 없습니다.`
-                  );
-                }
-                reviewerIds.push(foundReviewer.id);
-              }
-              if (!reviewerIds.includes(headReviewerId)) reviewerIds.push(headReviewerId);
+              if (foundProfessor.length === 0)
+                throw new BadRequestException(`${index + 2}행의 심사위원장 이름이 존재하지 않습니다.`);
+              else if (foundProfessor.length > 1)
+                throw new BadRequestException(`${index + 2}행의 심사위원장 항목의 이름을 가진 교수가 2명 이상입니다.`);
+              else headReviewerId = foundProfessor[0].id;
             }
 
             // 학번으로 기존 학생 여부 판단
@@ -276,12 +336,6 @@ export class StudentsService {
 
             if (foundStudent) {
               // 학생 업데이트
-              // 학생 지도 정보 >>> 엑셀로 업데이트는x, 생성만 가능
-              if (headReviewer || reviewers) {
-                throw new BadRequestException(
-                  `${index + 2} 행 : 기존 학생의 지도 교수 정보는 엑셀로 변경할 수 없습니다.`
-                );
-              }
 
               // 학생 기본 정보
               const updateStudentDto = new UpdateStudentDto();
@@ -337,7 +391,6 @@ export class StudentsService {
                 where: { studentId: foundStudent.id },
                 data: {
                   phaseId: updateSystemDto.phaseId ?? undefined,
-                  isLock: updateSystemDto.isLock ?? undefined,
                 },
                 include: {
                   thesisInfos: {
@@ -376,10 +429,10 @@ export class StudentsService {
               createStudentDto.email = email;
               createStudentDto.phone = phone;
               createStudentDto.deptId = deptId;
-              createStudentDto.isLock = isLock;
+              // createStudentDto.isLock = isLock;
               createStudentDto.headReviewerId = headReviewerId;
-              createStudentDto.phaseId = phaseId;
-              createStudentDto.reviewerIds = reviewerIds;
+              // createStudentDto.phaseId = phaseId;
+              // createStudentDto.reviewerIds = reviewerIds;
               createStudentDto.thesisTitle = thesisTitle;
 
               // CreateStudentDto 이용 validation 진행
@@ -415,18 +468,17 @@ export class StudentsService {
                 data: {
                   studentId: user.id,
                   headReviewerId: createStudentDto.headReviewerId,
-                  phaseId: createStudentDto.phaseId,
-                  isLock: createStudentDto.isLock,
+                  phaseId: 1, // TODO : 수정 예정
                   stage: Stage.PRELIMINARY, // TODO : 수정 예정
                 },
               });
               // 지도 교수 배정 (reviewer)
               // TODO : 교수 역할 구분
-              await tx.reviewer.createMany({
-                data: createStudentDto.reviewerIds.map((reviewerId) => {
-                  return { processId: process.id, reviewerId, role: Role.ADVISOR }; // TODO : 수정 예정
-                }),
-              });
+              // await tx.reviewer.createMany({
+              //   data: createStudentDto.reviewerIds.map((reviewerId) => {
+              //     return { processId: process.id, reviewerId, role: Role.ADVISOR }; // TODO : 수정 예정
+              //   }),
+              // });
               // 논문 정보 생성 (thesis_info) : 예심 논문 정보, 본심 논문 정보 총 2개 생성
               const preThesisInfo = await tx.thesisInfo.create({
                 data: {
@@ -614,7 +666,6 @@ export class StudentsService {
 
       // 시스템 정보
       record["시스템 단계"] = phase.title;
-      record["시스템 락 여부"] = process.isLock;
 
       // 교수 배정 정보
       record["심사위원장"] = headReviewer.name;
@@ -727,33 +778,33 @@ export class StudentsService {
   async updateStudentSystem(studentId: number, updateSystemDto: UpdateSystemDto) {
     const { phaseId, isLock } = updateSystemDto;
 
-    // studentId, phaseId 확인
-    const foundStudent = await this.prismaService.user.findUnique({
-      where: {
-        id: studentId,
-        type: UserType.STUDENT,
-      },
-    });
-    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
-    const foundPhase = await this.prismaService.phase.findUnique({
-      where: {
-        id: phaseId,
-      },
-    });
-    if (!foundPhase) throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
+    // // studentId, phaseId 확인
+    // const foundStudent = await this.prismaService.user.findUnique({
+    //   where: {
+    //     id: studentId,
+    //     type: UserType.STUDENT,
+    //   },
+    // });
+    // if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+    // const foundPhase = await this.prismaService.phase.findUnique({
+    //   where: {
+    //     id: phaseId,
+    //   },
+    // });
+    // if (!foundPhase) throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
 
-    try {
-      return await this.prismaService.process.update({
-        where: { studentId },
-        data: {
-          phaseId: phaseId ?? undefined,
-          isLock: isLock ?? undefined,
-        },
-        include: { phase: true },
-      });
-    } catch (error) {
-      throw new InternalServerErrorException("업데이트 실패");
-    }
+    // try {
+    //   return await this.prismaService.process.update({
+    //     where: { studentId },
+    //     data: {
+    //       phaseId: phaseId ?? undefined,
+    //       isLock: isLock ?? undefined,
+    //     },
+    //     include: { phase: true },
+    //   });
+    // } catch (error) {
+    //   throw new InternalServerErrorException("업데이트 실패");
+    // }
   }
 
   // 학생 논문 정보 조회/수정 API
