@@ -592,7 +592,7 @@ export class StudentsService {
         phone: { contains: phone },
         deptId: departmentId,
       },
-      include: { department: true },
+      include: { department: true, studentProcess: true },
       skip: studentSearchPageQuery.getOffset(),
       take: studentSearchPageQuery.getLimit(),
     });
@@ -648,7 +648,8 @@ export class StudentsService {
       const dept = student.department;
       const thesisInfos = process.thesisInfos;
       const headReviewer = process.headReviewer;
-      const reviewers = process.reviewers;
+      const advisors = process.reviewers.filter((reviewer) => reviewer.role === Role.ADVISOR);
+      const committees = process.reviewers.filter((reviewer) => reviewer.role === Role.COMMITTEE_MEMBER);
       const phase = process.phase;
 
       // 학생 회원 정보
@@ -661,16 +662,19 @@ export class StudentsService {
       // 학생 논문 정보
       record["예심 논문 제목"] = thesisInfos[0].title ? thesisInfos[0].title : "미제출";
       record["예심 심사 상태"] = thesisInfos[0].summary;
-      record["본심 논문 제목"] = thesisInfos[1].title ? thesisInfos[1].title : "미제출";
-      record["본심 심사 상태"] = thesisInfos[1].summary;
+      record["본심 논문 제목"] = thesisInfos[1]?.title ? thesisInfos[1].title : "미제출";
+      record["본심 심사 상태"] = thesisInfos[1]?.summary ? thesisInfos[1].summary : "미제출";
 
       // 시스템 정보
       record["시스템 단계"] = phase.title;
 
       // 교수 배정 정보
       record["심사위원장"] = headReviewer.name;
-      reviewers.forEach((reviewerInfo, index) => {
-        record[`심사위원-${index + 1}`] = reviewerInfo.reviewer.name;
+      advisors.forEach((reviewerInfo, index) => {
+        record[`지도 교수${index + 1}`] = reviewerInfo.reviewer.name;
+      });
+      committees.forEach((reviewerInfo, index) => {
+        record[`심사위원${index + 1}`] = reviewerInfo.reviewer.name;
       });
 
       return record;
@@ -701,7 +705,7 @@ export class StudentsService {
         id: studentId,
         type: UserType.STUDENT,
       },
-      include: { department: true },
+      include: { department: true, studentProcess: true },
     });
     if (!student) {
       throw new BadRequestException("해당하는 학생을 찾을 수 없습니다.");
