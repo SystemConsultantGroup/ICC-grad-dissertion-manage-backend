@@ -1,6 +1,17 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { Stage } from "@prisma/client";
 import { Type } from "class-transformer";
-import { IsArray, IsBoolean, IsEmail, IsInt, IsNotEmpty, IsPositive, IsString } from "class-validator";
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsEmail,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsPositive,
+  IsString,
+} from "class-validator";
 
 export class CreateStudentDto {
   // 사용자 정보
@@ -9,7 +20,7 @@ export class CreateStudentDto {
   @IsString()
   loginId: string;
 
-  @ApiProperty({ description: "비밀번호", example: "1111" })
+  @ApiProperty({ description: "비밀번호(생년월일)", example: "010101" })
   @IsNotEmpty()
   @IsString()
   password: string;
@@ -37,13 +48,17 @@ export class CreateStudentDto {
   @IsInt()
   deptId: number;
 
-  // 논문 과정 정보
-  @ApiProperty({ description: "시스템 락 여부", example: "false" })
+  // 시스템 단계
+  @ApiProperty({
+    description: "시스템 단계(예심, 본심)",
+    example: `${Stage.PRELIMINARY} || ${Stage.MAIN}`,
+  })
   @IsNotEmpty()
-  @Type(() => Boolean)
-  @IsBoolean()
-  isLock: boolean;
+  @IsString()
+  @IsEnum(Stage)
+  stage: Stage;
 
+  // 심사 위원 정보
   @ApiProperty({ description: "심사위원장 아이디", example: "2" })
   @IsNotEmpty()
   @Type(() => Number)
@@ -51,23 +66,26 @@ export class CreateStudentDto {
   @IsInt()
   headReviewerId: number;
 
-  @ApiProperty({ description: "시스템 단계 아이디", example: "1" })
-  @IsNotEmpty()
-  @Type(() => Number)
-  @IsPositive()
-  @IsInt()
-  phaseId: number;
-
-  // 심사 위원 정보
-  @ApiProperty({ description: "심사위원 아이디 리스트(심사위원장 반드시 포함)", type: [Number], example: "[2, 3, 4]" })
+  @ApiProperty({ description: "지도교수 아이디 리스트", type: [Number], example: "[3, 4]" })
   @IsArray()
   @Type(() => Number)
   @IsInt({ each: true })
   @IsPositive({ each: true })
-  reviewerIds: number[];
+  @ArrayMinSize(1)
+  @ArrayMaxSize(2)
+  advisorIds: number[];
+
+  @ApiProperty({ description: "심사위원 아이디 리스트", type: [Number], example: "[10, 11]" })
+  @IsArray()
+  @Type(() => Number)
+  @IsInt({ each: true })
+  @IsPositive({ each: true })
+  @ArrayMinSize(1)
+  @ArrayMaxSize(2)
+  committeeIds: number[];
 
   // 논문 정보
-  @ApiProperty({ description: "논문 제목" })
+  @ApiProperty({ description: "논문 제목", example: "논문 제목 예시" })
   @IsNotEmpty()
   @IsString()
   thesisTitle: string;
