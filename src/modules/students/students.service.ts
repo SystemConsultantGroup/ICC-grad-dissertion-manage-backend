@@ -347,7 +347,6 @@ export class StudentsService {
               // 학생 시스템 정보
               const updateSystemDto = new UpdateSystemDto();
               updateSystemDto.phaseId = phaseId;
-              updateSystemDto.isLock = isLock;
               // 학생 논문 정보
               const updateThesisInfoDto = new UpdateThesisInfoDto();
               updateThesisInfoDto.title = thesisTitle;
@@ -780,35 +779,34 @@ export class StudentsService {
   }
 
   async updateStudentSystem(studentId: number, updateSystemDto: UpdateSystemDto) {
-    const { phaseId, isLock } = updateSystemDto;
+    const { phaseId } = updateSystemDto;
 
-    // // studentId, phaseId 확인
-    // const foundStudent = await this.prismaService.user.findUnique({
-    //   where: {
-    //     id: studentId,
-    //     type: UserType.STUDENT,
-    //   },
-    // });
-    // if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
-    // const foundPhase = await this.prismaService.phase.findUnique({
-    //   where: {
-    //     id: phaseId,
-    //   },
-    // });
-    // if (!foundPhase) throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
+    // studentId, phaseId 확인
+    const foundStudent = await this.prismaService.user.findUnique({
+      where: {
+        id: studentId,
+        type: UserType.STUDENT,
+      },
+    });
+    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+    const foundPhase = await this.prismaService.phase.findUnique({
+      where: {
+        id: phaseId,
+      },
+    });
+    if (!foundPhase) throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
 
-    // try {
-    //   return await this.prismaService.process.update({
-    //     where: { studentId },
-    //     data: {
-    //       phaseId: phaseId ?? undefined,
-    //       isLock: isLock ?? undefined,
-    //     },
-    //     include: { phase: true },
-    //   });
-    // } catch (error) {
-    //   throw new InternalServerErrorException("업데이트 실패");
-    // }
+    try {
+      return await this.prismaService.process.update({
+        where: { studentId },
+        data: {
+          phaseId: phaseId ?? undefined,
+        },
+        include: { phase: true },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException("업데이트 실패");
+    }
   }
 
   // 학생 논문 정보 조회/수정 API

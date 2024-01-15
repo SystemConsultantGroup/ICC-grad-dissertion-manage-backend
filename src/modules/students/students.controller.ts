@@ -205,7 +205,7 @@ export class StudentsController {
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
     summary: "학생 시스템 정보 조회 API",
-    description: "아이디에 해당하는 학생의 시스템 단계와 시스템 락 여부를 조회할 수 있다.",
+    description: "아이디에 해당하는 학생의 시스템 단계를 조회할 수 있다.",
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiBadRequestResponse({ description: "요청 양식 오류" })
@@ -217,9 +217,8 @@ export class StudentsController {
   })
   async getStudentSystem(@Param("id", PositiveIntPipe) studentId: number) {
     const systemInfo = await this.studentsService.getStudentSystem(studentId);
-    // const systemDto = new SystemDto(systemInfo);
-    // return new CommonResponseDto(systemDto);
-    return "수정 예정";
+    const systemDto = new SystemDto(systemInfo);
+    return new CommonResponseDto(systemDto);
   }
 
   @Put("/:id/system")
@@ -237,10 +236,9 @@ export class StudentsController {
     },
   })
   async updateStudentSystem(@Param("id", PositiveIntPipe) studentId: number, @Body() updateSystemDto: UpdateSystemDto) {
-    // const updatedSystem = await this.studentsService.updateStudentSystem(studentId, updateSystemDto);
-    // const systemDto = new SystemDto(updatedSystem);
-    // return new CommonResponseDto(systemDto);
-    return "수정 예정";
+    const updatedSystem = await this.studentsService.updateStudentSystem(studentId, updateSystemDto);
+    const systemDto = new SystemDto(updatedSystem);
+    return new CommonResponseDto(systemDto);
   }
 
   // 학생 논문 정보 조회/수정 API
