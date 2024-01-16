@@ -824,6 +824,7 @@ export class StudentsService {
         id: studentId,
         type: UserType.STUDENT,
       },
+      include: { studentProcess: true },
     });
     if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
 
@@ -839,15 +840,19 @@ export class StudentsService {
 
     // 조회할 심사 단계 결정
     let stage;
-    if (typeQuery === ThesisQueryType.NOW) {
-      // 학생의 현재 시스템 단계 확인
-      /**
-       * phaseId 1, 2 > 예심
-       * phaseId 3, 4, 5 > 본심
-       */
-      stage = [1, 2].includes(process.phaseId) ? Stage.PRELIMINARY : Stage.MAIN;
-    } else {
-      stage = typeQuery === ThesisQueryType.MAIN ? Stage.MAIN : Stage.PRELIMINARY;
+    switch (typeQuery) {
+      case ThesisQueryType.NOW:
+        stage = foundStudent.studentProcess.stage;
+        break;
+      case ThesisQueryType.MAIN:
+        stage = Stage.MAIN;
+        break;
+      case ThesisQueryType.PRELIMINARY:
+        stage = Stage.PRELIMINARY;
+        break;
+      case ThesisQueryType.REVISION:
+        stage = Stage.REVISION;
+        break;
     }
 
     // 정보 조회
@@ -862,7 +867,7 @@ export class StudentsService {
             include: { student: { include: { department: true } } },
           },
           thesisFiles: {
-            orderBy: { type: "desc" },
+            // orderBy: { type: "desc" },
             include: { file: true },
           },
         },
