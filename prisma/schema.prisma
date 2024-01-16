@@ -24,7 +24,7 @@ model User {
   reviews             Review[]
   reviewers           Reviewer[]
   department          Department?    @relation(fields: [deptId], references: [id])
-  achievements        Achievements[]
+  Achievements        Achievements[]
 
   @@index([deptId], map: "user_deptId_fkey")
   @@map("user")
@@ -161,6 +161,7 @@ enum UserType {
 enum Stage {
   PRELIMINARY
   MAIN
+  REVISION
 }
 
 enum Summary {
@@ -213,6 +214,7 @@ enum AuthorType {
   CO_AUTHOR
 }
 
+//논문 실적
 model Achievements {
   id              Int         @id @default(autoincrement())
   performance     Performance
