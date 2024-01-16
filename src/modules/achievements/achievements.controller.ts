@@ -10,7 +10,6 @@ import {
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
-  getSchemaPath,
 } from "@nestjs/swagger";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { CreateAchievementsDto } from "./dtos/create-achievements.dto";
@@ -36,19 +35,16 @@ export class AchievementsController {
   @UseUserTypeGuard([UserType.STUDENT])
   @Post(":id")
   @ApiCreatedResponse({
-    description: '논문 실적 등록 성공',
-    type: CommonResponseDto
+    description: "논문 실적 등록 성공",
+    type: CommonResponseDto,
   })
   @ApiBadRequestResponse({
-    description: '존재하지 않는 유저의 논문 실적을 등록하려고 하였습니다'
+    description: "존재하지 않는 유저의 논문 실적을 등록하려고 하였습니다",
   })
   @ApiUnauthorizedResponse({
-    description: '학생 권한 접근 가능'
+    description: "학생 권한 접근 가능",
   })
-  async createAchievement(
-    @Param("id", PositiveIntPipe) id,
-    @Body() createAchievementsDto: CreateAchievementsDto
-  ) {
+  async createAchievement(@Param("id", PositiveIntPipe) id, @Body() createAchievementsDto: CreateAchievementsDto) {
     await this.achievemenstService.createAchievement(id, createAchievementsDto);
   }
 
