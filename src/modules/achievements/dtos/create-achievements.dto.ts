@@ -1,7 +1,8 @@
-import { IsDate, IsEnum, IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
+import { IsDate, IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
 import { Performance } from "../../../common/enums/performance.enum";
 import { Author } from "../../../common/enums/author.enum";
 import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 
 export class CreateAchievementsDto {
   @ApiProperty({
@@ -64,6 +65,8 @@ export class CreateAchievementsDto {
     required: true,
   })
   @IsNotEmpty()
+  @Type(() => Number)
+  @IsInt()
   @IsPositive()
   authorNumbers: number;
 }
