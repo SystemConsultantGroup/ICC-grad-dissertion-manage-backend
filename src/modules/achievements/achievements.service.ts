@@ -32,13 +32,19 @@ export class AchievementsService {
     });
   }
 
-  async updateAchievement(updateAchievementDto: UpdateAchievementsDto) {
-    const { achievementId, performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
+  async updateAchievement(id: number, updateAchievementDto: UpdateAchievementsDto) {
+    const foundUser = await this.prismaService.achievements.findFirst({
+      where: {
+        id,
+      },
+    });
+    if (!foundUser) throw new BadRequestException("해당 논문실적은 존재하지 않습니다.");
+    const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
       updateAchievementDto;
     try {
       return await this.prismaService.achievements.update({
         where: {
-          id: achievementId,
+          id
         },
         data: {
           ...(performance && { performance }),

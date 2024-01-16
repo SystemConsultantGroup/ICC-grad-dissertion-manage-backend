@@ -6,24 +6,13 @@ import { Type } from "class-transformer";
 
 export class UpdateAchievementsDto {
   @ApiProperty({
-    description: "논문 실적 id",
-    example: "1",
-    required: true,
-  })
-  @IsNotEmpty()
-  @Type(() => Number)
-  @IsInt()
-  @IsPositive()
-  achievementId: number;
-
-  @ApiProperty({
     description: "논문 실적 구분",
     example: "SCI",
     required: false,
   })
   @IsOptional()
   @IsEnum(Performance)
-  performance: Performance;
+  performance?: Performance;
 
   @ApiProperty({
     description: "논문 제목",
@@ -32,7 +21,7 @@ export class UpdateAchievementsDto {
   })
   @IsOptional()
   @IsString()
-  paperTitle: string;
+  paperTitle?: string;
 
   @ApiProperty({
     description: "학술지명/학술대회명",
@@ -41,7 +30,7 @@ export class UpdateAchievementsDto {
   })
   @IsOptional()
   @IsString()
-  journalName: string;
+  journalName?: string;
 
   @ApiProperty({
     description: "ISSN",
@@ -50,7 +39,7 @@ export class UpdateAchievementsDto {
   })
   @IsOptional()
   @IsString()
-  ISSN: string;
+  ISSN?: string;
 
   @ApiProperty({
     description: "게재년월",
@@ -59,7 +48,7 @@ export class UpdateAchievementsDto {
   })
   @IsOptional()
   @IsDate()
-  publicationDate: Date;
+  publicationDate?: Date;
 
   @ApiProperty({
     description: "주저자여부",
@@ -68,7 +57,7 @@ export class UpdateAchievementsDto {
   })
   @IsOptional()
   @IsEnum(Author)
-  authorType: Author;
+  authorType?: Author;
 
   @ApiProperty({
     description: "저자수",
@@ -79,5 +68,5 @@ export class UpdateAchievementsDto {
   @Type(() => Number)
   @IsInt()
   @IsPositive()
-  authorNumbers: number;
+  authorNumbers?: number;
 }
