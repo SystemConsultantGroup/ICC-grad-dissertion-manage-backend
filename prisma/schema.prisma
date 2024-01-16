@@ -42,7 +42,7 @@ model Department {
 /// 논문 과정
 model Process {
   id             Int          @id @default(autoincrement())
-  isLock         Boolean
+  isLock         Boolean? // TODO : 추후 삭제
   stage          Stage
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @default(now()) @updatedAt
@@ -180,6 +180,7 @@ enum Status {
 enum ThesisFileType {
   PRESENTATION
   THESIS
+  REVISION_REPORT
 }
 
 enum Role {
