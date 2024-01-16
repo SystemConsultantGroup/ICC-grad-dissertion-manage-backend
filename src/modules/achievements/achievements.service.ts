@@ -44,7 +44,7 @@ export class AchievementsService {
     try {
       return await this.prismaService.achievements.update({
         where: {
-          id
+          id,
         },
         data: {
           ...(performance && { performance }),

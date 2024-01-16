@@ -1,4 +1,4 @@
-import { IsDate, IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
+import { IsDate, IsEnum, IsInt, IsOptional, IsPositive, IsString } from "class-validator";
 import { Performance } from "../../../common/enums/performance.enum";
 import { Author } from "../../../common/enums/author.enum";
 import { ApiProperty } from "@nestjs/swagger";
