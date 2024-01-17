@@ -34,13 +34,14 @@ export class AchievementsService {
     });
   }
 
-  async updateAchievement(id: number, updateAchievementDto: UpdateAchievementsDto) {
+  async updateAchievement(id: number, user: User, updateAchievementDto: UpdateAchievementsDto) {
     const foundUser = await this.prismaService.achievements.findFirst({
       where: {
         id,
       },
     });
     if (!foundUser) throw new BadRequestException("해당 논문실적은 존재하지 않습니다.");
+    if (foundUser.userId != user.id) throw new BadRequestException("다른 학생의 논문실적은 수정할수 없습니다.");
     const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
       updateAchievementDto;
     try {

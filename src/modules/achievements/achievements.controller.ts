@@ -33,7 +33,7 @@ export class AchievementsController {
     summary: "논문실적 등록",
     description: "논문실적 등록",
   })
-  @UseUserTypeGuard([UserType.STUDENT])
+  @UseUserTypeGuard([UserType.STUDENT, UserType.ADMIN])
   @Post(":id")
   @ApiCreatedResponse({
     description: "논문 실적 등록 성공",
@@ -47,6 +47,7 @@ export class AchievementsController {
   })
   async createAchievement(@Param("id", PositiveIntPipe) id, @Body() createAchievementsDto: CreateAchievementsDto) {
     await this.achievemenstService.createAchievement(id, createAchievementsDto);
+    return new CommonResponseDto();
   }
 
   @ApiOperation({
@@ -64,6 +65,7 @@ export class AchievementsController {
   @Get()
   async getAchievements(@Query() achievementsQuery: AchievementsSearchQuery, @CurrentUser() currentUser: User) {
     const { achievements, counts } = await this.achievemenstService.getAchievements(currentUser, achievementsQuery);
+    console.log(achievements);
     const pageDto = new PageDto(
       achievementsQuery.pageNumber,
       achievementsQuery.pageSize,
@@ -83,12 +85,17 @@ export class AchievementsController {
     description: "논문실적 수정 성공",
     type: CommonResponseDto,
   })
-  @UseUserTypeGuard([UserType.ADMIN])
+  @UseUserTypeGuard([UserType.STUDENT])
   @Put(":id")
-  async updateAchievement(@Param("id", PositiveIntPipe) id: number, updateAchievementDto: UpdateAchievementsDto) {
-    await this.achievemenstService.updateAchievement(id, updateAchievementDto);
+  async updateAchievement(
+    @Param("id", PositiveIntPipe) id: number,
+    @CurrentUser() user: User,
+    @Body() updateAchievementDto: UpdateAchievementsDto
+  ) {
+    await this.achievemenstService.updateAchievement(id, user, updateAchievementDto);
     return new CommonResponseDto();
   }
+
   @ApiOperation({
     summary: "전체 학생 논문실적 엑셀파일 생성",
     description: "전체 학생 논문실적 엑셀파일 생성",
