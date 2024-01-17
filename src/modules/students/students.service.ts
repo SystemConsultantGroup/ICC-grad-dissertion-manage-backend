@@ -213,6 +213,7 @@ export class StudentsService {
         });
       });
     } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException("학생 생성 실패");
     }
   }
@@ -879,79 +880,91 @@ export class StudentsService {
 
   async updateThesisInfo(studentId: number, updateThesisInfoDto: UpdateThesisInfoDto, currentUser: User) {
     const currentUserType = currentUser.type;
-    const { title, abstract, thesisFileUUID, presentationFileUUID } = updateThesisInfoDto;
+    const { title, abstract, thesisFileUUID, presentationFileUUID, revisionReportFileUUID } = updateThesisInfoDto;
     const userId = currentUser.id;
 
-    // studentId, thesisFileUUID, presentationFileUUID 확인
+    // studentId 확인
     const foundStudent = await this.prismaService.user.findUnique({
       where: {
         id: studentId,
         type: UserType.STUDENT,
       },
+      include: { studentProcess: true },
     });
     if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+    const currentStage = foundStudent.studentProcess.stage;
 
+    // 접근 권한 확인
+    if (currentUserType === UserType.STUDENT && userId !== studentId) {
+      throw new UnauthorizedException("타 학생의 정보는 수정할 수 없습니다.");
+    }
+
+    // 제출할 파일 종류 확인
+    if (
+      (currentStage !== Stage.REVISION && revisionReportFileUUID) ||
+      (currentStage === Stage.REVISION && presentationFileUUID)
+    ) {
+      // 수정지시사항 단계가 아닌데 수정지시사항보고서 제출 or 수정지시사항 단계에 논문 발표 파일 제출
+      throw new BadRequestException(`${currentStage}단계에 올바르지 않은 파일 제출입니다.`);
+    }
+
+    // 파일 존재 여부 확인
     if (thesisFileUUID) {
       const foundThesisFile = await this.prismaService.file.findUnique({
         where: { uuid: thesisFileUUID },
       });
       if (!foundThesisFile) throw new BadRequestException("논문 파일이 존재하지 않습니다.");
     }
-
     if (presentationFileUUID) {
       const foundPresentationFile = await this.prismaService.file.findUnique({
         where: { uuid: presentationFileUUID },
       });
       if (!foundPresentationFile) throw new BadRequestException("논문 발표 파일이 존재하지 않습니다.");
     }
-
-    // 접근 권한 확인
-    if (currentUserType === UserType.STUDENT && userId !== studentId) {
-      throw new UnauthorizedException("타 학생의 정보는 수정할 수 없습니다.");
-    }
-    if (currentUserType === UserType.ADMIN) {
-      if (abstract || thesisFileUUID || presentationFileUUID) {
-        throw new BadRequestException("관리자는 논문 제목만 수정할 수 있습니다.");
-      }
+    if (revisionReportFileUUID) {
+      const revisionReportFile = await this.prismaService.file.findUnique({
+        where: { uuid: revisionReportFileUUID },
+      });
+      if (!revisionReportFile) throw new BadRequestException("수정지시사항 보고서 파일이 존재하지 않습니다.");
     }
 
-    // 수정할 학생의 현재 심사 단계[예심 or 본심] 정보 가져오기
+    // 수정할 학생의 현재 심사 단계 정보 가져오기
     const process = await this.prismaService.process.findUnique({
       where: { studentId },
       include: {
         thesisInfos: {
-          orderBy: { stage: "asc" },
-          include: {
-            thesisFiles: {
-              orderBy: { type: "asc" },
-            },
-          },
+          where: { stage: currentStage },
+          include: { thesisFiles: true },
         },
       },
     });
-    const stage = [1, 2].includes(process.phaseId) ? Stage.PRELIMINARY : Stage.MAIN;
-    const currentThesisInfo = stage === Stage.PRELIMINARY ? process.thesisInfos[0] : process.thesisInfos[1];
-    const currentPresentationFile = currentThesisInfo.thesisFiles[0];
-    const currentThesisFile = currentThesisInfo.thesisFiles[1];
+    // 업데이트에 파일 id 를 사용하기 위해 미리 불러옴
+    const newFileQuery = []; // 파일 업데이트에 쓰일 쿼리 배열
+    const currentThesisInfo = process.thesisInfos[0];
+    if (thesisFileUUID) {
+      const currentThesisFile = currentThesisInfo.thesisFiles.find((file) => file.type === ThesisFileType.THESIS);
+      newFileQuery.push({ where: { id: currentThesisFile.id }, data: { fileId: thesisFileUUID } });
+    }
+    if (presentationFileUUID) {
+      const currentPPTFile = currentThesisInfo.thesisFiles.find((file) => file.type === ThesisFileType.PRESENTATION);
+      newFileQuery.push({ where: { id: currentPPTFile.id }, data: { fileId: presentationFileUUID } });
+    }
+    if (revisionReportFileUUID) {
+      const currentRevisionFile = currentThesisInfo.thesisFiles.find(
+        (file) => file.type === ThesisFileType.REVISION_REPORT
+      );
+      newFileQuery.push({ where: { id: currentRevisionFile.id }, data: { fileId: revisionReportFileUUID } });
+    }
 
     // 업데이트 진행
     try {
       return await this.prismaService.thesisInfo.update({
         where: { id: currentThesisInfo.id },
         data: {
-          title: title ?? undefined,
-          abstract: abstract ?? undefined,
+          title,
+          abstract,
           thesisFiles: {
-            update: [
-              {
-                where: { id: currentPresentationFile.id },
-                data: { fileId: presentationFileUUID ?? undefined },
-              },
-              {
-                where: { id: currentThesisFile.id },
-                data: { fileId: thesisFileUUID ?? undefined },
-              },
-            ],
+            update: newFileQuery,
           },
         },
         include: {
@@ -959,12 +972,12 @@ export class StudentsService {
             include: { student: { include: { department: true } } },
           },
           thesisFiles: {
-            orderBy: { type: "desc" },
             include: { file: true },
           },
         },
       });
     } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException("업데이트 실패");
     }
   }
