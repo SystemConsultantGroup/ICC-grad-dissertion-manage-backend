@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put, Query, Response, UseGuards } from "@nestjs/common";
 import { AchievementsService } from "./achievements.service";
 import { PositiveIntPipe } from "../../common/pipes/positive-int.pipe";
 import {
@@ -15,12 +15,13 @@ import { JwtGuard } from "../auth/guards/jwt.guard";
 import { CreateAchievementsDto } from "./dtos/create-achievements.dto";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
 import { UserType } from "../../common/enums/user-type.enum";
-import { AchievementsSearchQuery } from "./dtos/achievements-query.dto";
+import { AchievementsExcelQuery, AchievementsSearchQuery } from "./dtos/achievements-query.dto";
 import { PageDto } from "../../common/dtos/pagination.dto";
 import { AchievementDto } from "./dtos/achievement.dto";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { User } from "@prisma/client";
 import { CommonResponseDto } from "../../common/dtos/common-response.dto";
+import { UpdateAchievementsDto } from "./dtos/update-achievements.dto";
 @ApiTags("논문실적 API")
 @UseGuards(JwtGuard)
 @ApiBearerAuth("access-token")
@@ -72,5 +73,33 @@ export class AchievementsController {
       })
     );
     return new CommonResponseDto(pageDto);
+  }
+
+  @ApiOperation({
+    summary: "논문 실적 수정",
+    description: "논문 실적 수정",
+  })
+  @ApiOkResponse({
+    description: "논문실적 수정 성공",
+    type: CommonResponseDto,
+  })
+  @UseUserTypeGuard([UserType.ADMIN])
+  @Put(":id")
+  async updateAchievement(@Param("id", PositiveIntPipe) id: number, updateAchievementDto: UpdateAchievementsDto) {
+    await this.achievemenstService.updateAchievement(id, updateAchievementDto);
+    return new CommonResponseDto();
+  }
+  @ApiOperation({
+    summary: "전체 학생 논문실적 엑셀파일 생성",
+    description: "전체 학생 논문실적 엑셀파일 생성",
+  })
+  @ApiUnauthorizedResponse({ description: "관리자만 권한 허용" })
+  @UseUserTypeGuard([UserType.ADMIN])
+  @Get("excel")
+  async getAchievementsExcel(@Query() achievementsExcelQuery: AchievementsExcelQuery, @Response() res) {
+    const { fileName, stream } = await this.achievemenstService.getAchievementsExcel(achievementsExcelQuery);
+
+    res.setHeader(`Content-Disposition`, `attachment; filename=${encodeURI(fileName)}`);
+    stream.pipe(res);
   }
 }
