@@ -10,6 +10,7 @@ import { UsersModule } from "./modules/users/users.module";
 import { FilesModule } from "./modules/files/files.module";
 import { PhasesModule } from "./modules/phases/phases.module";
 import { ProfessorsModule } from "./modules/professors/professors.module";
+import { ReviewsModule } from "./modules/reviews/reviews.module";
 import { TaskModule } from "./modules/task/task.module";
 
 @Module({
@@ -23,6 +24,7 @@ import { TaskModule } from "./modules/task/task.module";
     StudentsModule,
     PhasesModule,
     ProfessorsModule,
+    ReviewsModule,
     TaskModule,
   ],
   controllers: [AppController],
