@@ -1,3 +1,4 @@
+import { ReviewerRoleQuery, UpdateReviewerQueryDto } from "./dtos/update-reviewer-query-dto";
 import { ThesisInfoQueryDto, ThesisQueryType } from "./dtos/thesis-info-query.dto";
 import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
 import { UserType } from "src/common/enums/user-type.enum";
@@ -14,7 +15,7 @@ import { ReviewStatus } from "src/common/enums/review-status.enum";
 import { StudentSearchQuery } from "./dtos/student-search-query.dto";
 import { UpdateStudentDto } from "./dtos/update-student.dto";
 import { UpdateSystemDto } from "./dtos/update-system.dto";
-import { Role, User } from "@prisma/client";
+import { User, Role } from "@prisma/client";
 import { validate } from "class-validator";
 import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
 import { Readable } from "stream";
@@ -868,7 +869,6 @@ export class StudentsService {
             include: { student: { include: { department: true } } },
           },
           thesisFiles: {
-            // orderBy: { type: "desc" },
             include: { file: true },
           },
         },
@@ -995,29 +995,40 @@ export class StudentsService {
 
     const process = await this.prismaService.process.findUnique({
       where: { studentId },
-      include: { headReviewer: { include: { department: true } } },
+      include: {
+        headReviewer: { include: { department: true } },
+        reviewers: { include: { reviewer: { include: { department: true } } } },
+      },
     });
     const headReviewer = process.headReviewer;
+    const advisors = process.reviewers
+      .filter((reviewerInfo) => reviewerInfo.role === Role.ADVISOR)
+      .map((reviewerInfo) => reviewerInfo.reviewer);
 
-    const reviewerInfos = await this.prismaService.reviewer.findMany({
-      where: { processId: process.id },
-      include: { reviewer: { include: { department: true } } },
-    });
-    const reviewers = reviewerInfos.map((reviewerInfo) => {
-      return reviewerInfo.reviewer;
-    });
+    const committees = process.reviewers
+      .filter((reviewerInfo) => reviewerInfo.role === Role.COMMITTEE_MEMBER)
+      .map((reviewerInfo) => reviewerInfo.reviewer);
 
-    return { headReviewer, reviewers };
+    return { headReviewer, advisors, committees };
   }
 
-  async updateReviewer(studentId: number, reviewerId: number) {
+  async updateReviewer(studentId: number, reviewerId: number, updateReviewerQuery: UpdateReviewerQueryDto) {
+    const roleQuery = updateReviewerQuery.role;
+    const role = roleQuery === ReviewerRoleQuery.ADVISOR ? Role.ADVISOR : Role.COMMITTEE_MEMBER;
+
     // studentId, reviewerId 확인
     const foundStudent = await this.prismaService.user.findUnique({
       where: {
         id: studentId,
         type: UserType.STUDENT,
       },
-      include: { studentProcess: true },
+      include: {
+        studentProcess: {
+          include: {
+            thesisInfos: true,
+          },
+        },
+      },
     });
     if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
     const foundProfessor = await this.prismaService.user.findUnique({
@@ -1028,28 +1039,87 @@ export class StudentsService {
     });
     if (!foundProfessor) throw new BadRequestException("존재하지 않는 교수입니다.");
 
+    const process = foundStudent.studentProcess;
+    const preThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY)[0];
+    const mainThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.MAIN)[0];
+    const revisionThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.REVISION)[0];
+
     // 이미 reviewer인 경우
     const foundReviewer = await this.prismaService.reviewer.findFirst({
       where: {
         reviewerId,
-        processId: foundStudent.studentProcess.id,
+        processId: process.id,
       },
     });
     if (foundReviewer) throw new BadRequestException("이미 해당 학생에 배정된 교수입니다.");
 
-    // 지도교수/심사위원 추가
-    // TODO : 교수 역할 구분
+    // 인원수 초과 확인
+    const currentReviewers = await this.prismaService.reviewer.findMany({
+      where: {
+        processId: process.id,
+        role,
+      },
+    });
+    if (currentReviewers.length === 2) throw new BadRequestException(`${role}가 이미 2명이므로 추가할 수 없습니다.`);
+
     try {
-      await this.prismaService.reviewer.create({
-        data: {
-          reviewerId,
-          processId: foundStudent.studentProcess.id,
-          role: Role.ADVISOR, // TODO : 수정 예정
-        },
+      await this.prismaService.$transaction(async (tx) => {
+        // reviewer 생성
+        await tx.reviewer.create({
+          data: {
+            reviewerId,
+            processId: process.id,
+            role,
+          },
+        });
+        // review 생성
+        await tx.review.createMany({
+          data: [
+            // 예심 심사
+            {
+              thesisInfoId: preThesisInfo.id,
+              reviewerId,
+              status: ReviewStatus.UNEXAMINED,
+              isFinal: false,
+            },
+            // 본심 심사
+            {
+              thesisInfoId: mainThesisInfo.id,
+              reviewerId,
+              status: ReviewStatus.UNEXAMINED,
+              isFinal: false,
+            },
+            // 수정지시사항 반영 확인
+            {
+              thesisInfoId: revisionThesisInfo.id,
+              reviewerId,
+              status: ReviewStatus.UNEXAMINED,
+              isFinal: false,
+            },
+          ],
+        });
       });
     } catch (error) {
-      throw new InternalServerErrorException("업데이트 실패");
+      console.log(error);
+      throw new InternalServerErrorException("심사위원장/지도교수 추가 실패");
     }
+
+    // 전체 리뷰어 목록 조회
+    const newReviewers = await this.prismaService.process.findUnique({
+      where: { studentId },
+      include: {
+        headReviewer: { include: { department: true } },
+        reviewers: { include: { reviewer: { include: { department: true } } } },
+      },
+    });
+    const headReviewer = newReviewers.headReviewer;
+    const advisors = newReviewers.reviewers
+      .filter((reviewerInfo) => reviewerInfo.role === Role.ADVISOR)
+      .map((reviewerInfo) => reviewerInfo.reviewer);
+    const committees = newReviewers.reviewers
+      .filter((reviewerInfo) => reviewerInfo.role === Role.COMMITTEE_MEMBER)
+      .map((reviewerInfo) => reviewerInfo.reviewer);
+    return { headReviewer, advisors, committees };
   }
 
   async deleteReviewer(studentId: number, reviewerId: number) {
@@ -1062,6 +1132,7 @@ export class StudentsService {
       include: { studentProcess: true },
     });
     if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+    const process = foundStudent.studentProcess;
     const foundProfessor = await this.prismaService.user.findUnique({
       where: {
         id: reviewerId,
@@ -1074,23 +1145,67 @@ export class StudentsService {
     const foundReviewer = await this.prismaService.reviewer.findFirst({
       where: {
         reviewerId,
-        processId: foundStudent.studentProcess.id,
+        processId: process.id,
       },
     });
     if (!foundReviewer) throw new BadRequestException("배정 상태인 교수가 아닙니다.");
 
     // 심사위원장인지 확인
-    if (foundStudent.studentProcess.headReviewerId === reviewerId)
-      throw new BadRequestException("심사위원장은 배정 취소할 수 없습니다.");
+    if (process.headReviewerId === reviewerId) throw new BadRequestException("심사위원장은 배정 취소할 수 없습니다.");
+
+    // 해당 역할의 교수가 2명인지 확인
+    const reviewerList = await this.prismaService.reviewer.findMany({
+      where: {
+        processId: process.id,
+        role: foundReviewer.role,
+      },
+    });
+    if (reviewerList.length < 2)
+      throw new BadRequestException(`${foundReviewer.role}이 2명일 때만 배정 취소가 가능합니다.`);
 
     // 배정 취소
     try {
-      await this.prismaService.reviewer.delete({
-        where: { id: foundReviewer.id },
+      await this.prismaService.$transaction(async (tx) => {
+        // review 삭제
+        await tx.review.deleteMany({
+          where: {
+            reviewerId,
+            thesisInfo: {
+              is: {
+                processId: process.id,
+              },
+            },
+          },
+        });
+        // reviewer 삭제
+        await tx.reviewer.delete({
+          where: {
+            id: foundReviewer.id,
+            processId: process.id,
+          },
+        });
       });
     } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException("배정 취소 실패");
     }
+
+    // 전체 리뷰어 목록 조회
+    const newReviewers = await this.prismaService.process.findUnique({
+      where: { studentId },
+      include: {
+        headReviewer: { include: { department: true } },
+        reviewers: { include: { reviewer: { include: { department: true } } } },
+      },
+    });
+    const headReviewer = newReviewers.headReviewer;
+    const advisors = newReviewers.reviewers
+      .filter((reviewerInfo) => reviewerInfo.role === Role.ADVISOR)
+      .map((reviewerInfo) => reviewerInfo.reviewer);
+    const committees = newReviewers.reviewers
+      .filter((reviewerInfo) => reviewerInfo.role === Role.COMMITTEE_MEMBER)
+      .map((reviewerInfo) => reviewerInfo.reviewer);
+    return { headReviewer, advisors, committees };
   }
 
   async updateHeadReviewer(studentId: number, headReviewerId: number) {
@@ -1100,7 +1215,14 @@ export class StudentsService {
         id: studentId,
         type: UserType.STUDENT,
       },
-      include: { studentProcess: true },
+      include: {
+        studentProcess: {
+          include: {
+            thesisInfos: true,
+            reviewers: true,
+          },
+        },
+      },
     });
     if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
     const foundProfessor = await this.prismaService.user.findUnique({
@@ -1111,24 +1233,106 @@ export class StudentsService {
     });
     if (!foundProfessor) throw new BadRequestException("존재하지 않는 교수입니다.");
 
-    // 지도교수/심사위원 리스트에 존재하는 교수인지 확인
+    const process = foundStudent.studentProcess;
+    const preThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY)[0];
+    const mainThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.MAIN)[0];
+    const revisionThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.REVISION)[0];
+    const currentHeadReviewer = process.reviewers.filter((reviewer) => reviewer.role === Role.COMMITTEE_CHAIR)[0];
+
+    // 이미 reviewer인 경우
     const foundReviewer = await this.prismaService.reviewer.findFirst({
       where: {
         reviewerId: headReviewerId,
-        processId: foundStudent.studentProcess.id,
+        processId: process.id,
       },
     });
-    if (!foundReviewer)
-      throw new BadRequestException("심사위원/지도교수 리스트에 등록 후 심사위원장으로 등록 가능합니다.");
+    if (foundReviewer) throw new BadRequestException("이미 해당 학생에 배정된 교수입니다.");
 
     // 심사위원장 교체
     try {
-      await this.prismaService.process.update({
-        where: { id: foundStudent.studentProcess.id },
-        data: { headReviewerId },
+      await this.prismaService.$transaction(async (tx) => {
+        // 기존 심사위원장의 review 삭제
+        await tx.review.deleteMany({
+          where: {
+            reviewerId: currentHeadReviewer.reviewerId,
+            thesisInfo: {
+              is: {
+                processId: process.id,
+              },
+            },
+          },
+        });
+        // process 수정
+        await tx.process.update({
+          where: { id: process.id },
+          data: { headReviewerId },
+        });
+        // reviewer 수정
+        await tx.reviewer.update({
+          where: { id: currentHeadReviewer.id },
+          data: { reviewerId: headReviewerId },
+        });
+        // review 생성
+        await tx.review.createMany({
+          data: [
+            // 예심 심사
+            {
+              thesisInfoId: preThesisInfo.id,
+              reviewerId: headReviewerId,
+              status: ReviewStatus.UNEXAMINED,
+              isFinal: false,
+            },
+            // 예심 최종 심사
+            {
+              thesisInfoId: preThesisInfo.id,
+              reviewerId: headReviewerId,
+              status: ReviewStatus.UNEXAMINED,
+              isFinal: true,
+            },
+            // 본심 심사
+            {
+              thesisInfoId: mainThesisInfo.id,
+              reviewerId: headReviewerId,
+              status: ReviewStatus.UNEXAMINED,
+              isFinal: false,
+            },
+            // 본심 최종 심사
+            {
+              thesisInfoId: mainThesisInfo.id,
+              reviewerId: headReviewerId,
+              status: ReviewStatus.UNEXAMINED,
+              isFinal: true,
+            },
+            // 수정지시사항 반영 확인
+            {
+              thesisInfoId: revisionThesisInfo.id,
+              reviewerId: headReviewerId,
+              status: ReviewStatus.UNEXAMINED,
+              isFinal: false,
+            },
+          ],
+        });
       });
     } catch (error) {
-      throw new InternalServerErrorException("업데이트 실패");
+      console.log(error);
+      throw new InternalServerErrorException("심사위원장 교체 실패");
     }
+
+    // 전체 리뷰어 목록 조회
+    const newReviewers = await this.prismaService.process.findUnique({
+      where: { studentId },
+      include: {
+        headReviewer: { include: { department: true } },
+        reviewers: { include: { reviewer: { include: { department: true } } } },
+      },
+    });
+    const headReviewer = newReviewers.headReviewer;
+    const advisors = newReviewers.reviewers
+      .filter((reviewerInfo) => reviewerInfo.role === Role.ADVISOR)
+      .map((reviewerInfo) => reviewerInfo.reviewer);
+    const committees = newReviewers.reviewers
+      .filter((reviewerInfo) => reviewerInfo.role === Role.COMMITTEE_MEMBER)
+      .map((reviewerInfo) => reviewerInfo.reviewer);
+    return { headReviewer, advisors, committees };
   }
 }

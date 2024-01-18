@@ -9,9 +9,9 @@ export enum ThesisQueryType {
 }
 
 export class ThesisInfoQueryDto {
-  @ApiProperty({ description: "논문 정보 타입 선택", example: "now", enum: ["now", "pre", "main", "rivision"] })
+  @ApiProperty({ description: "논문 정보 타입 선택", example: "now", enum: ThesisQueryType })
   @IsNotEmpty()
   @IsString()
   @IsEnum(ThesisQueryType)
-  type: string;
+  type: ThesisQueryType;
 }

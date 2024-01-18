@@ -48,6 +48,7 @@ import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
 import { ReviewersDto } from "./dtos/reviewers.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ExcelFilter } from "src/common/pipes/excel.filter";
+import { UpdateReviewerQueryDto } from "./dtos/update-reviewer-query-dto";
 
 @Controller("students")
 @UseGuards(JwtGuard)
@@ -298,7 +299,7 @@ export class StudentsController {
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
     summary: "학생 지도 정보 조회 API",
-    description: "아이디에 해당하는 학생의 지도교수 리스트를 조회할 수 있다.",
+    description: "아이디에 해당하는 학생의 심사위원장, 지도 교수, 심사위원을 조회할 수 있다.",
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiBadRequestResponse({ description: "잘못된 요청" })
@@ -309,8 +310,8 @@ export class StudentsController {
     },
   })
   async getReviewerList(@Param("id", PositiveIntPipe) studentId: number) {
-    const { headReviewer, reviewers } = await this.studentsService.getReviewerList(studentId);
-    const reviewersDto = new ReviewersDto(headReviewer, reviewers);
+    const { headReviewer, advisors, committees } = await this.studentsService.getReviewerList(studentId);
+    const reviewersDto = new ReviewersDto(headReviewer, advisors, committees);
     return new CommonResponseDto(reviewersDto);
   }
 
@@ -318,20 +319,28 @@ export class StudentsController {
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
     summary: "학생 지도 정보 추가 API",
-    description: "심사위원/지도교수를 추가할 수 있다.",
+    description: "심사위원/지도교수를 추가할 수 있다. 단, 이미 심사위원/지도교수가 2명이라면 불가하다.",
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiBadRequestResponse({ description: "잘못된 요청" })
   @ApiCreatedResponse({
     description: "추가 성공",
-    type: CommonResponseDto,
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(ReviewersDto) }],
+    },
   })
   async updateReviewer(
     @Param("id", PositiveIntPipe) studentId: number,
-    @Param("reviewerId", PositiveIntPipe) reviewerId: number
+    @Param("reviewerId", PositiveIntPipe) reviewerId: number,
+    @Query() updateReviewrQuery: UpdateReviewerQueryDto
   ) {
-    await this.studentsService.updateReviewer(studentId, reviewerId);
-    return new CommonResponseDto();
+    const { headReviewer, advisors, committees } = await this.studentsService.updateReviewer(
+      studentId,
+      reviewerId,
+      updateReviewrQuery
+    );
+    const reviewersDto = new ReviewersDto(headReviewer, advisors, committees);
+    return new CommonResponseDto(reviewersDto);
   }
 
   @Delete("/:id/reviewers/:reviewerId")
@@ -339,39 +348,48 @@ export class StudentsController {
   @ApiOperation({
     summary: "심사위원/지도교수 배정 취소 API",
     description:
-      "기존에 배정된 심사위원/지도교수를 배정 취소한다. 심사위원장은 배정 취소할 수 없다. 심사위원을 배정 취소하고자 할 경우, 우선 심사위원을 교체한 후 배정 취소할 수 있다.",
+      "기존에 배정된 심사위원/지도교수를 배정 취소할 수 있다. 단, 심사위원/지도교수가 한 명일 때는 불가능하다.",
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiBadRequestResponse({ description: "잘못된 요청" })
-  @ApiCreatedResponse({
+  @ApiOkResponse({
     description: "배정 취소 성공",
-    type: CommonResponseDto,
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(ReviewersDto) }],
+    },
   })
   async deleteReviewer(
     @Param("id", PositiveIntPipe) studentId: number,
     @Param("reviewerId", PositiveIntPipe) reviewerId: number
   ) {
-    await this.studentsService.deleteReviewer(studentId, reviewerId);
+    const { headReviewer, advisors, committees } = await this.studentsService.deleteReviewer(studentId, reviewerId);
+    const reviewersDto = new ReviewersDto(headReviewer, advisors, committees);
+    return new CommonResponseDto(reviewersDto);
   }
 
   @Put("/:id/headReviewer/:headReviewerId")
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
     summary: "심사위원장 교체 API",
-    description:
-      "심사위원장을 교체할 수 있다. 해당학생의 기존 심사위원/지도교수 리스트에 존재하는 교수만 심사위원장으로 등록할 수 있다.",
+    description: "심사위원장을 교체할 수 있다.",
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiBadRequestResponse({ description: "잘못된 요청" })
-  @ApiCreatedResponse({
+  @ApiOkResponse({
     description: "교체 성공",
-    type: CommonResponseDto,
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(ReviewersDto) }],
+    },
   })
   async updateHeadReviewer(
     @Param("id", PositiveIntPipe) studentId: number,
     @Param("headReviewerId", PositiveIntPipe) headReviewerId: number
   ) {
-    await this.studentsService.updateHeadReviewer(studentId, headReviewerId);
-    return new CommonResponseDto();
+    const { headReviewer, advisors, committees } = await this.studentsService.updateHeadReviewer(
+      studentId,
+      headReviewerId
+    );
+    const reviewersDto = new ReviewersDto(headReviewer, advisors, committees);
+    return new CommonResponseDto(reviewersDto);
   }
 }
