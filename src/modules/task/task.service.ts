@@ -196,6 +196,7 @@ export class TaskService {
     console.log("[본심 논문 최종 심사] 단계인 학생을 [수정지시사항] 단계나 [논문 실적] 단계로 업데이트합니다.");
     await this.prismaService.$transaction(async (tx) => {
       await tx.process.updateMany({
+        //수정지시사항으로 넘어가는 케이스
         where: {
           phaseId: 6,
           student: {
@@ -213,9 +214,11 @@ export class TaskService {
         },
         data: {
           phaseId: 7,
+          currentPhase: Stage.REVISION,
         },
       });
       await tx.process.updateMany({
+        //논문 실적 단계로 바로 넘어가는 케이스
         where: {
           phaseId: 6,
           student: {
