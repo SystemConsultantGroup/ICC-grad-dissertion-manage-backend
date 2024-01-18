@@ -29,7 +29,6 @@ export class TaskService {
     console.log(this.scheduleRegistry.getCronJobs());
   }
 
-
   async resetCronJob(phase: Phase) {
     try {
       await this.scheduleRegistry.deleteCronJob(phase.title);
@@ -127,7 +126,9 @@ export class TaskService {
             some: {
               stage: { equals: Stage.PRELIMINARY },
               thesisFiles: {
-                some: {}, //논문을 제출한 학생만 단계 업데이트
+                some: {
+                  fileId: { not: null },
+                }, //논문을 제출한 학생만 단계 업데이트
               },
             },
           },
@@ -163,7 +164,9 @@ export class TaskService {
             some: {
               stage: { equals: Stage.MAIN },
               thesisFiles: {
-                some: {},
+                every: {
+                  fileId: { not: null },
+                },
               },
             },
           },
@@ -200,6 +203,13 @@ export class TaskService {
               modificationFlag: true,
             },
           },
+          thesisInfos: {
+            every: {
+              summary: {
+                equals: Status.PASS,
+              },
+            },
+          },
         },
         data: {
           phaseId: 7,
@@ -234,9 +244,11 @@ export class TaskService {
           phaseId: 7,
           thesisInfos: {
             some: {
-              stage: { equals: Stage.MODIFICATION },
+              stage: { equals: Stage.REVISION },
               thesisFiles: {
-                some: {},
+                every: {
+                  fileId: { not: null },
+                },
               },
             },
           },
