@@ -3,7 +3,7 @@ import { PrismaService } from "../../config/database/prisma.service";
 import { CreateAchievementsDto } from "./dtos/create-achievements.dto";
 import { UpdateAchievementsDto } from "./dtos/update-achievements.dto";
 import { AchievementsExcelQuery, AchievementsSearchQuery } from "./dtos/achievements-query.dto";
-import { User, UserType } from "@prisma/client";
+import { AuthorType, Performance, User, UserType } from "@prisma/client";
 import * as XLSX from "xlsx";
 import * as DateUtil from "../../common/utils/date.util";
 import { Readable } from "stream";
@@ -155,12 +155,12 @@ export class AchievementsService {
       record["이름"] = student.name;
       record["학과"] = dept.name;
 
-      record["실적 구분"] = achievement.performance;
+      record["실적 구분"] = this.PerformanceToFullname(achievement.performance);
       record["학술지 또는 학술대회명"] = achievement.journalName;
       record["논문 제목"] = achievement.paperTitle;
       (record["ISSN"] = achievement.ISSN ? achievement.ISSN : "미제출"),
         (record["게재년월일"] = achievement.publicationDate);
-      record["주저자여부"] = achievement.authorType;
+      record["주저자여부"] = this.authorToFullname(achievement.authorType);
       record["저자수"] = achievement.userId;
 
       return record;
@@ -176,5 +176,52 @@ export class AchievementsService {
     stream.push(null);
 
     return { fileName, stream };
+  }
+
+  PerformanceToFullname(alias: Performance) {
+    switch (alias) {
+      case Performance.SCI:
+        return "SCI";
+      case Performance.SCOPUS:
+        return "SCOPUS";
+      case Performance.SCIE:
+        return "SCI(E)급 국제학회";
+      case Performance.INTERNATIONAL_B:
+        return "국제 B급 학술지";
+      case Performance.DOMESTIC_A:
+        return "국내 A급 학술지";
+      case Performance.DOMESTIC_B:
+        return "국내 B급 학술지";
+      case Performance.ICOP:
+        return "국제 학술대회 구두발표";
+      case Performance.ICP:
+        return "국제 학술대회 포스터";
+      case Performance.DCOP:
+        return "국내 학술대회 구두발표";
+      case Performance.DCP:
+        return "국내 학술대회 포스터";
+      case Performance.IPR:
+        return "국제특허등록";
+      case Performance.IPA:
+        return "국제특허출원";
+      case Performance.DPR:
+        return "국내특허등록";
+      case Performance.DPA:
+        return "국내특허출원";
+    }
+  }
+  authorToFullname(author: AuthorType) {
+    switch (author) {
+      case AuthorType.FIRST_AUTHOR:
+        return "제1저자";
+      case AuthorType.CO_FIRST_AUTHOR:
+        return "공동1저자";
+      case AuthorType.CORRESPONDING_AUTHOR:
+        return "교신저자";
+      case AuthorType.FIRST_CORRESPONDING_AUTHOR:
+        return "제1교신저자";
+      case AuthorType.CO_AUTHOR:
+        return "공저자";
+    }
   }
 }
