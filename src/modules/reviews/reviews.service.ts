@@ -15,7 +15,7 @@ import { getCurrentTime } from "src/common/utils/date.util";
 
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly prismaService: PrismaService) { }
+  constructor(private readonly prismaService: PrismaService) {}
 
   async buildFilename(base, searchQuery) {
     let queryString = "";
