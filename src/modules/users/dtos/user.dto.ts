@@ -16,7 +16,7 @@ export class UserDto {
     this.phone = studentData.phone;
     this.type = studentData.type;
     this.department = new DepartmentDto(studentData.department);
-    this.stage = studentData.studentProcess?.stage;
+    this.stage = studentData.studentProcess?.currentPhase;
   }
 
   @ApiProperty({ description: "아이디" })

@@ -82,6 +82,8 @@ export class StudentsService {
       if (!foundProfessor) throw new BadRequestException(`[ID:${reviewerId}]에 해당하는 교수가 없습니다.`);
     }
     const reviewerIds = [headReviewerId, ...advisorIds, ...committeeIds];
+    if (new Set(reviewerIds).size !== reviewerIds.length)
+      throw new BadRequestException("한 명의 교수가 두개 이상의 역할을 맡을 수 없습니다.");
 
     try {
       return await this.prismaService.$transaction(async (tx) => {
@@ -104,7 +106,7 @@ export class StudentsService {
             studentId: user.id,
             headReviewerId,
             phaseId: stage === Stage.PRELIMINARY ? 1 : 4, // 1: 예심 논문 제출, 4: 본심 논문 제출
-            stage,
+            currentPhase: stage,
           },
         });
 
@@ -124,86 +126,100 @@ export class StudentsService {
           ],
         });
 
-        // 논문 정보 생성 (thesis_info) : 예심 논문 정보, 본심 논문 정보, 수정지시사항 총 3개 생성
-        const preThesisInfo = await tx.thesisInfo.create({
-          data: {
-            processId: process.id,
-            title: stage === Stage.PRELIMINARY ? thesisTitle : null,
-            stage: Stage.PRELIMINARY,
-            summary: Summary.UNEXAMINED,
-            thesisFiles: {
-              create: [{ type: ThesisFileType.PRESENTATION }, { type: ThesisFileType.THESIS }],
+        // 등록되는 학생의 phase에 해당하는 논문 정보(thesis_info), 논문 파일(thesis_file), 리뷰(review) 생성
+        if (stage === Stage.PRELIMINARY) {
+          // 예심 학생 등록
+          await tx.thesisInfo.create({
+            // 예심 논문 정보 생성
+            data: {
+              processId: process.id,
+              title: thesisTitle,
+              stage: Stage.PRELIMINARY,
+              summary: Summary.UNEXAMINED,
+              // 예심 논문 발표 파일, 예심 논문 파일 생성
+              thesisFiles: {
+                create: [{ type: ThesisFileType.PRESENTATION }, { type: ThesisFileType.THESIS }],
+              },
+              reviews: {
+                create: [
+                  // 예심 논문 심사 생성
+                  ...reviewerIds.map((reviewerId) => {
+                    return {
+                      reviewerId,
+                      status: ReviewStatus.UNEXAMINED,
+                      isFinal: false,
+                    };
+                  }),
+                  // 예심 최종 심사 생성
+                  {
+                    reviewerId: headReviewerId,
+                    status: ReviewStatus.UNEXAMINED,
+                    isFinal: true,
+                  },
+                ],
+              },
             },
-          },
-        });
-        const mainThesisInfo = await tx.thesisInfo.create({
-          data: {
-            processId: process.id,
-            title: stage === Stage.MAIN ? thesisTitle : null,
-            stage: Stage.MAIN,
-            summary: Summary.UNEXAMINED,
-            thesisFiles: {
-              create: [{ type: ThesisFileType.PRESENTATION }, { type: ThesisFileType.THESIS }],
+          });
+        } else if (stage === Stage.MAIN) {
+          // 본심 학생 등록
+          await tx.thesisInfo.create({
+            data: {
+              // 본심 논문 정보 생성
+              processId: process.id,
+              title: thesisTitle,
+              stage: Stage.MAIN,
+              summary: Summary.UNEXAMINED,
+              thesisFiles: {
+                // 본심 논문 발표 파일, 본심 논문 파일 생성
+                create: [{ type: ThesisFileType.PRESENTATION }, { type: ThesisFileType.THESIS }],
+              },
+              reviews: {
+                create: [
+                  // 본심 논문 심사 생성
+                  ...reviewerIds.map((reviewerId) => {
+                    return {
+                      reviewerId,
+                      status: ReviewStatus.UNEXAMINED,
+                      isFinal: false,
+                    };
+                  }),
+                  // 본심 최종 심사 생성
+                  {
+                    reviewerId: headReviewerId,
+                    status: ReviewStatus.UNEXAMINED,
+                    isFinal: true,
+                  },
+                ],
+              },
             },
-          },
-        });
-        const revisionThesisInfo = await tx.thesisInfo.create({
-          data: {
-            processId: process.id,
-            stage: Stage.REVISION,
-            summary: Summary.UNEXAMINED,
-            thesisFiles: {
-              create: [{ type: ThesisFileType.REVISION_REPORT }, { type: ThesisFileType.THESIS }],
-            },
-          },
-        });
-
-        // 논문 심사 (review)
-        await tx.review.createMany({
-          data: [
-            // 예심 논문 심사
-            ...reviewerIds.map((reviewerId) => {
-              return {
-                thesisInfoId: preThesisInfo.id,
-                reviewerId,
-                status: ReviewStatus.UNEXAMINED,
-                isFinal: false,
-              };
-            }),
-            // 예심 최종 심사
-            {
-              thesisInfoId: preThesisInfo.id,
-              reviewerId: headReviewerId,
-              status: ReviewStatus.UNEXAMINED,
-              isFinal: true,
-            },
-            // 본심 논문 심사
-            ...reviewerIds.map((reviewerId) => {
-              return {
-                thesisInfoId: mainThesisInfo.id,
-                reviewerId,
-                status: ReviewStatus.UNEXAMINED,
-                isFinal: false,
-              };
-            }),
-            // 본심 최종 심사
-            {
-              thesisInfoId: mainThesisInfo.id,
-              reviewerId: headReviewerId,
-              status: ReviewStatus.UNEXAMINED,
-              isFinal: true,
-            },
-            // 수정지시사항 확인
-            ...reviewerIds.map((reviewerId) => {
-              return {
-                thesisInfoId: revisionThesisInfo.id,
-                reviewerId,
-                status: ReviewStatus.UNEXAMINED,
-                isFinal: false,
-              };
-            }),
-          ],
-        });
+          });
+          if (foundDept.modificationFlag) {
+            // 본심 학생 중 수정지시사항 단계가 있는 학생인 경우
+            await tx.thesisInfo.create({
+              data: {
+                // 수정지시사항 정보 생성
+                processId: process.id,
+                stage: Stage.REVISION,
+                summary: Summary.UNEXAMINED,
+                thesisFiles: {
+                  create: [{ type: ThesisFileType.REVISION_REPORT }, { type: ThesisFileType.THESIS }],
+                },
+                reviews: {
+                  create: [
+                    // 수정지시사항 확인 심사 생성
+                    ...reviewerIds.map((reviewerId) => {
+                      return {
+                        reviewerId,
+                        status: ReviewStatus.UNEXAMINED,
+                        isFinal: false,
+                      };
+                    }),
+                  ],
+                },
+              },
+            });
+          }
+        }
 
         return await tx.user.findUnique({
           where: {
@@ -247,16 +263,7 @@ export class StudentsService {
             const headReviewer = studentRecord["심사위원장"];
 
             // major, phase, headReviewer, reviewers 적절한 값으로 변경
-            let deptId,
-              phaseId,
-              isLock,
-              headReviewerId,
-              reviewerIds,
-              stage,
-              advisor1Id,
-              advisor2Id,
-              committee1Id,
-              committee2Id;
+            let deptId, phaseId, headReviewerId, reviewerIds, stage, advisor1Id, advisor2Id, committee1Id, committee2Id;
             if (major) {
               const foundDepartment = await this.prismaService.department.findFirst({
                 where: { name: major },
@@ -470,7 +477,7 @@ export class StudentsService {
                   studentId: user.id,
                   headReviewerId: createStudentDto.headReviewerId,
                   phaseId: 1, // TODO : 수정 예정
-                  stage: Stage.PRELIMINARY, // TODO : 수정 예정
+                  currentPhase: Stage.PRELIMINARY, // TODO : 수정 예정
                 },
               });
               // 지도 교수 배정 (reviewer)
@@ -844,7 +851,7 @@ export class StudentsService {
     let stage;
     switch (typeQuery) {
       case ThesisQueryType.NOW:
-        stage = foundStudent.studentProcess.stage;
+        stage = foundStudent.studentProcess.currentPhase;
         break;
       case ThesisQueryType.MAIN:
         stage = Stage.MAIN;
@@ -892,7 +899,7 @@ export class StudentsService {
       include: { studentProcess: true },
     });
     if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
-    const currentStage = foundStudent.studentProcess.stage;
+    const currentStage = foundStudent.studentProcess.currentPhase;
 
     // 접근 권한 확인
     if (currentUserType === UserType.STUDENT && userId !== studentId) {
