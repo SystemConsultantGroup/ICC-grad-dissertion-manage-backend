@@ -1,6 +1,12 @@
 import { ReviewerRoleQuery, UpdateReviewerQueryDto } from "./dtos/update-reviewer-query-dto";
 import { ThesisInfoQueryDto, ThesisQueryType } from "./dtos/thesis-info-query.dto";
-import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { UserType } from "src/common/enums/user-type.enum";
 import { PrismaService } from "src/config/database/prisma.service";
 import { StudentSearchPageQuery } from "./dtos/student-search-page-query.dto";
@@ -866,7 +872,7 @@ export class StudentsService {
 
     // 정보 조회
     try {
-      return this.prismaService.thesisInfo.findFirst({
+      const thesisInfo = await this.prismaService.thesisInfo.findFirst({
         where: {
           processId: process.id,
           stage,
@@ -880,8 +886,10 @@ export class StudentsService {
           },
         },
       });
+      if (!thesisInfo) throw new Error();
+      return thesisInfo;
     } catch (error) {
-      throw new InternalServerErrorException("조회 실패");
+      throw new NotFoundException(`${stage}에 해당하는 논문 정보가 없습니다.`);
     }
   }
 

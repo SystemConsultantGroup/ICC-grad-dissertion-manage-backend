@@ -29,6 +29,7 @@ import {
   ApiCreatedResponse,
   ApiExtraModels,
   ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -253,6 +254,7 @@ export class StudentsController {
     description: "로그인 후 접근 가능, [학생] 본인 정보만 조회 가능, [교수] 담당 학생 정보만 조회 가능",
   })
   @ApiBadRequestResponse({ description: "요청 양식 오류" })
+  @ApiNotFoundResponse({ description: "쿼리에 해당하는 단계의 논문 정보 없음" })
   @ApiOkResponse({
     description: "학생 논문 정보 조회 성공",
     schema: {
