@@ -23,7 +23,7 @@ export class StudentSearchPageQuery extends PageQuery implements StudentSearchQu
   @IsString()
   email?: string;
 
-  @ApiProperty({ description: '전화번호 ("-" 제외)', required: false })
+  @ApiProperty({ description: '전화번호 ("-" 포함)', required: false })
   @IsOptional()
   @IsNotEmpty()
   @IsString()
@@ -36,18 +36,4 @@ export class StudentSearchPageQuery extends PageQuery implements StudentSearchQu
   @IsInt()
   @IsPositive()
   departmentId?: number;
-
-  @ApiProperty({ description: "시스템 단계 아이디", required: false })
-  @IsOptional()
-  @IsNotEmpty()
-  @Type(() => Number)
-  @IsInt()
-  @IsPositive()
-  phaseId?: number;
-
-  @ApiProperty({ description: "시스템 락 여부", required: false })
-  @IsOptional()
-  @IsNotEmpty()
-  @Type(() => Boolean)
-  isLock?: boolean;
 }

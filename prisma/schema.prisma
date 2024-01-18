@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,31 +9,25 @@ datasource db {
 
 /// 사용자
 model User {
-  id        Int      @id @default(autoincrement())
-  loginId   String   @unique @db.VarChar(255)
-  password  String   @db.VarChar(255)
-  name      String   @db.VarChar(255)
-  email     String   @unique @db.VarChar(255)
-  phone     String   @db.VarChar(255)
-  type      UserType
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  deptId         Int?
-  department     Department? @relation(fields: [deptId], references: [id])
-  studentProcess Process?    @relation("student")
-
-  headReviewProcesses Process[]  @relation("headReviewer")
-  reviewers           Reviewer[]
+  id                  Int            @id @default(autoincrement())
+  loginId             String         @unique @db.VarChar(255)
+  password            String         @db.VarChar(255)
+  name                String         @db.VarChar(255)
+  email               String         @unique @db.VarChar(255)
+  phone               String         @db.VarChar(255)
+  type                UserType
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @default(now()) @updatedAt
+  deptId              Int?
+  headReviewProcesses Process[]      @relation("headReviewer")
+  studentProcess      Process?       @relation("student")
   reviews             Review[]
+  reviewers           Reviewer[]
+  department          Department?    @relation(fields: [deptId], references: [id])
+  Achievements        Achievements[]
 
+  @@index([deptId], map: "user_deptId_fkey")
   @@map("user")
-}
-
-enum UserType {
-  STUDENT
-  PROFESSOR
-  ADMIN
 }
 
 /// 학과
@@ -51,21 +42,22 @@ model Department {
 
 /// 논문 과정
 model Process {
-  id        Int      @id @default(autoincrement())
-  isLock    Boolean
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  studentId      Int?   @unique
-  student        User?  @relation("student", fields: [studentId], references: [id])
+  id             Int          @id @default(autoincrement())
+  isLock         Boolean? // TODO : 추후 삭제
+  stage          Stage
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+  studentId      Int?         @unique
   headReviewerId Int?
-  headReviewer   User?  @relation("headReviewer", fields: [headReviewerId], references: [id])
   phaseId        Int?
-  phase          Phase? @relation(fields: [phaseId], references: [id])
+  headReviewer   User?        @relation("headReviewer", fields: [headReviewerId], references: [id])
+  phase          Phase?       @relation(fields: [phaseId], references: [id])
+  student        User?        @relation("student", fields: [studentId], references: [id])
+  reviewers      Reviewer[]
+  thesisInfos    ThesisInfo[]
 
-  reviewers   Reviewer[]
-  thesisInfos ThesisInfo[]
-
+  @@index([headReviewerId], map: "process_headReviewerId_fkey")
+  @@index([phaseId], map: "process_phaseId_fkey")
   @@map("process")
 }
 
@@ -77,7 +69,6 @@ model Phase {
   end       DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now()) @updatedAt
-
   processes Process[]
 
   @@map("phase")
@@ -85,62 +76,99 @@ model Phase {
 
 /// 논문 정보
 model ThesisInfo {
-  id       Int     @id @default(autoincrement())
-  title    String? @db.VarChar(255)
-  abstract String? @db.Text
-  stage    Stage
-  summary  Summary
-
-  processId Int?
-  process   Process? @relation(fields: [processId], references: [id])
-
-  thesisFiles ThesisFile[]
+  id          Int          @id @default(autoincrement())
+  title       String?      @db.VarChar(255)
+  abstract    String?      @db.Text
+  stage       Stage
+  summary     Summary
+  processId   Int?
   reviews     Review[]
+  thesisFiles ThesisFile[]
+  process     Process?     @relation(fields: [processId], references: [id])
 
+  @@index([processId], map: "thesis_info_processId_fkey")
   @@map("thesis_info")
-}
-
-enum Stage {
-  PRELIMINARY
-  MAIN
-  MODIFICATION
-}
-
-enum Summary {
-  PASS
-  FAIL
-  UNEXAMINED
 }
 
 /// 심사 위원
 model Reviewer {
-  id Int @id @default(autoincrement())
-
+  id         Int      @id @default(autoincrement())
+  role       Role
   reviewerId Int?
-  reviewer   User?    @relation(fields: [reviewerId], references: [id])
   processId  Int?
   process    Process? @relation(fields: [processId], references: [id])
+  reviewer   User?    @relation(fields: [reviewerId], references: [id])
 
+  @@index([processId], map: "reviewer_processId_fkey")
+  @@index([reviewerId], map: "reviewer_reviewerId_fkey")
   @@map("reviewer")
 }
 
 /// 논문 심사
 model Review {
-  id        Int      @id @default(autoincrement())
-  status    Status?
-  comment   String?  @db.Text
-  isFinal   Boolean
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
+  id           Int        @id @default(autoincrement())
+  status       Status?
+  comment      String?    @db.Text
+  isFinal      Boolean
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
   reviewerId   Int
-  reviewer     User       @relation(fields: [reviewerId], references: [id])
   thesisInfoId Int
-  thesisInfo   ThesisInfo @relation(fields: [thesisInfoId], references: [id])
   fileId       String?    @unique
   file         File?      @relation(fields: [fileId], references: [uuid])
+  reviewer     User       @relation(fields: [reviewerId], references: [id])
+  thesisInfo   ThesisInfo @relation(fields: [thesisInfoId], references: [id])
 
+  @@index([reviewerId], map: "review_reviewerId_fkey")
+  @@index([thesisInfoId], map: "review_thesisInfoId_fkey")
   @@map("review")
+}
+
+/// 파일
+model File {
+  uuid       String      @id @default(uuid())
+  name       String?     @db.VarChar(255)
+  mimeType   String?     @db.VarChar(255)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @default(now()) @updatedAt
+  review     Review?
+  thesisFile ThesisFile?
+
+  @@map("file")
+}
+
+/// 논문 파일
+model ThesisFile {
+  id           Int            @id @default(autoincrement())
+  type         ThesisFileType
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+  thesisInfoId Int?
+  fileId       String?        @unique
+  file         File?          @relation(fields: [fileId], references: [uuid])
+  ThesisInfo   ThesisInfo?    @relation(fields: [thesisInfoId], references: [id])
+
+  @@index([thesisInfoId], map: "thesis_file_thesisInfoId_fkey")
+  @@map("thesis_file")
+}
+
+enum UserType {
+  STUDENT
+  PROFESSOR
+  ADMIN
+}
+
+enum Stage {
+  PRELIMINARY
+  MAIN
+  REVISION
+}
+
+enum Summary {
+  PASS
+  FAIL
+  PENDING
+  UNEXAMINED
 }
 
 enum Status {
@@ -150,36 +178,55 @@ enum Status {
   PENDING
 }
 
-/// 파일
-model File {
-  uuid      String   @id @default(uuid())
-  name      String?  @db.VarChar(255)
-  mimeType  String?  @db.VarChar(255)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  review     Review?
-  thesisFile ThesisFile?
-
-  @@map("file")
-}
-
-/// 논문 파일
-model ThesisFile {
-  id        Int            @id @default(autoincrement())
-  type      ThesisFileType
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @default(now()) @updatedAt
-
-  thesisInfoId Int?
-  ThesisInfo   ThesisInfo? @relation(fields: [thesisInfoId], references: [id])
-  fileId       String?     @unique
-  file         File?       @relation(fields: [fileId], references: [uuid])
-
-  @@map("thesis_file")
-}
-
 enum ThesisFileType {
   PRESENTATION
   THESIS
+  REVISION_REPORT
+}
+
+enum Role {
+  ADVISOR
+  COMMITTEE_MEMBER
+  COMMITTEE_CHAIR
+}
+
+enum Performance {
+  SCI
+  SCOPUS
+  SCIE
+  INTERNATIONAL_B
+  DOMESTIC_A
+  DOMESTIC_B
+  ICOP
+  ICP
+  DCOP
+  DCP
+  IPR
+  IPA
+  DPR
+  DPA
+}
+
+enum AuthorType {
+  FIRST_AUTHOR
+  CO_FIRST_AUTHOR
+  CORRESPONDING_AUTHOR
+  FIRST_CORRESPONDING_AUTHOR
+  CO_AUTHOR
+}
+
+//논문 실적
+model Achievements {
+  id              Int         @id @default(autoincrement())
+  performance     Performance
+  journalName     String      @db.VarChar(100)
+  paperTitle      String      @db.VarChar(100)
+  ISSN            String?     @db.VarChar(15)
+  publicationDate DateTime    @db.Date
+  authorType      AuthorType
+  authorNumbers   Int
+  User            User?       @relation(fields: [userId], references: [id])
+  userId          Int?
+
+  @@map("achievements")
 }
