@@ -225,7 +225,7 @@ export class ReviewsService {
           isFinal: false,
         },
         data: {
-          status: updateReviewDto.status,
+          contentStatus: updateReviewDto.status,
           comment: updateReviewDto.comment,
           fileId: updateReviewDto.fileUUID,
         },
@@ -461,7 +461,7 @@ export class ReviewsService {
           isFinal: true,
         },
         data: {
-          status: updateReviewDto.status,
+          contentStatus: updateReviewDto.status,
           comment: updateReviewDto.comment,
           fileId: updateReviewDto.fileUUID,
         },
