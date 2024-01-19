@@ -2,16 +2,11 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Status } from "@prisma/client";
 import { IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
 
-export class UpdateReviewReqDto {
+export class UpdateReviewFinalReqDto {
   @ApiProperty({ description: "내용 합격 여부", required: false })
   @IsOptional()
   @IsEnum(Status)
   contentStatus: Status;
-
-  @ApiProperty({ description: "구두 합격 여부", required: false })
-  @IsOptional()
-  @IsEnum(Status)
-  presentationStatus: Status;
 
   @ApiProperty({ description: "심사 의견", required: false })
   @IsOptional()
