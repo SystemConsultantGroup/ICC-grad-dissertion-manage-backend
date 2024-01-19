@@ -19,11 +19,13 @@ model User {
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @default(now()) @updatedAt
   deptId              Int?
+  signId              String?        @unique
   headReviewProcesses Process[]      @relation("headReviewer")
   studentProcess      Process?       @relation("student")
   reviews             Review[]
   reviewers           Reviewer[]
   department          Department?    @relation(fields: [deptId], references: [id])
+  signFile            File?          @relation(fields: [signId], references: [uuid])
   Achievements        Achievements[]
 
   @@index([deptId], map: "user_deptId_fkey")
@@ -134,6 +136,7 @@ model File {
   updatedAt  DateTime    @default(now()) @updatedAt
   review     Review?
   thesisFile ThesisFile?
+  professor  User?
 
   @@map("file")
 }
