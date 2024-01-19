@@ -17,7 +17,7 @@ export class ReviewDto {
     this.thesisInfo = review.thesisInfo;
     this.reviewer = review.reviewer;
     this.file = review.file;
-    this.status = review.status;
+    this.status = review.contentStatus;
     this.comment = review.comment;
     this.isFinal = review.isFinal;
     this.createdAt = review.createdAt;
