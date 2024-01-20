@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
-import { User, UserType } from "@prisma/client";
+import { User } from "@prisma/client";
 import { PrismaService } from "src/config/database/prisma.service";
 import { UpdateUserDto } from "./dtos/update-user.dto";
 import { AuthService } from "../auth/auth.service";
