@@ -126,7 +126,7 @@ export class TaskService {
             some: {
               stage: { equals: Stage.PRELIMINARY },
               thesisFiles: {
-                some: {
+                every: {
                   fileId: { not: null },
                 }, //논문을 제출한 학생만 단계 업데이트
               },
