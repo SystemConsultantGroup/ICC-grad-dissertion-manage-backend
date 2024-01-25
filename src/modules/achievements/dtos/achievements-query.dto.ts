@@ -1,7 +1,7 @@
 import { Performance } from "@prisma/client";
 import { PageQuery } from "../../../common/dtos/pagination.dto";
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDate, IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsDate, IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
 
 export class AchievementsSearchQuery extends PageQuery {
   @ApiProperty({ description: "학번", required: false })
@@ -16,11 +16,12 @@ export class AchievementsSearchQuery extends PageQuery {
   @IsString()
   author?: string;
 
-  @ApiProperty({ description: "전공", required: false })
+  @ApiProperty({ description: "학과id", required: false })
   @IsOptional()
   @IsNotEmpty()
-  @IsString()
-  major?: string;
+  @IsInt()
+  @IsPositive()
+  departmentId?: number;
 
   @ApiProperty({ description: "논문제목", required: false })
   @IsOptional()
@@ -60,11 +61,12 @@ export class AchievementsExcelQuery {
   @IsString()
   author?: string;
 
-  @ApiProperty({ description: "전공", required: false })
+  @ApiProperty({ description: "학과id", required: false })
   @IsOptional()
   @IsNotEmpty()
-  @IsString()
-  major?: string;
+  @IsInt()
+  @IsPositive()
+  departmentId?: number;
 
   @ApiProperty({ description: "논문제목", required: false })
   @IsOptional()
@@ -72,7 +74,7 @@ export class AchievementsExcelQuery {
   @IsString()
   paperTitle?: string;
 
-  @ApiProperty({ description: "실적 구분", required: false })
+  @ApiProperty({ description: "실적 구분", required: false, enum: Performance })
   @IsOptional()
   @IsNotEmpty()
   @IsEnum(Performance)
