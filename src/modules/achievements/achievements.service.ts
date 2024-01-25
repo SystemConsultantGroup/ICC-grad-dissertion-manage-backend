@@ -19,7 +19,7 @@ export class AchievementsService {
         id: userId,
       },
     });
-    if (!user) throw new BadRequestException("올바르지 않은 유저id입니다.");
+    if (!user) throw new BadRequestException("본인의 논문실적만 등록이 가능합니다.");
     return await this.prismaService.achievements.create({
       data: {
         userId,
@@ -92,11 +92,11 @@ export class AchievementsService {
       }
     }
 
-    const { major, author, paperTitle, performance, journalName, publicationDate } = achievementsQuery;
+    const { departmentId, author, paperTitle, performance, journalName, publicationDate } = achievementsQuery;
 
     const query = {
       where: {
-        ...(major && { User: { department: { name: { contains: major } } } }),
+        ...(departmentId && { User: { department: { departmentId: { equals: departmentId } } } }),
         ...(author && { User: { name: { contains: author } } }),
         ...(paperTitle && { paperTitle: { contains: paperTitle } }),
         ...(performance && { performance: { equals: performance } }),
@@ -126,11 +126,11 @@ export class AchievementsService {
   }
 
   async getAchievementsExcel(achievementsQuery: AchievementsExcelQuery) {
-    const { major, author, paperTitle, performance, journalName, publicationDate } = achievementsQuery;
+    const { departmentId, author, paperTitle, performance, journalName, publicationDate } = achievementsQuery;
 
     const achievements = await this.prismaService.achievements.findMany({
       where: {
-        ...(major && { User: { department: { name: { contains: major } } } }),
+        ...(departmentId && { User: { department: { departmentId: { equals: departmentId } } } }),
         ...(author && { User: { name: { contains: author } } }),
         ...(paperTitle && { paperTitle: { contains: paperTitle } }),
         ...(performance && { performance: { equals: performance } }),
@@ -161,7 +161,7 @@ export class AchievementsService {
       (record["ISSN"] = achievement.ISSN ? achievement.ISSN : "미제출"),
         (record["게재년월일"] = achievement.publicationDate);
       record["주저자여부"] = this.authorToFullname(achievement.authorType);
-      record["저자수"] = achievement.userId;
+      record["저자수"] = achievement.authorNumbers;
 
       return record;
     });

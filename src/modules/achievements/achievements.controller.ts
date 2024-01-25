@@ -22,6 +22,7 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { User } from "@prisma/client";
 import { CommonResponseDto } from "../../common/dtos/common-response.dto";
 import { UpdateAchievementsDto } from "./dtos/update-achievements.dto";
+import { ApiPaginationOKResponse } from "../../common/decorators/api-pagination-ok-response.decorator";
 @ApiTags("논문실적 API")
 @UseGuards(JwtGuard)
 @ApiBearerAuth("access-token")
@@ -33,7 +34,7 @@ export class AchievementsController {
     summary: "논문실적 등록",
     description: "논문실적 등록",
   })
-  @UseUserTypeGuard([UserType.STUDENT, UserType.ADMIN])
+  @UseUserTypeGuard([UserType.STUDENT])
   @Post(":id")
   @ApiCreatedResponse({
     description: "논문 실적 등록 성공",
@@ -45,7 +46,10 @@ export class AchievementsController {
   @ApiUnauthorizedResponse({
     description: "학생 권한 접근 가능",
   })
-  async createAchievement(@Param("id", PositiveIntPipe) id, @Body() createAchievementsDto: CreateAchievementsDto) {
+  async createAchievement(
+    @Param("id", PositiveIntPipe) id: number,
+    @Body() createAchievementsDto: CreateAchievementsDto
+  ) {
     await this.achievemenstService.createAchievement(id, createAchievementsDto);
     return new CommonResponseDto();
   }
@@ -54,9 +58,9 @@ export class AchievementsController {
     summary: "논문실적 조회",
     description: "관리자와 학생모두 이 api를 통해 논문실적을 조회합니다.",
   })
-  @ApiOkResponse({
+  @ApiPaginationOKResponse({
     description: "논문 실적 조회 성공",
-    type: [AchievementDto],
+    dto: AchievementDto,
   })
   @ApiInternalServerErrorResponse({
     description: "논문 조회 실패",
@@ -65,7 +69,6 @@ export class AchievementsController {
   @Get()
   async getAchievements(@Query() achievementsQuery: AchievementsSearchQuery, @CurrentUser() currentUser: User) {
     const { achievements, counts } = await this.achievemenstService.getAchievements(currentUser, achievementsQuery);
-    console.log(achievements);
     const pageDto = new PageDto(
       achievementsQuery.pageNumber,
       achievementsQuery.pageSize,
