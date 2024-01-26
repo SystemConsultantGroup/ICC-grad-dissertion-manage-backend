@@ -33,6 +33,7 @@ import { SearchRevisionReqDto } from "./dtos/search-revision.req.dto";
 import { GetRevisionResDto } from "./dtos/get-revision.res.dto";
 import { GetResultResDto } from "./dtos/get-result.res.dto";
 import { SearchCurrentReqDto } from "./dtos/search-current.req.dto";
+import { GetRevisionListResDto } from "./dtos/get-revision-list.res.dto";
 
 @ApiTags("심사정보 API")
 @UseGuards(JwtGuard)
@@ -128,7 +129,7 @@ export class ReviewsController {
   })
   @ApiPaginationOKResponse({
     description: "조회 성공",
-    dto: GetReviewListResDto,
+    dto: GetRevisionListResDto,
   })
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
