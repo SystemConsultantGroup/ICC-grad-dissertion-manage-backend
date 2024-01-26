@@ -22,7 +22,7 @@ import { SearchCurrentReqDto } from "./dtos/search-current.req.dto";
 import { GetCurrentListResDto } from "./dtos/get-current-list.res.dto";
 import { MinioClientService } from "src/config/file/minio-client.service";
 import { v1 } from "uuid";
-import { readFileSync } from "fs";
+import { readFile, createWriteStream, unlink } from "fs";
 import { create as createPdf } from "html-pdf";
 import * as path from "path";
 import * as Zip from "jszip";
@@ -72,20 +72,24 @@ export class ReviewsService {
         top: "2.8in",
         bottom: "2.8in",
       },
+      base: "file:///" + path.resolve("./") + "/",
+      localUrlAccess: true,
     };
     const fileName = (isMain ? "" : "예비") + "심사결과보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     // "./resources/format/" + isMain ? "" : "예비" + "심사보고서_양식.html";
     try {
-      let formatHtml = readFileSync(filePath, "utf8");
-      const replacerKeys = Object.keys(replacer);
-      if (isMain) {
-        for (const key of replacerKeys) {
-          if (key == "$심사위원장") {
-            for (const slot of replacer[key]) {
-              formatHtml = formatHtml.replace(
-                "$row",
-                `
+      readFile(filePath, "utf8", async (err, formatHtml) => {
+        if (err) throw new Error("reading format html file failed: " + filePath);
+        let signPath = "";
+        const replacerKeys = Object.keys(replacer);
+        if (isMain) {
+          for (const key of replacerKeys) {
+            if (key == "$심사위원장") {
+              for (const slot of replacer[key]) {
+                formatHtml = formatHtml.replace(
+                  "$row",
+                  `
                 <tr class="row_1">
                   <td class="label_1">
                       <span>심사위원장</span><br>
@@ -108,14 +112,14 @@ export class ReviewsService {
                   </td>
                 </tr>
               `
-              );
-              for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
-            }
-          } else if (key == "$심사위원") {
-            for (const slot of replacer[key]) {
-              formatHtml = formatHtml.replace(
-                "$row",
-                `
+                );
+                for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+              }
+            } else if (key == "$심사위원") {
+              for (const slot of replacer[key]) {
+                formatHtml = formatHtml.replace(
+                  "$row",
+                  `
                   <tr class="row_1">
                     <td class="label_1">
                         <span>심사위원</span><br>
@@ -138,14 +142,14 @@ export class ReviewsService {
                     </td>
                 </tr>
               `
-              );
-              for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
-            }
-          } else if (key == "$지도교수") {
-            for (const slot of replacer[key]) {
-              formatHtml = formatHtml.replace(
-                "$row",
-                `
+                );
+                for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+              }
+            } else if (key == "$지도교수") {
+              for (const slot of replacer[key]) {
+                formatHtml = formatHtml.replace(
+                  "$row",
+                  `
                   <tr class="row_1">
                     <td class="label_1">
                         <span>지도교수</span><br>
@@ -168,21 +172,33 @@ export class ReviewsService {
                     </td>
                 </tr>
               `
-              );
-              for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+                );
+                for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+              }
+            } else if (key == "$서명") {
+              const readable = await this.minioClientService.getFile(replacer[key]);
+              signPath = path.join("resource", "img", "tmp", replacer[key]);
+              const writeStream = new Promise((resolve) => {
+                const ws = createWriteStream(signPath);
+                readable.pipe(ws);
+                readable.on("end", () => {
+                  resolve(null);
+                });
+              });
+              await writeStream;
+              formatHtml = formatHtml.replace(key, signPath);
+            } else {
+              formatHtml = formatHtml.replace(key, replacer[key]);
             }
-          } else {
-            formatHtml = formatHtml.replace(key, replacer[key]);
           }
-        }
-        formatHtml = formatHtml.replaceAll("$row", "");
-      } else {
-        for (const key of replacerKeys) {
-          if (key == "$심사위원장") {
-            for (const slot of replacer[key]) {
-              formatHtml = formatHtml.replace(
-                "$row",
-                `
+          formatHtml = formatHtml.replaceAll("$row", "");
+        } else {
+          for (const key of replacerKeys) {
+            if (key == "$심사위원장") {
+              for (const slot of replacer[key]) {
+                formatHtml = formatHtml.replace(
+                  "$row",
+                  `
                 <tr class="row_1">
                   <td class="label_1">
                       <span>심사위원장</span><br>
@@ -199,14 +215,14 @@ export class ReviewsService {
                   </td>
                 </tr>
               `
-              );
-              for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
-            }
-          } else if (key == "$심사위원") {
-            for (const slot of replacer[key]) {
-              formatHtml = formatHtml.replace(
-                "$row",
-                `
+                );
+                for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+              }
+            } else if (key == "$심사위원") {
+              for (const slot of replacer[key]) {
+                formatHtml = formatHtml.replace(
+                  "$row",
+                  `
                   <tr class="row_1">
                     <td class="label_1">
                         <span>심사위원</span><br>
@@ -223,14 +239,14 @@ export class ReviewsService {
                     </td>
                 </tr>
               `
-              );
-              for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
-            }
-          } else if (key == "$지도교수") {
-            for (const slot of replacer[key]) {
-              formatHtml = formatHtml.replace(
-                "$row",
-                `
+                );
+                for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+              }
+            } else if (key == "$지도교수") {
+              for (const slot of replacer[key]) {
+                formatHtml = formatHtml.replace(
+                  "$row",
+                  `
                   <tr class="row_1">
                     <td class="label_1">
                         <span>지도교수</span><br>
@@ -247,36 +263,39 @@ export class ReviewsService {
                     </td>
                 </tr>
               `
-              );
-              for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+                );
+                for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+              }
+            } else {
+              formatHtml = formatHtml.replace(key, replacer[key]);
             }
-          } else {
-            formatHtml = formatHtml.replace(key, replacer[key]);
           }
+          formatHtml = formatHtml.replaceAll("$row", "");
         }
-        formatHtml = formatHtml.replaceAll("$row", "");
-      }
-
-      const key = v1();
-      const createdAt = new Date();
-      await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
-        if (err) console.log(err);
-        await this.minioClientService.uploadFile(
-          key,
-          buffer,
-          Buffer.byteLength(buffer),
-          createdAt,
-          reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-          "application/pdf"
-        );
-      });
-      return await tx.file.create({
-        data: {
-          name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-          mimeType: "application/pdf",
-          uuid: key,
-          createdAt: createdAt,
-        },
+        const key = v1();
+        const createdAt = new Date();
+        await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
+          if (err) throw new Error("Creating PDF Buffer failed!");
+          await this.minioClientService.uploadFile(
+            key,
+            buffer,
+            Buffer.byteLength(buffer),
+            createdAt,
+            reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+            "application/pdf"
+          );
+        });
+        unlink(signPath, async (err) => {
+          if (err) throw new Error("Deleting temporary img file failed: " + signPath);
+          return await tx.file.create({
+            data: {
+              name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+              mimeType: "application/pdf",
+              uuid: key,
+              createdAt: createdAt,
+            },
+          });
+        });
       });
     } catch (error) {
       console.log(error);
@@ -293,34 +312,57 @@ export class ReviewsService {
         top: "2.8in",
         bottom: "2.8in",
       },
+      base: "file:///" + path.resolve("./") + "/",
+      localUrlAccess: true,
     };
     const fileName = (isMain ? "" : "예비") + "심사보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
-    // "./resources/format/" + isMain ? "" : "예비" + "심사보고서_양식.html";
     try {
-      let formatHtml = readFileSync(filePath, "utf8");
-      const replacerKeys = Object.keys(replacer);
-      for (const key of replacerKeys) formatHtml = formatHtml.replaceAll(key, replacer[key]);
-      const key = v1();
-      const createdAt = new Date();
-      await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
-        if (err) console.log(err);
-        await this.minioClientService.uploadFile(
-          key,
-          buffer,
-          Buffer.byteLength(buffer),
-          createdAt,
-          reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-          "application/pdf"
-        );
-      });
-      return await tx.file.create({
-        data: {
-          name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-          mimeType: "application/pdf",
-          uuid: key,
-          createdAt: createdAt,
-        },
+      let signPath = "";
+      readFile(filePath, "utf8", async (err, formatHtml) => {
+        if (err) throw new Error("reading format html file failed: " + filePath);
+        const replacerKeys = Object.keys(replacer);
+        for (const key of replacerKeys) {
+          if (key == "$서명") {
+            const readable = await this.minioClientService.getFile(replacer[key]);
+            signPath = path.join("resources", "img", "tmp", replacer[key]);
+            const writeStream = new Promise((resolve) => {
+              const ws = createWriteStream(signPath);
+              readable.pipe(ws);
+              ws.on("close", () => {
+                resolve(null);
+              });
+            });
+            await writeStream;
+            formatHtml = formatHtml.replace(key, signPath);
+          } else {
+            formatHtml = formatHtml.replaceAll(key, replacer[key]);
+          }
+        }
+        const key = v1();
+        const createdAt = new Date();
+        await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
+          if (err) throw new Error("Creating PDF Buffer failed!");
+          await this.minioClientService.uploadFile(
+            key,
+            buffer,
+            Buffer.byteLength(buffer),
+            createdAt,
+            reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+            "application/pdf"
+          );
+        });
+        unlink(signPath, async (err) => {
+          if (err) throw new Error("Deleting temporary img file failed: " + signPath);
+          return await tx.file.create({
+            data: {
+              name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+              mimeType: "application/pdf",
+              uuid: key,
+              createdAt: createdAt,
+            },
+          });
+        });
       });
     } catch (error) {
       console.log(error);
@@ -598,6 +640,11 @@ export class ReviewsService {
     });
     if (!foundReview) throw new BadRequestException("존재하지 않는 심사정보입니다");
     if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (
+      (foundReview.contentStatus == Status.PASS || foundReview.contentStatus == Status.FAIL) &&
+      (foundReview.presentationStatus == Status.PASS || foundReview.presentationStatus == Status.FAIL)
+    )
+      throw new BadRequestException("수정 불가능한 논문심사입니다.");
     if (fileUUID) {
       const foundFile = await this.prismaService.file.findUnique({
         where: {
@@ -632,7 +679,7 @@ export class ReviewsService {
                 $month: getCurrentTime().month.toString().padStart(2, "0"),
                 $day: getCurrentTime().date.toString().padStart(2, "0"),
                 "$심사위원:성명": foundReview.reviewer.name,
-                $서명: "",
+                $서명: foundReview.reviewer.signId,
               };
             }
           } else if (foundReview.thesisInfo.stage == Stage.PRELIMINARY) {
@@ -650,7 +697,7 @@ export class ReviewsService {
                 $month: getCurrentTime().month.toString().padStart(2, "0"),
                 $day: getCurrentTime().date.toString().padStart(2, "0"),
                 "$심사위원:성명": foundReview.reviewer.name,
-                $서명: "",
+                $서명: foundReview.reviewer.signId,
               };
             }
           }
@@ -912,6 +959,8 @@ export class ReviewsService {
     });
     if (!foundReview) throw new BadRequestException("존재하지 않는 심사정보입니다");
     if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (foundReview.contentStatus == Status.PASS || foundReview.contentStatus == Status.FAIL)
+      throw new BadRequestException("수정 불가능한 논문심사입니다.");
     if (fileUUID) {
       const foundFile = await this.prismaService.file.findUnique({
         where: {
@@ -945,7 +994,7 @@ export class ReviewsService {
                 $month: getCurrentTime().month.toString().padStart(2, "0"),
                 $day: getCurrentTime().date.toString().padStart(2, "0"),
                 "$심사위원장:성명": foundReview.reviewer.name,
-                $서명: "",
+                $서명: foundReview.reviewer.signId,
               };
               for (const singleReview of foundReview.thesisInfo.reviews) {
                 for (const reviewer of foundReview.thesisInfo.process.reviewers) {
@@ -998,7 +1047,7 @@ export class ReviewsService {
                 $month: getCurrentTime().month.toString().padStart(2, "0"),
                 $day: getCurrentTime().date.toString().padStart(2, "0"),
                 "$심사위원장:성명": foundReview.reviewer.name,
-                $서명: "",
+                $서명: foundReview.reviewer.signId,
               };
               for (const singleReview of foundReview.thesisInfo.reviews) {
                 for (const reviewer of foundReview.thesisInfo.process.reviewers) {
@@ -1031,7 +1080,7 @@ export class ReviewsService {
           file = await this.buildResultPdf(tx, foundReview.id, replacer, isMain);
         }
         const fileUUID = updateReviewFinalDto.fileUUID ? updateReviewFinalDto.fileUUID : file.uuid;
-        return await tx.review.update({
+        const review = await tx.review.update({
           where: {
             id,
             reviewerId: user.id,
@@ -1066,6 +1115,17 @@ export class ReviewsService {
             },
           },
         });
+        if (review.contentStatus == Status.PASS || review.contentStatus == Status.FAIL) {
+          await tx.thesisInfo.update({
+            where: {
+              id: review.thesisInfoId,
+            },
+            data: {
+              summary: review.contentStatus,
+            },
+          });
+        }
+        return review;
       });
       return new ReviewDto(review);
     } catch (error) {
