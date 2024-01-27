@@ -60,34 +60,23 @@ export class StudentsService {
     });
     if (foundEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
 
-    // deptId, headReviewerId, advisorIds, committeeIds 올바른지 확인
+    // deptId 올바른지 확인
     const foundDept = await this.prismaService.department.findUnique({
       where: { id: deptId },
     });
     if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
-    const foundHeadReviewer = await this.prismaService.user.findUnique({
-      where: { id: headReviewerId, type: UserType.PROFESSOR },
-    });
-    if (!foundHeadReviewer) throw new BadRequestException(`[ID:${headReviewerId}]에 해당하는 교수가 없습니다.`);
-    for (const reviewerId of advisorIds) {
-      const foundProfessor = await this.prismaService.user.findUnique({
-        where: {
-          id: reviewerId,
-          type: UserType.PROFESSOR,
-        },
-      });
-      if (!foundProfessor) throw new BadRequestException(`[ID:${reviewerId}]에 해당하는 교수가 없습니다.`);
-    }
-    for (const reviewerId of committeeIds) {
-      const foundProfessor = await this.prismaService.user.findUnique({
-        where: {
-          id: reviewerId,
-          type: UserType.PROFESSOR,
-        },
-      });
-      if (!foundProfessor) throw new BadRequestException(`[ID:${reviewerId}]에 해당하는 교수가 없습니다.`);
-    }
+
+    // 교수 아이디 올바른지, 중복 역할은 없는지 확인
     const reviewerIds = [headReviewerId, ...advisorIds, ...committeeIds];
+    const foundProfessors = await this.prismaService.user.findMany({
+      where: {
+        id: { in: reviewerIds },
+        type: UserType.PROFESSOR,
+      },
+    });
+    const foundIds = foundProfessors.map((user) => user.id);
+    const missingIds = reviewerIds.filter((id) => !foundIds.includes(id));
+    if (missingIds.length !== 0) throw new BadRequestException(`ID:[${missingIds}]에 해당하는 교수가 없습니다.`);
     if (new Set(reviewerIds).size !== reviewerIds.length)
       throw new BadRequestException("한 명의 교수가 두개 이상의 역할을 맡을 수 없습니다.");
 
@@ -152,14 +141,16 @@ export class StudentsService {
                   ...reviewerIds.map((reviewerId) => {
                     return {
                       reviewerId,
-                      status: ReviewStatus.UNEXAMINED,
+                      contentStatus: ReviewStatus.UNEXAMINED,
+                      presentationStatus: ReviewStatus.PASS, // 예심은 구두 심사 없음
                       isFinal: false,
                     };
                   }),
                   // 예심 최종 심사 생성
                   {
                     reviewerId: headReviewerId,
-                    status: ReviewStatus.UNEXAMINED,
+                    contentStatus: ReviewStatus.UNEXAMINED,
+                    presentationStatus: ReviewStatus.PASS, // 예심은 구두 심사 없음
                     isFinal: true,
                   },
                 ],
@@ -185,14 +176,16 @@ export class StudentsService {
                   ...reviewerIds.map((reviewerId) => {
                     return {
                       reviewerId,
-                      status: ReviewStatus.UNEXAMINED,
+                      contentStatus: ReviewStatus.UNEXAMINED,
+                      presentationStatus: ReviewStatus.UNEXAMINED,
                       isFinal: false,
                     };
                   }),
                   // 본심 최종 심사 생성
                   {
                     reviewerId: headReviewerId,
-                    status: ReviewStatus.UNEXAMINED,
+                    contentStatus: ReviewStatus.UNEXAMINED,
+                    presentationStatus: ReviewStatus.PASS, // 최종 심사는 구두 심사 없음
                     isFinal: true,
                   },
                 ],
@@ -216,7 +209,8 @@ export class StudentsService {
                     ...reviewerIds.map((reviewerId) => {
                       return {
                         reviewerId,
-                        status: ReviewStatus.UNEXAMINED,
+                        contentStatus: ReviewStatus.UNEXAMINED,
+                        presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
                         isFinal: false,
                       };
                     }),
@@ -1149,21 +1143,21 @@ export class StudentsService {
             {
               thesisInfoId: preThesisInfo.id,
               reviewerId,
-              status: ReviewStatus.UNEXAMINED,
+              contentStatus: ReviewStatus.UNEXAMINED,
               isFinal: false,
             },
             // 본심 심사
             {
               thesisInfoId: mainThesisInfo.id,
               reviewerId,
-              status: ReviewStatus.UNEXAMINED,
+              contentStatus: ReviewStatus.UNEXAMINED,
               isFinal: false,
             },
             // 수정지시사항 반영 확인
             {
               thesisInfoId: revisionThesisInfo.id,
               reviewerId,
-              status: ReviewStatus.UNEXAMINED,
+              contentStatus: ReviewStatus.UNEXAMINED,
               isFinal: false,
             },
           ],
@@ -1349,35 +1343,35 @@ export class StudentsService {
             {
               thesisInfoId: preThesisInfo.id,
               reviewerId: headReviewerId,
-              status: ReviewStatus.UNEXAMINED,
+              contentStatus: ReviewStatus.UNEXAMINED,
               isFinal: false,
             },
             // 예심 최종 심사
             {
               thesisInfoId: preThesisInfo.id,
               reviewerId: headReviewerId,
-              status: ReviewStatus.UNEXAMINED,
+              contentStatus: ReviewStatus.UNEXAMINED,
               isFinal: true,
             },
             // 본심 심사
             {
               thesisInfoId: mainThesisInfo.id,
               reviewerId: headReviewerId,
-              status: ReviewStatus.UNEXAMINED,
+              contentStatus: ReviewStatus.UNEXAMINED,
               isFinal: false,
             },
             // 본심 최종 심사
             {
               thesisInfoId: mainThesisInfo.id,
               reviewerId: headReviewerId,
-              status: ReviewStatus.UNEXAMINED,
+              contentStatus: ReviewStatus.UNEXAMINED,
               isFinal: true,
             },
             // 수정지시사항 반영 확인
             {
               thesisInfoId: revisionThesisInfo.id,
               reviewerId: headReviewerId,
-              status: ReviewStatus.UNEXAMINED,
+              contentStatus: ReviewStatus.UNEXAMINED,
               isFinal: false,
             },
           ],
