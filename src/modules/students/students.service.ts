@@ -20,11 +20,11 @@ import { ThesisFileType } from "src/common/enums/thesis-file-type.enum";
 import { ReviewStatus } from "src/common/enums/review-status.enum";
 import { StudentSearchQuery } from "./dtos/student-search-query.dto";
 import { UpdateStudentDto } from "./dtos/update-student.dto";
-import { UpdateSystemDto } from "./dtos/update-system.dto";
 import { User, Role } from "@prisma/client";
 import { validate } from "class-validator";
 import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
 import { Readable } from "stream";
+import { UpdateSystemDto } from "./dtos/update-system.dto";
 
 @Injectable()
 export class StudentsService {
@@ -66,7 +66,7 @@ export class StudentsService {
     });
     if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
 
-    // 교수 아이디 올바른지, 중복 역할은 없는지 확인
+    // 교수 아이디 올바른지, 중복은 없는지 확인
     const reviewerIds = [headReviewerId, ...advisorIds, ...committeeIds];
     const foundProfessors = await this.prismaService.user.findMany({
       where: {
@@ -843,30 +843,146 @@ export class StudentsService {
   }
 
   async updateStudentSystem(studentId: number, updateSystemDto: UpdateSystemDto) {
-    const { phaseId } = updateSystemDto;
+    const { headReviewerId, advisorIds, committeeIds, thesisTitle } = updateSystemDto;
 
-    // studentId, phaseId 확인
+    // studentId 확인
     const foundStudent = await this.prismaService.user.findUnique({
       where: {
         id: studentId,
         type: UserType.STUDENT,
       },
-    });
-    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
-    const foundPhase = await this.prismaService.phase.findUnique({
-      where: {
-        id: phaseId,
+      include: {
+        department: true,
+        studentProcess: { include: { thesisInfos: true } },
       },
     });
-    if (!foundPhase) throw new BadRequestException("해당하는 시스템 단계가 없습니다.");
+    if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+    const process = foundStudent.studentProcess;
 
+    // 예심 최종 심사를 통과한 학생인지 확인
+    // 1. phaseId가 3(예심 최종 심사) 인가?
+    if (foundStudent.studentProcess.phaseId !== 3)
+      throw new BadRequestException("예심 최종 심사를 마친 학생만 시스템 단계를 업데이트할 수 있습니다.");
+    // 2. thesisInfos 중, 예심 논문 정보의 summary가 PASS 인가?
+    const preThesisInfo = foundStudent.studentProcess.thesisInfos.filter(
+      (thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY
+    )[0];
+    if (preThesisInfo.summary !== Summary.PASS)
+      throw new BadRequestException("예심 최종 심사를 통과하지 못한 학생입니다.");
+
+    // 교수 아이디 올바른지, 중복은 없는지 확인
+    const reviewerIds = [headReviewerId, ...advisorIds, ...committeeIds];
+    const foundProfessors = await this.prismaService.user.findMany({
+      where: {
+        id: { in: reviewerIds },
+        type: UserType.PROFESSOR,
+      },
+    });
+    const foundIds = foundProfessors.map((user) => user.id);
+    const missingIds = reviewerIds.filter((id) => !foundIds.includes(id));
+    if (missingIds.length !== 0) throw new BadRequestException(`ID:[${missingIds}]에 해당하는 교수가 없습니다.`);
+    if (new Set(reviewerIds).size !== reviewerIds.length)
+      throw new BadRequestException("한 명의 교수가 두개 이상의 역할을 맡을 수 없습니다.");
+
+    // 본심으로 업데이트
     try {
-      return await this.prismaService.process.update({
-        where: { studentId },
-        data: {
-          phaseId: phaseId ?? undefined,
-        },
-        include: { phase: true },
+      return await this.prismaService.$transaction(async (tx) => {
+        // process 수정
+        await tx.process.update({
+          where: { studentId },
+          data: {
+            phaseId: 4, // 본심 논문 제출 단계
+            currentPhase: Stage.MAIN,
+          },
+        });
+
+        // 기존 reviewer 정보 삭제
+        await tx.reviewer.deleteMany({
+          where: { processId: process.id },
+        });
+
+        // 새로운 심사위원장, 지도교수, 심사위원 배정
+        await tx.reviewer.createMany({
+          data: [
+            // 심사위원장
+            { processId: process.id, reviewerId: headReviewerId, role: Role.COMMITTEE_CHAIR },
+            // 심사위원
+            ...committeeIds.map((committeeId) => {
+              return { processId: process.id, reviewerId: committeeId, role: Role.COMMITTEE_MEMBER };
+            }),
+            // 지도교수
+            ...advisorIds.map((advisorId) => {
+              return { processId: process.id, reviewerId: advisorId, role: Role.ADVISOR };
+            }),
+          ],
+        });
+
+        // 본심에 해당하는 논문 정보(thesis_info), 논문 파일(thesis_file), 리뷰(review) 생성
+        await tx.thesisInfo.create({
+          data: {
+            // 본심 논문 정보 생성
+            processId: process.id,
+            title: thesisTitle,
+            stage: Stage.MAIN,
+            summary: Summary.UNEXAMINED,
+            thesisFiles: {
+              // 본심 논문 발표 파일, 본심 논문 파일 생성
+              create: [{ type: ThesisFileType.PRESENTATION }, { type: ThesisFileType.THESIS }],
+            },
+            reviews: {
+              create: [
+                // 본심 논문 심사 생성
+                ...reviewerIds.map((reviewerId) => {
+                  return {
+                    reviewerId,
+                    contentStatus: ReviewStatus.UNEXAMINED,
+                    presentationStatus: ReviewStatus.UNEXAMINED,
+                    isFinal: false,
+                  };
+                }),
+                // 본심 최종 심사 생성
+                {
+                  reviewerId: headReviewerId,
+                  contentStatus: ReviewStatus.UNEXAMINED,
+                  presentationStatus: ReviewStatus.PASS, // 최종 심사는 구두 심사 없음
+                  isFinal: true,
+                },
+              ],
+            },
+          },
+        });
+        if (foundStudent.department.modificationFlag) {
+          // 수정지시사항 단계가 있는 학생인 경우
+          await tx.thesisInfo.create({
+            data: {
+              // 수정지시사항 정보 생성
+              processId: process.id,
+              stage: Stage.REVISION,
+              summary: Summary.UNEXAMINED,
+              thesisFiles: {
+                create: [{ type: ThesisFileType.REVISION_REPORT }, { type: ThesisFileType.THESIS }],
+              },
+              reviews: {
+                create: [
+                  // 수정지시사항 확인 심사 생성
+                  ...reviewerIds.map((reviewerId) => {
+                    return {
+                      reviewerId,
+                      contentStatus: ReviewStatus.UNEXAMINED,
+                      presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
+                      isFinal: false,
+                    };
+                  }),
+                ],
+              },
+            },
+          });
+        }
+
+        return await tx.process.findUnique({
+          where: { studentId },
+          include: { phase: true },
+        });
       });
     } catch (error) {
       throw new InternalServerErrorException("업데이트 실패");

@@ -227,7 +227,7 @@ export class StudentsController {
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
     summary: "학생 시스템 정보 수정 API",
-    description: "아이디에 해당하는 학생의 시스템 정보를 수정할 수 있다.",
+    description: "에심 학생을 본심으로 업데이트 할 수 있다. 새로운 논문 정보, 지도 관계, 논문 심사 정보를 생성한다.",
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiBadRequestResponse({ description: "요청 양식 오류" })
