@@ -253,7 +253,7 @@ export class StudentsService {
             const name = studentRecord["이름"];
             const email = studentRecord["이메일"];
             const phone = studentRecord["연락처"]?.toString();
-            const major = studentRecord["전공"];
+            const major = studentRecord["학과"];
             const phase = studentRecord["심사과정"];
             const thesisTitle = studentRecord["작품/논문 제목"];
             const advisor1 = studentRecord["지도 교수1"];
@@ -364,7 +364,7 @@ export class StudentsService {
             if (foundStudent) {
               // 학생 업데이트
 
-              // 학생 기본 정보 업데이트 (학번, 비밀번호, 이름, 이메일, 연락처, 전공)
+              // 학생 기본 정보 업데이트 (학번, 비밀번호, 이름, 이메일, 연락처, 학과)
               const updateStudentDto = new UpdateStudentDto();
               updateStudentDto.password = password;
               updateStudentDto.name = name;
@@ -720,7 +720,7 @@ export class StudentsService {
       record["이름"] = student.name;
       record["이메일"] = student.email;
       record["연락처"] = student.phone;
-      record["전공"] = dept.name;
+      record["학과"] = dept.name;
 
       // 학생 논문 정보
       record["예심 논문 제목"] = thesisInfos[0].title ? thesisInfos[0].title : "미제출";
