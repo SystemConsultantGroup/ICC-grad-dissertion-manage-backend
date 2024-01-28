@@ -16,7 +16,7 @@ export class UserDto {
     this.phone = studentData.phone;
     this.type = studentData.type;
     this.department = new DepartmentDto(studentData.department);
-    this.stage = studentData.studentProcess?.currentPhase;
+    this.currentPhase = studentData.studentProcess?.currentPhase;
   }
 
   @ApiProperty({ description: "아이디" })
@@ -35,5 +35,5 @@ export class UserDto {
   department: DepartmentDto;
 
   @ApiProperty({ description: "시스템 단계", enum: Stage })
-  stage?: Stage;
+  currentPhase?: Stage;
 }

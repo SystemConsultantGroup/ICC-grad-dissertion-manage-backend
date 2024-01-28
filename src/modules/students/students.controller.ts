@@ -320,7 +320,7 @@ export class StudentsController {
   @Post("/:id/reviewers/:reviewerId")
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
-    summary: "학생 지도 정보 추가 API",
+    summary: "지도교수/심사위원 배정 추가 API",
     description: "심사위원/지도교수를 추가할 수 있다. 단, 이미 심사위원/지도교수가 2명이라면 불가하다.",
   })
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })

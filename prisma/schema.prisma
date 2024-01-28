@@ -108,19 +108,19 @@ model Reviewer {
 
 /// 논문 심사
 model Review {
-  id                 Int        @id @default(autoincrement())
+  id                 Int         @id @default(autoincrement())
   contentStatus      Status?
   presentationStatus Status?
-  comment            String?    @db.Text
+  comment            String?     @db.Text
   isFinal            Boolean
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @default(now()) @updatedAt
-  reviewerId         Int
-  thesisInfoId       Int
-  fileId             String?    @unique
-  file               File?      @relation(fields: [fileId], references: [uuid])
-  reviewer           User       @relation(fields: [reviewerId], references: [id])
-  thesisInfo         ThesisInfo @relation(fields: [thesisInfoId], references: [id])
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @default(now()) @updatedAt
+  reviewerId         Int?
+  thesisInfoId       Int?
+  fileId             String?     @unique
+  file               File?       @relation(fields: [fileId], references: [uuid])
+  reviewer           User?       @relation(fields: [reviewerId], references: [id])
+  thesisInfo         ThesisInfo? @relation(fields: [thesisInfoId], references: [id])
 
   @@index([reviewerId], map: "review_reviewerId_fkey")
   @@index([thesisInfoId], map: "review_thesisInfoId_fkey")

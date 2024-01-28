@@ -1218,11 +1218,7 @@ export class StudentsService {
       },
     });
     if (!foundProfessor) throw new BadRequestException("존재하지 않는 교수입니다.");
-
     const process = foundStudent.studentProcess;
-    const preThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY)[0];
-    const mainThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.MAIN)[0];
-    const revisionThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.REVISION)[0];
 
     // 이미 reviewer인 경우
     const foundReviewer = await this.prismaService.reviewer.findFirst({
@@ -1253,30 +1249,42 @@ export class StudentsService {
           },
         });
         // review 생성
+        // 논문 정보 확인. 논문 정보가 없을 경우 undefined 할당
+        const preThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY)[0];
+        const mainThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.MAIN)[0];
+        const revisionThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.REVISION)[0];
+        // 존재하는 논문 정보에 대해 review data 미리 정리
+        const reviewData = [];
+        if (preThesisInfo) {
+          reviewData.push({
+            thesisInfoId: preThesisInfo.id,
+            reviewerId,
+            contentStatus: ReviewStatus.UNEXAMINED,
+            presentationStatus: ReviewStatus.PASS, // 예심은 구두 심사 없음
+            isFinal: false,
+          });
+        }
+        if (mainThesisInfo) {
+          reviewData.push({
+            thesisInfoId: mainThesisInfo.id,
+            reviewerId,
+            contentStatus: ReviewStatus.UNEXAMINED,
+            presentationStatus: ReviewStatus.UNEXAMINED,
+            isFinal: false,
+          });
+        }
+        if (revisionThesisInfo) {
+          reviewData.push({
+            thesisInfoId: revisionThesisInfo.id,
+            reviewerId,
+            contentStatus: ReviewStatus.UNEXAMINED,
+            presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
+            isFinal: false,
+          });
+        }
+        // review 생성
         await tx.review.createMany({
-          data: [
-            // 예심 심사
-            {
-              thesisInfoId: preThesisInfo.id,
-              reviewerId,
-              contentStatus: ReviewStatus.UNEXAMINED,
-              isFinal: false,
-            },
-            // 본심 심사
-            {
-              thesisInfoId: mainThesisInfo.id,
-              reviewerId,
-              contentStatus: ReviewStatus.UNEXAMINED,
-              isFinal: false,
-            },
-            // 수정지시사항 반영 확인
-            {
-              thesisInfoId: revisionThesisInfo.id,
-              reviewerId,
-              contentStatus: ReviewStatus.UNEXAMINED,
-              isFinal: false,
-            },
-          ],
+          data: reviewData,
         });
       });
     } catch (error) {
@@ -1346,8 +1354,8 @@ export class StudentsService {
     // 배정 취소
     try {
       await this.prismaService.$transaction(async (tx) => {
-        // review 삭제
-        await tx.review.deleteMany({
+        // review 삭제 (soft delete)
+        await tx.review.updateMany({
           where: {
             reviewerId,
             thesisInfo: {
@@ -1356,8 +1364,11 @@ export class StudentsService {
               },
             },
           },
+          data: {
+            thesisInfoId: null,
+            reviewerId: null,
+          },
         });
-        // reviewer 삭제
         await tx.reviewer.delete({
           where: {
             id: foundReviewer.id,
@@ -1414,9 +1425,6 @@ export class StudentsService {
     if (!foundProfessor) throw new BadRequestException("존재하지 않는 교수입니다.");
 
     const process = foundStudent.studentProcess;
-    const preThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY)[0];
-    const mainThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.MAIN)[0];
-    const revisionThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.REVISION)[0];
     const currentHeadReviewer = process.reviewers.filter((reviewer) => reviewer.role === Role.COMMITTEE_CHAIR)[0];
 
     // 이미 reviewer인 경우
@@ -1431,8 +1439,8 @@ export class StudentsService {
     // 심사위원장 교체
     try {
       await this.prismaService.$transaction(async (tx) => {
-        // 기존 심사위원장의 review 삭제
-        await tx.review.deleteMany({
+        // 기존 심사위원장의 review 삭제 (soft delete)
+        await tx.review.updateMany({
           where: {
             reviewerId: currentHeadReviewer.reviewerId,
             thesisInfo: {
@@ -1441,25 +1449,39 @@ export class StudentsService {
               },
             },
           },
+          data: {
+            thesisInfoId: null,
+            reviewerId: null,
+          },
         });
+
         // process 수정
         await tx.process.update({
           where: { id: process.id },
           data: { headReviewerId },
         });
+
         // reviewer 수정
         await tx.reviewer.update({
           where: { id: currentHeadReviewer.id },
           data: { reviewerId: headReviewerId },
         });
+
         // review 생성
-        await tx.review.createMany({
-          data: [
+        // 논문 정보 확인. 논문 정보가 없을 경우 undefined 할당
+        const preThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY)[0];
+        const mainThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.MAIN)[0];
+        const revisionThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.REVISION)[0];
+        // 존재하는 논문 정보에 대해 review data 미리 정리
+        const reviewData = [];
+        if (preThesisInfo) {
+          reviewData.push(
             // 예심 심사
             {
               thesisInfoId: preThesisInfo.id,
               reviewerId: headReviewerId,
               contentStatus: ReviewStatus.UNEXAMINED,
+              presentationStatus: ReviewStatus.PASS, // 예심은 구두 심사 없음
               isFinal: false,
             },
             // 예심 최종 심사
@@ -1467,13 +1489,19 @@ export class StudentsService {
               thesisInfoId: preThesisInfo.id,
               reviewerId: headReviewerId,
               contentStatus: ReviewStatus.UNEXAMINED,
+              presentationStatus: ReviewStatus.PASS, // 예심은 구두 심사 없음
               isFinal: true,
-            },
+            }
+          );
+        }
+        if (mainThesisInfo) {
+          reviewData.push(
             // 본심 심사
             {
               thesisInfoId: mainThesisInfo.id,
               reviewerId: headReviewerId,
               contentStatus: ReviewStatus.UNEXAMINED,
+              presentationStatus: ReviewStatus.UNEXAMINED,
               isFinal: false,
             },
             // 본심 최종 심사
@@ -1481,16 +1509,25 @@ export class StudentsService {
               thesisInfoId: mainThesisInfo.id,
               reviewerId: headReviewerId,
               contentStatus: ReviewStatus.UNEXAMINED,
+              presentationStatus: ReviewStatus.UNEXAMINED,
               isFinal: true,
-            },
+            }
+          );
+        }
+        if (revisionThesisInfo) {
+          reviewData.push(
             // 수정지시사항 반영 확인
             {
               thesisInfoId: revisionThesisInfo.id,
               reviewerId: headReviewerId,
               contentStatus: ReviewStatus.UNEXAMINED,
+              presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
               isFinal: false,
-            },
-          ],
+            }
+          );
+        }
+        await tx.review.createMany({
+          data: reviewData,
         });
       });
     } catch (error) {
