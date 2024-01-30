@@ -28,7 +28,7 @@ export class DepartmentsController {
     summary: "학과 리스트 조회",
     description: "학과 리스트 조회",
   })
-  @UseUserTypeGuard([UserType.ADMIN])
+  @UseUserTypeGuard([UserType.ADMIN, UserType.PROFESSOR])
   @ApiOkResponse({
     description: "학과 리스트 조회 성공",
     type: GetDepartmentsDto,
