@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
 import { PrismaService } from "../../config/database/prisma.service";
 import { CreateAchievementsDto } from "./dtos/create-achievements.dto";
 import { UpdateAchievementsDto } from "./dtos/update-achievements.dto";
@@ -11,15 +11,18 @@ import { Readable } from "stream";
 export class AchievementsService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async createAchievement(userId: number, createAchievementsDto: CreateAchievementsDto) {
+  async createAchievement(userId: number, user: User, createAchievementsDto: CreateAchievementsDto) {
     const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
       createAchievementsDto;
-    const user = await this.prismaService.user.findUnique({
+
+    if (user.type === UserType.STUDENT && userId !== user.id)
+      throw new UnauthorizedException("본인 논문실적만 등록 가능합니다.");
+    const foundUser = await this.prismaService.user.findUnique({
       where: {
         id: userId,
       },
     });
-    if (!user) throw new BadRequestException("본인의 논문실적만 등록이 가능합니다.");
+    if (!foundUser) throw new BadRequestException("해당 유저가 존재하지 않습니다.");
     return await this.prismaService.achievements.create({
       data: {
         userId,
