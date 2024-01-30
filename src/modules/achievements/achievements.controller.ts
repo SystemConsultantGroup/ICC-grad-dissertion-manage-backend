@@ -10,6 +10,7 @@ import {
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
+  getSchemaPath,
 } from "@nestjs/swagger";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { CreateAchievementsDto } from "./dtos/create-achievements.dto";
@@ -112,5 +113,23 @@ export class AchievementsController {
 
     res.setHeader(`Content-Disposition`, `attachment; filename=${encodeURI(fileName)}`);
     stream.pipe(res);
+  }
+
+  @ApiOperation({
+    summary: "특정 논문실적 조회",
+  })
+  @ApiOkResponse({
+    description: "논문 실적 조회 성공",
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(CreateAchievementResponseDto) }],
+    },
+  })
+  @ApiInternalServerErrorResponse({ description: "논문 실적 조회 실패" })
+  @ApiUnauthorizedResponse({ description: "학생은 본인 논문실적만 조회 허용" })
+  @UseUserTypeGuard([UserType.ADMIN, UserType.PROFESSOR])
+  @Get(":id")
+  async getAchievement(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
+    const achievement = await this.achievemenstService.getAchievement(id, user);
+    return new CommonResponseDto(new CreateAchievementResponseDto(achievement));
   }
 }
