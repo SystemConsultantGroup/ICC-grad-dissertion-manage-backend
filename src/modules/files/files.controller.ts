@@ -68,4 +68,11 @@ export class FilesController {
     res.setHeader("Content-Disposition", `attachment; filename=${encodeURI(fileName)}`);
     stream.pipe(res);
   }
+
+  @Get(":id")
+  @ApiOperation({ summary: " 파일 다운로드 (서명 이미지)" })
+  async getFile(@Param("id") id: string, @Response() res) {
+    const stream = await this.filesService.getFile(id);
+    stream.pipe(res);
+  }
 }
