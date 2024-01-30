@@ -34,6 +34,7 @@ import { GetRevisionResDto } from "./dtos/get-revision.res.dto";
 import { GetResultResDto } from "./dtos/get-result.res.dto";
 import { SearchCurrentReqDto } from "./dtos/search-current.req.dto";
 import { GetRevisionListResDto } from "./dtos/get-revision-list.res.dto";
+import { UpdateRevisionReqDto } from "./dtos/update-revision.req.dto";
 
 @ApiTags("심사정보 API")
 @UseGuards(JwtGuard)
@@ -369,10 +370,10 @@ export class ReviewsController {
   @Put("revision/:id")
   async updateRevision(
     @Param("id", PositiveIntPipe) id: number,
-    @Body() updateReviewFinalDto: UpdateReviewFinalReqDto,
+    @Body() updateRevision: UpdateRevisionReqDto,
     @CurrentUser() user: User
   ) {
-    const review = await this.reviewsService.updateReviewFinal(id, updateReviewFinalDto, user);
+    const review = await this.reviewsService.updateRevision(id, updateRevision, user);
     return new CommonResponseDto(new GetRevisionResDto(review));
   }
 
