@@ -6,11 +6,11 @@ import { FileDto } from "src/modules/files/dtos/file.dto";
 export class ReviewDto {
   constructor(
     review: Review & {
-      thesisInfo: ThesisInfo & {
+      thesisInfo?: ThesisInfo & {
         process: Process & { student: User & { department: Department }; reviewers: Reviewer[] };
         thesisFiles: (ThesisFile & { file: File })[];
       };
-      reviewer: User;
+      reviewer?: User;
       file: File;
     }
   ) {
@@ -31,7 +31,7 @@ export class ReviewDto {
   @ApiProperty({ description: "논문정보", type: () => ThesisInfoDto })
   thesisInfo?: ThesisInfoDto;
   @ApiProperty({ description: "심사위원" })
-  reviewer: User;
+  reviewer?: User;
   @ApiProperty({ description: "심사정보 파일", type: FileDto })
   file?: File;
   @ApiProperty({ description: "내용 심사 상태", enum: Status })
