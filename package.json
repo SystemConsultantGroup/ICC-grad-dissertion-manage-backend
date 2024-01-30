@@ -46,7 +46,7 @@
     "passport-jwt": "^4.0.1",
     "path": "^0.12.7",
     "pdf-merger-js": "^5.0.0",
-    "prisma": "^5.6.0",
+    "prisma": "^5.8.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "uuid": "^9.0.1",
