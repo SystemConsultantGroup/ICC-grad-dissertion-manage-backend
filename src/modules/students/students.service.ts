@@ -87,7 +87,7 @@ export class StudentsService {
             headReviewerId,
             phaseId,
             isLock,
-            stage: Stage.PRELIMINARY, // TODO : 수정 예정
+            currentPhase: Stage.PRELIMINARY, // TODO : 수정 예정
           },
         });
 
@@ -417,7 +417,7 @@ export class StudentsService {
                   headReviewerId: createStudentDto.headReviewerId,
                   phaseId: createStudentDto.phaseId,
                   isLock: createStudentDto.isLock,
-                  stage: Stage.PRELIMINARY, // TODO : 수정 예정
+                  currentPhase: Stage.PRELIMINARY, // TODO : 수정 예정
                 },
               });
               // 지도 교수 배정 (reviewer)

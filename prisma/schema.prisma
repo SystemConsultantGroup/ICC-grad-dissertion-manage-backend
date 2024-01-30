@@ -19,11 +19,13 @@ model User {
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @default(now()) @updatedAt
   deptId              Int?
+  signId              String?        @unique
   headReviewProcesses Process[]      @relation("headReviewer")
   studentProcess      Process?       @relation("student")
   reviews             Review[]
   reviewers           Reviewer[]
   department          Department?    @relation(fields: [deptId], references: [id])
+  signFile            File?          @relation(fields: [signId], references: [uuid])
   Achievements        Achievements[]
 
   @@index([deptId], map: "user_deptId_fkey")
@@ -44,7 +46,7 @@ model Department {
 model Process {
   id             Int          @id @default(autoincrement())
   isLock         Boolean? // TODO : 추후 삭제
-  stage          Stage
+  currentPhase   Stage
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @default(now()) @updatedAt
   studentId      Int?         @unique
@@ -106,18 +108,19 @@ model Reviewer {
 
 /// 논문 심사
 model Review {
-  id           Int        @id @default(autoincrement())
-  status       Status?
-  comment      String?    @db.Text
-  isFinal      Boolean
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @default(now()) @updatedAt
-  reviewerId   Int
-  thesisInfoId Int
-  fileId       String?    @unique
-  file         File?      @relation(fields: [fileId], references: [uuid])
-  reviewer     User       @relation(fields: [reviewerId], references: [id])
-  thesisInfo   ThesisInfo @relation(fields: [thesisInfoId], references: [id])
+  id                 Int         @id @default(autoincrement())
+  contentStatus      Status?
+  presentationStatus Status?
+  comment            String?     @db.Text
+  isFinal            Boolean
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @default(now()) @updatedAt
+  reviewerId         Int?
+  thesisInfoId       Int?
+  fileId             String?     @unique
+  file               File?       @relation(fields: [fileId], references: [uuid])
+  reviewer           User?       @relation(fields: [reviewerId], references: [id])
+  thesisInfo         ThesisInfo? @relation(fields: [thesisInfoId], references: [id])
 
   @@index([reviewerId], map: "review_reviewerId_fkey")
   @@index([thesisInfoId], map: "review_thesisInfoId_fkey")
@@ -133,6 +136,7 @@ model File {
   updatedAt  DateTime    @default(now()) @updatedAt
   review     Review?
   thesisFile ThesisFile?
+  professor  User?
 
   @@map("file")
 }
