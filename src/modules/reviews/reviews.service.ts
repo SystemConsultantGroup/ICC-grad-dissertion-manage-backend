@@ -10,16 +10,14 @@ import { SearchReviewReqDto, SearchStatus } from "./dtos/search-review.req.dto";
 import { SearchResultReqDto } from "./dtos/search-result.req.dto";
 import { GetResultListResDto } from "./dtos/get-result-list.res.dto";
 import { ThesisInfoDto } from "./dtos/thesis-info.dto";
-import { InternalServerErrorException } from "@nestjs/common/exceptions";
+import { InternalServerErrorException, NotFoundException } from "@nestjs/common/exceptions";
 import { getCurrentTime } from "src/common/utils/date.util";
 import { SearchRevisionReqDto } from "./dtos/search-revision.req.dto";
 import { UpdateRevisionReqDto } from "./dtos/update-revision.req.dto";
 import { GetReviewFinalListResDto } from "./dtos/get-review-final-list.res.dto";
 import { UpdateReviewFinalReqDto } from "./dtos/update-review-final.req.dto";
 import { GetRevisionListResDto } from "./dtos/get-revision-list.res.dto";
-import { GetRevisionResDto } from "./dtos/get-revision.res.dto";
 import { SearchCurrentReqDto } from "./dtos/search-current.req.dto";
-import { GetCurrentListResDto } from "./dtos/get-current-list.res.dto";
 import { MinioClientService } from "src/config/file/minio-client.service";
 import { v1 } from "uuid";
 import { readFile, createWriteStream, unlink } from "fs";
@@ -37,7 +35,7 @@ export class ReviewsService {
   buildFilename(base, searchQuery, isRevision = false) {
     let queryString = "";
     if (searchQuery.author != undefined) queryString += "_저자_" + searchQuery.author;
-    if (searchQuery.department != undefined) queryString += "_전공_" + searchQuery.department;
+    if (searchQuery.department != undefined) queryString += "_학과_" + searchQuery.department;
     if (searchQuery.stage != undefined) {
       if (searchQuery.stage == "PRELIMINARY") queryString += "_예심";
       if (searchQuery.stage == "MAIN") queryString += "_본심";
@@ -553,7 +551,7 @@ export class ReviewsService {
     const records = reviews.map((review) => {
       const record = {};
       record["저자"] = review.student;
-      record["전공"] = review.department;
+      record["학과"] = review.department;
       if (review.stage == Stage.MAIN) record["구분"] = "본심";
       else if (review.stage == Stage.PRELIMINARY) record["구분"] = "예심";
       record["논문 제목"] = review.title;
@@ -608,7 +606,7 @@ export class ReviewsService {
         },
       },
     });
-    if (!review) throw new BadRequestException("존재하지 않는 심사 정보입니다.");
+    if (!review) throw new NotFoundException("존재하지 않는 심사 정보입니다.");
     if (review.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     return new ReviewDto(review);
   }
@@ -638,7 +636,7 @@ export class ReviewsService {
         },
       },
     });
-    if (!foundReview) throw new BadRequestException("존재하지 않는 심사정보입니다");
+    if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
     if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     if (
       (foundReview.contentStatus == Status.PASS || foundReview.contentStatus == Status.FAIL) &&
@@ -651,7 +649,7 @@ export class ReviewsService {
           uuid: fileUUID,
         },
       });
-      if (!foundFile) throw new BadRequestException("존재하지 않는 심사파일입니다.");
+      if (!foundFile) throw new NotFoundException("존재하지 않는 심사파일입니다.");
     }
     try {
       const review = await this.prismaService.$transaction(async (tx) => {
@@ -866,7 +864,7 @@ export class ReviewsService {
     const records = reviews.map((review) => {
       const record = {};
       record["저자"] = review.student;
-      record["전공"] = review.department;
+      record["학과"] = review.department;
       if (review.stage == Stage.MAIN) record["구분"] = "본심";
       else if (review.stage == Stage.PRELIMINARY) record["구분"] = "예심";
       record["논문 제목"] = review.title;
@@ -921,7 +919,7 @@ export class ReviewsService {
         },
       },
     });
-    if (!review) throw new BadRequestException("존재하지 않는 심사 정보입니다.");
+    if (!review) throw new NotFoundException("존재하지 않는 심사 정보입니다.");
     if (review.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     return new ReviewDto(review);
   }
@@ -957,7 +955,7 @@ export class ReviewsService {
         },
       },
     });
-    if (!foundReview) throw new BadRequestException("존재하지 않는 심사정보입니다");
+    if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
     if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     if (foundReview.contentStatus == Status.PASS || foundReview.contentStatus == Status.FAIL)
       throw new BadRequestException("수정 불가능한 논문심사입니다.");
@@ -967,7 +965,7 @@ export class ReviewsService {
           uuid: fileUUID,
         },
       });
-      if (!foundFile) throw new BadRequestException("존재하지 않는 심사파일입니다.");
+      if (!foundFile) throw new NotFoundException("존재하지 않는 심사파일입니다.");
     }
     try {
       const review = await this.prismaService.$transaction(async (tx) => {
@@ -1195,7 +1193,7 @@ export class ReviewsService {
       },
     });
     return {
-      reviews: reviews.map((review) => new GetRevisionResDto(new ReviewDto(review))),
+      reviews: reviews.map((review) => new GetRevisionListResDto(new ReviewDto(review))),
       totalCount: totalCount,
     };
   }
@@ -1246,7 +1244,7 @@ export class ReviewsService {
     const records = reviews.map((review) => {
       const record = {};
       record["저자"] = review.student;
-      record["전공"] = review.department;
+      record["학과"] = review.department;
       record["논문 제목"] = review.title;
       if (review.status == Status.PASS) record["확인 여부"] = "확인 완료";
       else if (review.status == Status.UNEXAMINED) record["확인 여부"] = "미확인";
@@ -1296,7 +1294,7 @@ export class ReviewsService {
         },
       },
     });
-    if (!review) throw new BadRequestException("존재하지 않는 심사 정보입니다.");
+    if (!review) throw new NotFoundException("존재하지 않는 심사 정보입니다.");
     if (review.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     return new ReviewDto(review);
   }
@@ -1309,7 +1307,7 @@ export class ReviewsService {
         isFinal: false,
       },
     });
-    if (!foundReview) throw new BadRequestException("존재하지 않는 심사정보입니다");
+    if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
     if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     try {
       const review = await this.prismaService.review.update({
@@ -1393,6 +1391,12 @@ export class ReviewsService {
             file: true,
           },
         },
+        reviews: {
+          include: {
+            reviewer: true,
+            file: true,
+          },
+        },
       },
     });
     const totalCount = await this.prismaService.thesisInfo.count({
@@ -1418,27 +1422,7 @@ export class ReviewsService {
       },
     });
     return {
-      results: await Promise.all(
-        results.map(async (result) => {
-          const tmp = new GetCurrentListResDto(new ThesisInfoDto(result));
-          const reviews = await this.prismaService.review.findMany({
-            where: {
-              thesisInfoId: result.id,
-              isFinal: false,
-              NOT: {
-                thesisInfo: {
-                  stage: Stage.REVISION,
-                },
-              },
-            },
-            include: {
-              reviewer: true,
-            },
-          });
-          tmp.reviews = reviews;
-          return tmp;
-        })
-      ),
+      results: results.map((result) => new GetResultListResDto(new ThesisInfoDto(result))),
       totalCount: totalCount,
     };
   }
@@ -1492,7 +1476,7 @@ export class ReviewsService {
     const records = results.map((result) => {
       const record = {};
       record["저자"] = result.process.student.name;
-      record["전공"] = result.process.student.department.name;
+      record["학과"] = result.process.student.department.name;
       if (result.stage == Stage.MAIN) record["구분"] = "본심";
       else if (result.stage == Stage.PRELIMINARY) record["구분"] = "예심";
       else if (result.stage == Stage.REVISION) record["구분"] = "수정";
@@ -1566,7 +1550,7 @@ export class ReviewsService {
         },
       },
     });
-    if (!result) throw new BadRequestException("존재하지 않는 논문 정보입니다.");
+    if (!result) throw new NotFoundException("존재하지 않는 논문 정보입니다.");
     return new ThesisInfoDto(result);
   }
 
@@ -1610,6 +1594,12 @@ export class ReviewsService {
         },
         thesisFiles: {
           include: {
+            file: true,
+          },
+        },
+        reviews: {
+          include: {
+            reviewer: true,
             file: true,
           },
         },
@@ -1691,7 +1681,7 @@ export class ReviewsService {
     const records = results.map((result) => {
       const record = {};
       record["저자"] = result.student;
-      record["전공"] = result.department;
+      record["학과"] = result.department;
       if (result.stage == Stage.MAIN) record["구분"] = "본심";
       else if (result.stage == Stage.PRELIMINARY) record["구분"] = "예심";
       else if (result.stage == Stage.REVISION) record["구분"] = "수정";
@@ -1811,7 +1801,7 @@ export class ReviewsService {
         },
       },
     });
-    if (!result) throw new BadRequestException("존재하지 않는 논문 정보입니다.");
+    if (!result) throw new NotFoundException("존재하지 않는 논문 정보입니다.");
     return new ThesisInfoDto(result);
   }
 }
