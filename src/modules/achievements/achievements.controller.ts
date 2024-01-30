@@ -16,7 +16,7 @@ import { JwtGuard } from "../auth/guards/jwt.guard";
 import { CreateAchievementsDto } from "./dtos/create-achievements.dto";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
 import { UserType } from "../../common/enums/user-type.enum";
-import { AchievementsExcelQuery, AchievementsSearchQuery } from "./dtos/achievements-query.dto";
+import { AchievementsExcelQuery, AchievementsSearchQuery, PostAchievementQuery } from "./dtos/achievements-query.dto";
 import { PageDto } from "../../common/dtos/pagination.dto";
 import { AchievementDto, CreateAchievementResponseDto } from "./dtos/achievement.dto";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
@@ -48,11 +48,11 @@ export class AchievementsController {
     description: "본인의 논문 실적만 등록이 가능합니다(학생인경우)",
   })
   async createAchievement(
-    @Query("id", PositiveIntPipe) id: number,
+    @Query() postAchievementQuery: PostAchievementQuery,
     @CurrentUser() user: User,
     @Body() createAchievementsDto: CreateAchievementsDto
   ) {
-    const newAchievement = await this.achievemenstService.createAchievement(id, user, createAchievementsDto);
+    const newAchievement = await this.achievemenstService.createAchievement(postAchievementQuery.id, user, createAchievementsDto);
     return new CommonResponseDto(new CreateAchievementResponseDto(newAchievement));
   }
 
