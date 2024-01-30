@@ -73,4 +73,14 @@ export class FilesService {
       throw new InternalServerErrorException("파일을 찾을 수 없습니다.");
     }
   }
+
+  async getFile(key: string) {
+    try {
+      const stream = await this.minioClientService.getFile(key);
+      return stream;
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException("존재하지 않는 uuid입니다.");
+    }
+  }
 }
