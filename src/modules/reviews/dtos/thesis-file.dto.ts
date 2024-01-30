@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { ThesisFile, ThesisFileType, File } from "@prisma/client";
+import { FileDto } from "src/modules/files/dtos/file.dto";
 
 export class ThesisFileDto {
   constructor(thesisFile: ThesisFile & { file: File }) {
@@ -18,6 +19,6 @@ export class ThesisFileDto {
   createdAt: Date;
   @ApiProperty({ description: "updatedAt" })
   updatedAt: Date;
-  @ApiProperty({ description: "파일" })
-  file: File;
+  @ApiProperty({ description: "파일", type: FileDto })
+  file: FileDto;
 }

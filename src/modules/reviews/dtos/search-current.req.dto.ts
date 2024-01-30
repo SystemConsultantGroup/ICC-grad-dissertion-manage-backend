@@ -1,14 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Stage } from "@prisma/client";
-import { IsEnum, IsOptional, IsPositive, IsString } from "class-validator";
+import { IsEnum, IsOptional, IsString, IsPositive } from "class-validator";
 import { PageQuery } from "src/common/dtos/pagination.dto";
 
-export enum SearchStatus {
-  PENDING = "PENDING",
-  COMPLETE = "COMPLETE",
-}
-
-export class SearchReviewReqDto extends PageQuery {
+export class SearchCurrentReqDto extends PageQuery {
   @ApiProperty({ description: "저자명", required: false })
   @IsOptional()
   @IsString()
@@ -28,9 +23,4 @@ export class SearchReviewReqDto extends PageQuery {
   @IsOptional()
   @IsString()
   title: string;
-
-  @ApiProperty({ description: "심사 결과", required: false })
-  @IsOptional()
-  @IsEnum(SearchStatus)
-  status: SearchStatus;
 }
