@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Process, ThesisInfo, Stage, Summary, User, Department, ThesisFile, File } from "@prisma/client";
+import { Process, ThesisInfo, Stage, Summary, User, Department, ThesisFile, File, Reviewer } from "@prisma/client";
 import { ProcessDto } from "./process.dto";
 import { ReviewDto } from "./review.dto";
 import { ThesisFileDto } from "./thesis-file.dto";
@@ -7,7 +7,7 @@ import { ThesisFileDto } from "./thesis-file.dto";
 export class ThesisInfoDto {
   constructor(
     thesisInfo: ThesisInfo & {
-      process: Process & { student: User & { department: Department } };
+      process: Process & { student: User & { department: Department }; reviewers: Reviewer[] };
       thesisFiles: (ThesisFile & { file: File })[];
     }
   ) {
