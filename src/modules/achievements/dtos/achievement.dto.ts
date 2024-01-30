@@ -44,3 +44,43 @@ export class AchievementDto {
   @ApiProperty({ description: "학과" })
   department?: string;
 }
+
+export class CreateAchievementResponseDto {
+  constructor(achievement: Achievements) {
+    this.id = achievement.id;
+    this.performance = achievement.performance;
+    this.journalName = achievement.journalName;
+    this.paperTitle = achievement.paperTitle;
+    this.ISSN = achievement.ISSN;
+    this.publicationDate = achievement.publicationDate;
+    this.authorType = achievement.authorType;
+    this.authorNumbers = achievement.authorNumbers;
+    this.userId = achievement.userId;
+  }
+  @ApiProperty({ description: "논문실적 id" })
+  id: number;
+
+  @ApiProperty({ description: "실적 구분" })
+  performance: Performance;
+
+  @ApiProperty({ description: "학술지명" })
+  journalName: string;
+
+  @ApiProperty({ description: "논문 제목" })
+  paperTitle: string;
+
+  @ApiProperty({ description: "ISSN" })
+  ISSN: string;
+
+  @ApiProperty({ description: "게재년월일" })
+  publicationDate: Date;
+
+  @ApiProperty({ description: "주저자 여부" })
+  authorType: AuthorType;
+
+  @ApiProperty({ description: "주저자 수" })
+  authorNumbers: number;
+
+  @ApiProperty({ description: "유저ID" })
+  userId: number;
+}
