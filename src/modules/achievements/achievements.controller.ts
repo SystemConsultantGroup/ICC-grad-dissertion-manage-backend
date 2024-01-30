@@ -10,14 +10,15 @@ import {
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
+  getSchemaPath,
 } from "@nestjs/swagger";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { CreateAchievementsDto } from "./dtos/create-achievements.dto";
 import { UseUserTypeGuard } from "../auth/decorators/user-type-guard.decorator";
 import { UserType } from "../../common/enums/user-type.enum";
-import { AchievementsExcelQuery, AchievementsSearchQuery } from "./dtos/achievements-query.dto";
+import { AchievementsExcelQuery, AchievementsSearchQuery, PostAchievementQuery } from "./dtos/achievements-query.dto";
 import { PageDto } from "../../common/dtos/pagination.dto";
-import { AchievementDto } from "./dtos/achievement.dto";
+import { AchievementDto, CreateAchievementResponseDto } from "./dtos/achievement.dto";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { User } from "@prisma/client";
 import { CommonResponseDto } from "../../common/dtos/common-response.dto";
@@ -38,20 +39,21 @@ export class AchievementsController {
   @Post(":id")
   @ApiCreatedResponse({
     description: "논문 실적 등록 성공",
-    type: CommonResponseDto,
+    type: CreateAchievementResponseDto,
   })
   @ApiBadRequestResponse({
-    description: "존재하지 않는 유저의 논문 실적을 등록하려고 하였습니다",
+    description: "해당 유저는 존재하지 않습니다",
   })
   @ApiUnauthorizedResponse({
-    description: "학생 권한 접근 가능",
+    description: "본인의 논문 실적만 등록이 가능합니다(학생인경우)",
   })
   async createAchievement(
-    @Param("id", PositiveIntPipe) id: number,
+    @Query() postAchievementQuery: PostAchievementQuery,
+    @CurrentUser() user: User,
     @Body() createAchievementsDto: CreateAchievementsDto
   ) {
-    await this.achievemenstService.createAchievement(id, createAchievementsDto);
-    return new CommonResponseDto();
+    const newAchievement = await this.achievemenstService.createAchievement(postAchievementQuery.id, user, createAchievementsDto);
+    return new CommonResponseDto(new CreateAchievementResponseDto(newAchievement));
   }
 
   @ApiOperation({
@@ -111,5 +113,23 @@ export class AchievementsController {
 
     res.setHeader(`Content-Disposition`, `attachment; filename=${encodeURI(fileName)}`);
     stream.pipe(res);
+  }
+
+  @ApiOperation({
+    summary: "특정 논문실적 조회",
+  })
+  @ApiOkResponse({
+    description: "논문 실적 조회 성공",
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(CreateAchievementResponseDto) }],
+    },
+  })
+  @ApiInternalServerErrorResponse({ description: "논문 실적 조회 실패" })
+  @ApiUnauthorizedResponse({ description: "학생은 본인 논문실적만 조회 허용" })
+  @UseUserTypeGuard([UserType.ADMIN, UserType.PROFESSOR])
+  @Get(":id")
+  async getAchievement(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
+    const achievement = await this.achievemenstService.getAchievement(id, user);
+    return new CommonResponseDto(new CreateAchievementResponseDto(achievement));
   }
 }
