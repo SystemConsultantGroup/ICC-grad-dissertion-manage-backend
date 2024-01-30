@@ -92,3 +92,8 @@ export class AchievementsExcelQuery {
   @IsDate()
   publicationDate?: Date;
 }
+
+export class PostAchievementQuery {
+  @ApiProperty({ description: "유저ID", required: false, example: "1" })
+  id: number;
+}
