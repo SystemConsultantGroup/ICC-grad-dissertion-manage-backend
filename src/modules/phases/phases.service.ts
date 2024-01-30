@@ -61,8 +61,6 @@ export class PhasesService {
       throw new BadRequestException("기간이 잘못 설정되었습니다.");
     }
 
-    const endDateTime = UTC2KST(updatePhaseDto.end);
-    endDateTime.setUTCHours(23, 59, 59, 0);
     try {
       return await this.prismaService.$transaction(async (tx) => {
         const updatedPhase = await tx.phase.update({
@@ -71,7 +69,7 @@ export class PhasesService {
           },
           data: {
             start: UTC2KST(updatePhaseDto.start),
-            end: endDateTime.toISOString(),
+            end: UTC2KST(updatePhaseDto.end),
           },
         });
 
