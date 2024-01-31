@@ -24,6 +24,7 @@ import { readFile, createWriteStream, unlink } from "fs";
 import { create as createPdf } from "html-pdf";
 import * as path from "path";
 import * as Zip from "jszip";
+import { GetCurrentListResDto } from "./dtos/get-current-list.res.dto";
 
 @Injectable()
 export class ReviewsService {
@@ -1394,7 +1395,6 @@ export class ReviewsService {
         reviews: {
           include: {
             reviewer: true,
-            file: true,
           },
         },
       },
@@ -1422,7 +1422,7 @@ export class ReviewsService {
       },
     });
     return {
-      results: results.map((result) => new GetResultListResDto(new ThesisInfoDto(result))),
+      results: results.map((result) => new GetCurrentListResDto(new ThesisInfoDto(result))),
       totalCount: totalCount,
     };
   }
