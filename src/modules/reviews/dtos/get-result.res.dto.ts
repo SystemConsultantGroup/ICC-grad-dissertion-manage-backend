@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { Stage } from "@prisma/client";
 import { ReviewDto } from "./review.dto";
 import { ThesisFileDto } from "./thesis-file.dto";
 import { ThesisInfoDto } from "./thesis-info.dto";
@@ -6,6 +7,7 @@ import { ThesisInfoDto } from "./thesis-info.dto";
 export class GetResultResDto {
   constructor(result: ThesisInfoDto) {
     this.id = result.id;
+    this.stage = result.stage;
     this.title = result.title;
     this.student = result.process.student.name;
     this.department = result.process.student.department.name;
@@ -16,6 +18,8 @@ export class GetResultResDto {
 
   @ApiProperty({ description: "논문정보 아이디" })
   id: number;
+  @ApiProperty({ description: "구분", enum: Stage })
+  stage: Stage;
   @ApiProperty({ description: "논문 제목" })
   title: string;
   @ApiProperty({ description: "논문 저자 (학생)" })
