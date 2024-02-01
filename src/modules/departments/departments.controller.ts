@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { DepartmentsService } from "./departments.service";
 import {
   ApiBearerAuth,
@@ -15,6 +15,7 @@ import { UserType } from "@prisma/client";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { GetDepartmentsDto } from "./dtos/get-departments.dto";
 import { DepartmentDto } from "./dtos/department.dto";
+import { UpdateDepartmentQuery } from "./dtos/update-department-query.dto";
 
 @ApiTags("학과 API")
 @UseGuards(JwtGuard)
@@ -69,6 +70,20 @@ export class DepartmentsController {
   @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
   async deleteDepartment(@Param("id", ParseIntPipe) id: number) {
     await this.departmentsService.deleteDepartment(id);
+
+    return new CommonResponseDto();
+  }
+
+  @Put(":id")
+  @ApiOperation({
+    summary: "수정 지시사항 학과 수정",
+    description: "Querystring의 exclud boolean값에 따라서 수정 지시사항 학과에서 제외/제외 취소를 결정합니다.",
+  })
+  @UseUserTypeGuard([UserType.ADMIN])
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
+  async updateDepartment(@Param("id", ParseIntPipe) id: number, @Query() updateDepartmentQuery: UpdateDepartmentQuery) {
+    await this.departmentsService.updateDepartment(id, updateDepartmentQuery);
 
     return new CommonResponseDto();
   }
