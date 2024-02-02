@@ -2,10 +2,14 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "../../config/database/prisma.service";
 import { UTC2KST, getKST } from "../../common/utils/date.util";
 import { UpdatePhaseDto } from "./dtos/update-phase.dto";
+import { TaskService } from "../task/task.service";
 
 @Injectable()
 export class PhasesService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly taskSerivce: TaskService
+  ) {}
 
   async getPhaseList() {
     const phaseList = await this.prismaService.phase.findMany({
@@ -57,21 +61,19 @@ export class PhasesService {
       throw new BadRequestException("기간이 잘못 설정되었습니다.");
     }
 
-    const endDateTime = UTC2KST(updatePhaseDto.end);
-    endDateTime.setUTCHours(23, 59, 59, 0);
     try {
       return await this.prismaService.$transaction(async (tx) => {
-        await tx.phase.update({
+        const updatedPhase = await tx.phase.update({
           where: {
             id,
           },
           data: {
-            start: updatePhaseDto.start,
-            end: endDateTime.toISOString(),
+            start: UTC2KST(updatePhaseDto.start),
+            end: UTC2KST(updatePhaseDto.end),
           },
         });
 
-        // 행정실 문의 확인후 cron task 추가 필요
+        await this.taskSerivce.resetCronJob(updatedPhase);
       });
     } catch (error) {
       throw new BadRequestException("invalid request");

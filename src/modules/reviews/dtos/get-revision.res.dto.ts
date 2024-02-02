@@ -1,18 +1,17 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { File, Status } from "@prisma/client";
+import { Status } from "@prisma/client";
 import { ReviewDto } from "./review.dto";
 import { ThesisFileDto } from "./thesis-file.dto";
 
-export class GetReviewFinalResDto {
+export class GetRevisionResDto {
   constructor(review: ReviewDto) {
     this.id = review.id;
+    this.title = review.thesisInfo.title;
     this.student = review.thesisInfo.process.student.name;
     this.department = review.thesisInfo.process.student.department.name;
     this.abstract = review.thesisInfo.abstract;
     this.thesisFiles = review.thesisInfo.thesisFiles;
-    this.status = review.contentStatus;
-    this.comment = review.comment;
-    this.reviewFile = review.file;
+    this.contentStatus = review.contentStatus;
   }
 
   @ApiProperty({ description: "논문심사 아이디" })
@@ -27,10 +26,6 @@ export class GetReviewFinalResDto {
   abstract: string;
   @ApiProperty({ description: "논문 파일", type: [ThesisFileDto] })
   thesisFiles: ThesisFileDto[];
-  @ApiProperty({ description: "합격 여부", enum: Status })
-  status: Status;
-  @ApiProperty({ description: "심사 의견" })
-  comment: string;
-  @ApiProperty({ description: "심사 의견 파일" })
-  reviewFile: File;
+  @ApiProperty({ description: "내용 합격 여부", enum: Status })
+  contentStatus: Status;
 }

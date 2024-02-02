@@ -18,7 +18,7 @@ export class UserDto {
     this.phone = studentData.phone;
     this.type = studentData.type;
     this.department = studentData.department ? new DepartmentDto(studentData.department) : undefined;
-    this.stage = studentData.studentProcess?.currentPhase;
+    this.currentPhase = studentData.studentProcess?.currentPhase;
     this.signFile = studentData.signFile ? new FileDto(studentData.signFile) : undefined;
   }
 
@@ -37,7 +37,7 @@ export class UserDto {
   @ApiProperty({ description: "학과" })
   department: DepartmentDto;
   @ApiProperty({ description: "시스템 단계", enum: Stage })
-  stage?: Stage;
+  currentPhase?: Stage;
   @ApiProperty({ description: "교수 서명 파일" })
   signFile?: FileDto;
 }

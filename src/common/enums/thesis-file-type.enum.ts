@@ -1,4 +1,5 @@
 export enum ThesisFileType {
   PRESENTATION = "PRESENTATION",
   THESIS = "THESIS",
+  REVISION_REPORT = "REVISION_REPORT",
 }
