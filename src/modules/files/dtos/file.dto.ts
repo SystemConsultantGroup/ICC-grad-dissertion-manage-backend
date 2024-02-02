@@ -7,6 +7,8 @@ export class FileDto {
     this.uuid = fileData.uuid;
     this.name = fileData.name;
     this.mimeType = fileData.mimeType;
+    this.createdAt = fileData.createdAt;
+    this.updatedAt = fileData.updatedAt;
   }
 
   @ApiProperty({ description: "파일 uuid", example: "11111111-1111-1111-1111-1111111111" })
@@ -18,4 +20,10 @@ export class FileDto {
 
   @ApiProperty({ description: "파일 타입" })
   mimeType: string;
+
+  @ApiProperty({ description: "생성일" })
+  createdAt: Date;
+
+  @ApiProperty({ description: "수정일" })
+  updatedAt: Date;
 }

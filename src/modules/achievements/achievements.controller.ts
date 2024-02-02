@@ -52,7 +52,11 @@ export class AchievementsController {
     @CurrentUser() user: User,
     @Body() createAchievementsDto: CreateAchievementsDto
   ) {
-    const newAchievement = await this.achievemenstService.createAchievement(postAchievementQuery.id, user, createAchievementsDto);
+    const newAchievement = await this.achievemenstService.createAchievement(
+      postAchievementQuery.id,
+      user,
+      createAchievementsDto
+    );
     return new CommonResponseDto(new CreateAchievementResponseDto(newAchievement));
   }
 
