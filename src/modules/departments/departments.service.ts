@@ -1,6 +1,7 @@
 import { PrismaService } from "src/config/database/prisma.service";
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { CreateDepartmentDto } from "./dtos/create-department.dto";
+import { UpdateDepartmentQuery } from "./dtos/update-department-query.dto";
 
 @Injectable()
 export class DepartmentsService {
@@ -47,5 +48,22 @@ export class DepartmentsService {
     return this.prismaService.department.delete({
       where: { id },
     });
+  }
+
+  async updateDepartment(id: number, updateDepartmentQuery: UpdateDepartmentQuery) {
+    const modificationFlag = updateDepartmentQuery.exclude === "true" ? true : false;
+    try {
+      const department = await this.prismaService.department.update({
+        where: {
+          id,
+        },
+        data: {
+          modificationFlag,
+        },
+      });
+      if (!department) throw new BadRequestException("해당 학과id를 가진 학과는 존재하지 않습니다.");
+    } catch (e) {
+      throw new InternalServerErrorException("수정 지시사항 제출 학과 수정에 실패했습니다.");
+    }
   }
 }
