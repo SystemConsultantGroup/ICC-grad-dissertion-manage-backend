@@ -18,13 +18,14 @@ model User {
   type                UserType
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @default(now()) @updatedAt
+  deletedAt           DateTime?
   deptId              Int?
   signId              String?        @unique
   headReviewProcesses Process[]      @relation("headReviewer")
   studentProcess      Process?       @relation("student")
   reviews             Review[]
   reviewers           Reviewer[]
-  department          Department?    @relation(fields: [deptId], references: [id])
+  department          Department?    @relation(fields: [deptId], references: [id], onDelete: SetNull)
   signFile            File?          @relation(fields: [signId], references: [uuid])
   Achievements        Achievements[]
 
