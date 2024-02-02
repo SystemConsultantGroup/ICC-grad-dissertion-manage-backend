@@ -11,6 +11,8 @@ import { FilesModule } from "./modules/files/files.module";
 import { PhasesModule } from "./modules/phases/phases.module";
 import { ProfessorsModule } from "./modules/professors/professors.module";
 import { ReviewsModule } from "./modules/reviews/reviews.module";
+import { TaskModule } from "./modules/task/task.module";
+import { AchievementsModule } from "./modules/achievements/achievements.module";
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { ReviewsModule } from "./modules/reviews/reviews.module";
     PhasesModule,
     ProfessorsModule,
     ReviewsModule,
+    TaskModule,
+    AchievementsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

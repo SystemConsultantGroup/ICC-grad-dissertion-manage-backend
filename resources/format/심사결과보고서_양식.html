@@ -1,0 +1,315 @@
+<head>
+    <style>
+        body {
+            font-family: '바탕';
+        }
+        #title {
+            width: 100%;
+            height: 150px;
+            text-align: center;
+            font-size: 35px;
+            font-weight: bold;
+        }
+        #title span {
+            display: flex;
+        }
+        #title span u {
+            margin-top: 100px;
+            width: 100%;
+            align-self: flex-end;
+            font-size: 50px;
+        }
+        #info {
+            width: 70%;
+            height: 100px;
+            margin-left: 15%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        #result {
+            width: 70%;
+            height: 100px;
+            margin-left: 15%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        #comment {
+            width: 70%;
+            height: 100px;
+            margin-left: 15%;
+            border-collapse: collapse;
+        }
+       #info td {
+            padding-left: 10px;
+            padding-right: 10px;
+            border: black 2px solid;
+            font-size: 30px;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+        #result td {
+            padding-left: 10px;
+            padding-right: 10px;
+            border: black 1px solid;
+            font-size: 30px;
+            text-align: center;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+        #comment td {
+            padding-left: 10px;
+            padding-right: 10px;
+            border: black 1px solid;
+            font-size: 30px;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+        .label_1, .label_2, .label_3{
+            font-weight: bold;
+            text-align: center;
+            font-size: 22px;
+            width: 13%;
+            height: 20px;
+            background-color: #D9D9D9;
+        }
+        #info .label_1 {
+            padding-left: 0;
+            font-size: 22px;
+        }
+        #result .label_1 {
+            padding-left: 0;
+            font-size: 22px;
+            width: 26%;
+        }
+        #result .label_2 {
+            padding-left: 0;
+            width: 36%;
+        }
+        #result .label_3 {
+            padding-left: 0;
+            width: 19%;
+            font-size: 22px;
+        }
+        #result .label_3 span {
+            padding-left: 0;
+            font-size: 30px;
+        }
+        #result .label_4 {
+            padding-left: 0;
+            font-size: 22px;
+        }
+        #result .label_4 span {
+            padding-left: 0;
+            font-size: 30px;
+        }
+        .label_1 span {
+            font-size: 30px;
+        }
+        #info .blank_1 {
+            width: 25%;
+        }
+        .row_1 {
+            height: 80px;
+        }
+        .row_2 {
+            height: 200px;
+        }
+        .row_3 {
+            height: 400px;
+        }
+        #notice {
+            width: 70%;
+            padding: 30px;
+            margin-left: 15%;
+            font-size: 30px;
+        }
+        #date {
+            margin-top: 80px;
+            text-align: center;
+            width: 70%;
+            margin-left: 15%;
+        }
+        #date #kor {
+            font-size: 30px;
+        }
+        #date #eng {
+            font-size: 24px;
+        }
+        #sign {
+            margin-top: 40px;
+            margin-left: 45%;
+            width: 40%;
+            border-collapse: collapse;
+        }
+        #sign #label {
+            text-align: center;
+            width: 30%;
+            font-weight: bold;
+            font-size: 30px;
+        }
+        #sign #label span {
+            font-weight: bold;
+            font-size: 24px;
+        }
+        #sign #name {
+            border-bottom: black 1px solid;
+            width: 30%;
+            font-weight: bold;
+            font-size: 30px;
+        }
+        #sign #label_sign {
+            text-align: right;
+            font-weight: bold;
+            font-size: 30px;
+            border-bottom: black 1px solid;
+            width: 20%;
+        }
+        #label_sign img {
+            position: absolute;
+            margin-top: -40px;
+            margin-left: -30px;
+            height: 100px;
+            width: 200px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div id="title">
+            <span><u><b>석사학위 청구논문 심사 결과보고서</b></u></span><br>
+            Result Report of Main Defense for Master's Thesis
+        </div>
+        <div id="content">
+            <table id="info">
+                <tr class="row_1">
+                    <td class="label_1" rowspan="2">
+                        <span>논문제출자</span><br>
+                        Dissertion<br>
+                        Submitter
+                    </td>
+                    <td class="label_1">
+                        <span>학과</span><br>
+                        Dept.
+                    </td>
+                    <td colspan="3">
+                        $학과
+                    </td>
+                </tr>
+                <tr class="row_1">
+                    <td class="label_1">
+                        <span>학번</span><br>
+                        Student ID
+                    </td>
+                    <td class="blank_1">
+                        $학번
+                    </td>
+                    <td class="label_1">
+                        <span>성명</span><br>
+                        Name
+                    </td>
+                    <td>
+                        $이름
+                    </td>
+                </tr>
+                <tr class="row_2">
+                    <td class="label_1" colspan="2">
+                        <span>논문제목</span><br>
+                        Dissertion Title
+                    </td>
+                    <td colspan="3">
+                        $논문제목
+                    </td>
+                </tr>
+            </table>
+            <table id="result">
+                <tr class="row_1">
+                    <td class="label_1" colspan="6">
+                        <span>심사결과</span><br>
+                        Result of Evaluation
+                    </td>
+                </tr>
+                <tr class="row_1">
+                    <td class="label_1" rowspan="2">
+                        <span>심사구분</span>
+                    </td>
+                    <td class="label_2" rowspan="2">
+                        <span>성명(Name)</span>
+                    </td>
+                    <td class="label_3" colspan="2">
+                        <span>내용 심사 결과</span><br>
+                        Evaluation
+                    </td>
+                    <td class="label_3" colspan="2">
+                        <span>구두 심사 결과</span><br>
+                        Oral Presentation
+                    </td>
+                </tr>
+                <tr class="row_1">
+                    <td class="label_4">
+                        <span>합격</span><br>
+                        (PASS)
+                    </td>
+                    <td class="label_4">
+                        <span>불합격</span><br>
+                        (FAIL)
+                    </td>
+                    <td class="label_4">
+                        <span>합격</span><br>
+                        (PASS)
+                    </td>
+                    <td class="label_4">
+                        <span>불합격</span><br>
+                        (FAIL)
+                    </td>
+                </tr>
+                $row
+                $row
+                $row
+                $row
+                $row
+            </table>
+            <div id="notice">
+                ※ 심사위원별로 합격/불합격 예부를 “O”로 표기하여 주시기 바랍니다.
+            </div>
+            <table id="comment">
+                <tr class="row_1">
+                    <td class="label_1">
+                        종합의견( Comments )
+                    </td>
+                </tr>
+                <tr class="row_3">
+                    <td>
+                        $종합의견
+                    </td>
+                </tr>
+            </table>
+            <div id="notice">
+                붙임: 심사위원별 예비심사 보고서 각 1부
+            </div>
+            <div id="date">
+                <div id="kor">
+                    $year년&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$month월&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$day일
+                </div>
+                <div id="eng">
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Year&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Month&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;day
+                </div>
+            </div>
+            <table id="sign">
+                <tr>
+                    <td id="label">
+                        심사위원장<br>
+                        <span>(Committee Chair)</span>
+                    </td>
+                    <td id="name">
+                        $심사위원장:성명
+                    </td>
+                    <td id="label_sign">
+                        <img src="$서명">
+                        (서명/인)
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>

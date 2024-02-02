@@ -3,17 +3,14 @@ import { Status, Stage } from "@prisma/client";
 import { ReviewDto } from "./review.dto";
 import { SearchStatus } from "./search-review.req.dto";
 
-export class GetReviewListResDto {
+export class GetReviewFinalListResDto {
   constructor(review: ReviewDto) {
     this.id = review.id;
     this.student = review.thesisInfo.process.student.name;
     this.department = review.thesisInfo.process.student.department.name;
     this.stage = review.thesisInfo.stage;
     this.title = review.thesisInfo.title;
-    if (
-      (review.contentStatus == Status.PASS || review.contentStatus == Status.FAIL) &&
-      (review.presentationStatus == Status.PASS || review.presentationStatus == Status.FAIL)
-    ) {
+    if (review.contentStatus == Status.PASS || review.contentStatus == Status.FAIL) {
       this.status = SearchStatus.COMPLETE;
     } else {
       this.status = SearchStatus.PENDING;

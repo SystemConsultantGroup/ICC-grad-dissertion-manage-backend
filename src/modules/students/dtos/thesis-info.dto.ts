@@ -1,5 +1,15 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Department, File, Process, Stage, Summary, ThesisFile, ThesisInfo, User } from "@prisma/client";
+import {
+  Department,
+  File,
+  Process,
+  Stage,
+  Summary,
+  ThesisFile,
+  ThesisFileType,
+  ThesisInfo,
+  User,
+} from "@prisma/client";
 import { FileDto } from "src/modules/files/dtos/file.dto";
 import { UserDto } from "src/modules/users/dtos/user.dto";
 
@@ -14,8 +24,16 @@ export class ThesisInfoDto {
     this.stage = thesisInfo.stage;
     this.summary = thesisInfo.summary;
     this.studentInfo = new UserDto(thesisInfo.process.student);
-    this.thesisFile = new FileDto(thesisInfo.thesisFiles[0].file);
-    this.presentationFile = new FileDto(thesisInfo.thesisFiles[1].file);
+    const files = thesisInfo.thesisFiles;
+    const thesis = files.filter((file) => file.type === ThesisFileType.THESIS)[0];
+    this.thesisFile = thesis.file ? new FileDto(thesis.file) : null;
+    if (thesisInfo.stage !== Stage.REVISION) {
+      const presentation = files.filter((file) => file.type === ThesisFileType.PRESENTATION)[0];
+      this.presentationFile = presentation.file ? new FileDto(presentation.file) : null;
+    } else {
+      const revisionReport = files.filter((file) => file.type === ThesisFileType.REVISION_REPORT)[0];
+      this.revisionReportFile = revisionReport.file ? new FileDto(revisionReport.file) : null;
+    }
   }
 
   @ApiProperty({ description: "논문 제목" })
@@ -37,5 +55,8 @@ export class ThesisInfoDto {
   thesisFile: FileDto;
 
   @ApiProperty({ description: "논문 발표 파일" })
-  presentationFile: FileDto;
+  presentationFile?: FileDto;
+
+  @ApiProperty({ description: "수정지시사항 보고서" })
+  revisionReportFile?: FileDto;
 }

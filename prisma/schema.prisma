@@ -95,9 +95,9 @@ model ThesisInfo {
 /// 심사 위원
 model Reviewer {
   id         Int      @id @default(autoincrement())
-  role       Role
   reviewerId Int?
   processId  Int?
+  role       Role
   process    Process? @relation(fields: [processId], references: [id])
   reviewer   User?    @relation(fields: [reviewerId], references: [id])
 
@@ -108,19 +108,19 @@ model Reviewer {
 
 /// 논문 심사
 model Review {
-  id                 Int        @id @default(autoincrement())
+  id                 Int         @id @default(autoincrement())
   contentStatus      Status?
   presentationStatus Status?
-  comment            String?    @db.Text
+  comment            String?     @db.Text
   isFinal            Boolean
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @default(now()) @updatedAt
-  reviewerId         Int
-  thesisInfoId       Int
-  fileId             String?    @unique
-  file               File?      @relation(fields: [fileId], references: [uuid])
-  reviewer           User       @relation(fields: [reviewerId], references: [id])
-  thesisInfo         ThesisInfo @relation(fields: [thesisInfoId], references: [id])
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @default(now()) @updatedAt
+  reviewerId         Int?
+  thesisInfoId       Int?
+  fileId             String?     @unique
+  file               File?       @relation(fields: [fileId], references: [uuid])
+  reviewer           User?       @relation(fields: [reviewerId], references: [id])
+  thesisInfo         ThesisInfo? @relation(fields: [thesisInfoId], references: [id])
 
   @@index([reviewerId], map: "review_reviewerId_fkey")
   @@index([thesisInfoId], map: "review_thesisInfoId_fkey")
@@ -154,6 +154,22 @@ model ThesisFile {
 
   @@index([thesisInfoId], map: "thesis_file_thesisInfoId_fkey")
   @@map("thesis_file")
+}
+
+model Achievements {
+  id              Int         @id @default(autoincrement())
+  performance     Performance
+  journalName     String      @db.VarChar(100)
+  paperTitle      String      @db.VarChar(100)
+  ISSN            String?     @db.VarChar(15)
+  publicationDate DateTime    @db.Date
+  authorType      AuthorType
+  authorNumbers   Int
+  userId          Int?
+  User            User?       @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "achievements_userId_fkey")
+  @@map("achievements")
 }
 
 enum UserType {
@@ -217,20 +233,4 @@ enum AuthorType {
   CORRESPONDING_AUTHOR
   FIRST_CORRESPONDING_AUTHOR
   CO_AUTHOR
-}
-
-//논문 실적
-model Achievements {
-  id              Int         @id @default(autoincrement())
-  performance     Performance
-  journalName     String      @db.VarChar(100)
-  paperTitle      String      @db.VarChar(100)
-  ISSN            String?     @db.VarChar(15)
-  publicationDate DateTime    @db.Date
-  authorType      AuthorType
-  authorNumbers   Int
-  User            User?       @relation(fields: [userId], references: [id])
-  userId          Int?
-
-  @@map("achievements")
 }

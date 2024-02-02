@@ -1,16 +1,16 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Phase } from "@prisma/client";
+import { Phase, Process, Stage } from "@prisma/client";
 import { PhaseDto } from "src/modules/phases/dtos/phase.dto";
 
 export class SystemDto {
-  constructor(systemData: { phase: Phase; isLock: boolean }) {
+  constructor(systemData: Process & { phase: Phase }) {
     this.phase = new PhaseDto(systemData.phase);
-    this.isLock = systemData.isLock;
+    this.currentPhase = systemData.currentPhase;
   }
 
-  @ApiProperty({ description: "학생의 현재 시스템 단계", type: () => PhaseDto })
+  @ApiProperty({ description: "학생의 현재 시스템 단계 상세 정보", type: () => PhaseDto })
   phase: Phase;
 
-  @ApiProperty({ description: "학생의 시스템 락 여부" })
-  isLock: boolean;
+  @ApiProperty({ description: "현재 단계", enum: Stage })
+  currentPhase: Stage;
 }
