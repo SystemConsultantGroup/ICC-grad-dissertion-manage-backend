@@ -1,11 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Department, User, UserType } from "@prisma/client";
+import { Department, Process, Stage, User, UserType } from "@prisma/client";
 import { DepartmentDto } from "src/modules/departments/dtos/department.dto";
 
 export class UserDto {
   constructor(
     studentData: Partial<User> & {
       department: Partial<Department>;
+      studentProcess?: Partial<Process>;
     }
   ) {
     this.id = studentData.id;
@@ -15,6 +16,7 @@ export class UserDto {
     this.phone = studentData.phone;
     this.type = studentData.type;
     this.department = new DepartmentDto(studentData.department);
+    this.currentPhase = studentData.studentProcess?.currentPhase;
   }
 
   @ApiProperty({ description: "아이디" })
@@ -31,4 +33,7 @@ export class UserDto {
   type: UserType;
   @ApiProperty({ description: "학과", type: () => DepartmentDto })
   department: DepartmentDto;
+
+  @ApiProperty({ description: "시스템 단계", enum: Stage })
+  currentPhase?: Stage;
 }
