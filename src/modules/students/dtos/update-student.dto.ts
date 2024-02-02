@@ -28,7 +28,7 @@ export class UpdateStudentDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ description: "연락처", required: false, example: "01010101010" })
+  @ApiProperty({ description: "연락처", required: false, example: "010-1010-1010" })
   @IsOptional()
   @IsNotEmpty()
   @IsString()
