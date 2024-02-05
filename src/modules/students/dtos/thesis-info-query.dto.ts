@@ -4,7 +4,7 @@ import { IsEnum, IsNotEmpty, IsString } from "class-validator";
 export enum ThesisQueryType {
   PRELIMINARY = "pre",
   MAIN = "main",
-  REVISION = "rivision",
+  REVISION = "revision",
   NOW = "now",
 }
 
