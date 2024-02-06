@@ -82,12 +82,14 @@ export class ProfessorsService {
       throw new BadRequestException("이미 존재하는 아이디입니다.");
     }
 
-    const existingEmail = await this.prismaService.user.findUnique({
-      where: { email: email },
-    });
+    if (email) {
+      const existingEmail = await this.prismaService.user.findUnique({
+        where: { email: email },
+      });
 
-    if (existingEmail) {
-      throw new BadRequestException("이미 존재하는 이메일입니다.");
+      if (existingEmail) {
+        throw new BadRequestException("이미 존재하는 이메일입니다.");
+      }
     }
 
     const checkDepartment = await this.prismaService.department.findUnique({
@@ -226,20 +228,21 @@ export class ProfessorsService {
               where: { loginId },
             });
 
+            let existingEmail;
             // 해당 이메일 존재 여부 확인
-            const existingEmail = await tx.user.findUnique({
-              where: { email },
-            });
+            if (email) {
+              existingEmail = await tx.user.findUnique({
+                where: { email },
+              });
+            }
 
             // 존재하는 유저의 경우
             if (existingUser) {
               // 이메일의 경우 중복이 아닐 경우 업데이트
-              if (!existingEmail) {
-                if (email) {
-                  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-                  if (!regex.test(email)) {
-                    throw new BadRequestException(`${index + 2}번째 줄의 이메일 형식이 잘못되었습니다.`);
-                  }
+              if (email && !existingEmail) {
+                const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!regex.test(email)) {
+                  throw new BadRequestException(`${index + 2}번째 줄의 이메일 형식이 잘못되었습니다.`);
                 }
 
                 await tx.user.update({
@@ -269,8 +272,6 @@ export class ProfessorsService {
             } else {
               // 새로 생성하는 유저
               if (!departmentName) throw new BadRequestException(`${index + 2}번째 줄의 소속학과를 입력해주세요.`);
-              if (!phone) throw new BadRequestException(`${index + 2}번째 줄의 연락처를 입력해주세요`);
-              if (!email) throw new BadRequestException(`${index + 2}번째 줄의 이메일을 입력해주세요.`);
               if (!name) throw new BadRequestException(`${index + 2}번째 줄의 이름을 입력해주세요.`);
               if (!password) throw new BadRequestException(`${index + 2}번째 줄의 비밀번호를 입력해주세요.`);
               if (existingEmail)
