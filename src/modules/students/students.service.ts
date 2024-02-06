@@ -14,13 +14,12 @@ import * as XLSX from "xlsx";
 import * as DateUtil from "../../common/utils/date.util";
 import { CreateStudentDto } from "./dtos/create-student.dto";
 import { AuthService } from "../auth/auth.service";
-import { Stage } from "src/common/enums/stage.enum";
 import { Summary } from "src/common/enums/summary.enum";
 import { ThesisFileType } from "src/common/enums/thesis-file-type.enum";
 import { ReviewStatus } from "src/common/enums/review-status.enum";
 import { StudentSearchQuery } from "./dtos/student-search-query.dto";
 import { UpdateStudentDto } from "./dtos/update-student.dto";
-import { User, Role, Department } from "@prisma/client";
+import { User, Role, Department, Stage } from "@prisma/client";
 import { validate } from "class-validator";
 import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
 import { Readable } from "stream";
@@ -51,12 +50,18 @@ export class StudentsService {
 
     // 로그인 아이디, 이메일 존재 여부 확인
     const foundId = await this.prismaService.user.findUnique({
-      where: { loginId },
+      where: {
+        loginId,
+        deletedAt: null,
+      },
     });
     if (foundId)
       throw new BadRequestException("이미 존재하는 아이디입니다. 기존 학생 수정은 학생 수정 페이지를 이용해주세요.");
     const foundEmail = await this.prismaService.user.findUnique({
-      where: { email },
+      where: {
+        email,
+        deletedAt: null,
+      },
     });
     if (foundEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
 
@@ -72,6 +77,7 @@ export class StudentsService {
       where: {
         id: { in: reviewerIds },
         type: UserType.PROFESSOR,
+        deletedAt: null,
       },
     });
     const foundIds = foundProfessors.map((user) => user.id);
@@ -290,7 +296,7 @@ export class StudentsService {
               headReviewerId: number;
             if (advisor1) {
               const foundProfessor = await this.prismaService.user.findUnique({
-                where: { loginId: advisor1, type: UserType.PROFESSOR }, // 내선번호 사용
+                where: { loginId: advisor1, type: UserType.PROFESSOR, deletedAt: null }, // 내선번호 사용
               });
               if (!foundProfessor)
                 throw new BadRequestException(`${index + 2}행 : 교수 내선번호 ${advisor1}를 확인하십시오.`);
@@ -298,7 +304,7 @@ export class StudentsService {
             }
             if (advisor2) {
               const foundProfessor = await this.prismaService.user.findUnique({
-                where: { loginId: advisor2, type: UserType.PROFESSOR }, // 내선번호 사용
+                where: { loginId: advisor2, type: UserType.PROFESSOR, deletedAt: null }, // 내선번호 사용
               });
               if (!foundProfessor)
                 throw new BadRequestException(`${index + 2}행 : 교수 내선번호 ${advisor2}를 확인하십시오.`);
@@ -306,7 +312,7 @@ export class StudentsService {
             }
             if (committee1) {
               const foundProfessor = await this.prismaService.user.findUnique({
-                where: { loginId: committee1, type: UserType.PROFESSOR }, // 내선번호 사용
+                where: { loginId: committee1, type: UserType.PROFESSOR, deletedAt: null }, // 내선번호 사용
               });
               if (!foundProfessor)
                 throw new BadRequestException(`${index + 2}행 : 교수 내선번호 ${committee1}를 확인하십시오.`);
@@ -314,7 +320,7 @@ export class StudentsService {
             }
             if (committee2) {
               const foundProfessor = await this.prismaService.user.findUnique({
-                where: { loginId: committee2, type: UserType.PROFESSOR }, // 내선번호 사용
+                where: { loginId: committee2, type: UserType.PROFESSOR, deletedAt: null }, // 내선번호 사용
               });
               if (!foundProfessor)
                 throw new BadRequestException(`${index + 2}행 : 교수 내선번호 ${committee2}를 확인하십시오.`);
@@ -322,7 +328,7 @@ export class StudentsService {
             }
             if (headReviewer) {
               const foundProfessor = await this.prismaService.user.findUnique({
-                where: { loginId: headReviewer, type: UserType.PROFESSOR }, // 내선번호 사용
+                where: { loginId: headReviewer, type: UserType.PROFESSOR, deletedAt: null }, // 내선번호 사용
               });
               if (!foundProfessor)
                 throw new BadRequestException(`${index + 2}행 : 교수 내선번호 ${headReviewer}를 확인하십시오.`);
@@ -344,6 +350,7 @@ export class StudentsService {
               where: {
                 loginId: studentNumber,
                 type: UserType.STUDENT,
+                deletedAt: null,
               },
               include: {
                 studentProcess: {
@@ -374,14 +381,14 @@ export class StudentsService {
               // 이메일 중복 여부 확인
               if (updateStudentDto.email) {
                 const foundEmail = await this.prismaService.user.findUnique({
-                  where: { email: updateStudentDto.email },
+                  where: { email: updateStudentDto.email, deletedAt: null },
                 });
                 if (foundEmail && foundEmail.id !== foundStudent.id)
                   throw new BadRequestException(`${index + 2}행 : 이미 존재하는 이메일로는 변경할 수 없습니다.`);
               }
               // 업데이트
               const updatedStudent = await tx.user.update({
-                where: { id: foundStudent.id },
+                where: { id: foundStudent.id, deletedAt: null },
                 data: {
                   loginId: updateStudentDto.loginId,
                   password: updateStudentDto.password
@@ -1038,6 +1045,7 @@ export class StudentsService {
         email: { contains: email },
         phone: { contains: phone },
         deptId: departmentId,
+        deletedAt: null,
       },
       include: { department: true, studentProcess: true },
       skip: studentSearchPageQuery.getOffset(),
@@ -1052,6 +1060,7 @@ export class StudentsService {
         email: { contains: email },
         phone: { contains: phone },
         deptId: departmentId,
+        deletedAt: null,
       },
     });
 
@@ -1077,6 +1086,7 @@ export class StudentsService {
           email: { contains: email },
           phone: { contains: phone },
           deptId: departmentId,
+          deletedAt: null,
         },
       },
       include: {
@@ -1151,6 +1161,7 @@ export class StudentsService {
       where: {
         id: studentId,
         type: UserType.STUDENT,
+        deletedAt: null,
       },
       include: { department: true, studentProcess: true },
     });
@@ -1169,6 +1180,7 @@ export class StudentsService {
       where: {
         id: studentId,
         type: UserType.STUDENT,
+        deletedAt: null,
       },
     });
     if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
@@ -1180,13 +1192,13 @@ export class StudentsService {
     }
     if (email) {
       const foundEmail = await this.prismaService.user.findUnique({
-        where: { email },
+        where: { email, deletedAt: null },
       });
       if (foundEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
     }
     if (loginId) {
       const foundLoginId = await this.prismaService.user.findUnique({
-        where: { loginId },
+        where: { loginId, deletedAt: null },
       });
       if (foundLoginId) throw new BadRequestException("이미 존재하는 로그인 아이디 입니다.");
     }
@@ -1216,6 +1228,7 @@ export class StudentsService {
       where: {
         id: studentId,
         type: UserType.STUDENT,
+        deletedAt: null,
       },
     });
     if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
@@ -1234,6 +1247,7 @@ export class StudentsService {
       where: {
         id: studentId,
         type: UserType.STUDENT,
+        deletedAt: null,
       },
       include: {
         department: true,
@@ -1260,6 +1274,7 @@ export class StudentsService {
       where: {
         id: { in: reviewerIds },
         type: UserType.PROFESSOR,
+        deletedAt: null,
       },
     });
     const foundIds = foundProfessors.map((user) => user.id);
@@ -1387,6 +1402,7 @@ export class StudentsService {
       where: {
         id: studentId,
         type: UserType.STUDENT,
+        deletedAt: null,
       },
       include: { studentProcess: true },
     });
@@ -1403,7 +1419,7 @@ export class StudentsService {
     }
 
     // 조회할 심사 단계 결정
-    let stage;
+    let stage: Stage;
     switch (typeQuery) {
       case ThesisQueryType.NOW:
         stage = foundStudent.studentProcess.currentPhase;
@@ -1452,6 +1468,7 @@ export class StudentsService {
       where: {
         id: studentId,
         type: UserType.STUDENT,
+        deletedAt: null,
       },
       include: { studentProcess: true },
     });
@@ -1553,6 +1570,7 @@ export class StudentsService {
       where: {
         id: studentId,
         type: UserType.STUDENT,
+        deletedAt: null,
       },
     });
     if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
@@ -1585,6 +1603,7 @@ export class StudentsService {
       where: {
         id: studentId,
         type: UserType.STUDENT,
+        deletedAt: null,
       },
       include: {
         studentProcess: {
@@ -1700,6 +1719,7 @@ export class StudentsService {
       where: {
         id: studentId,
         type: UserType.STUDENT,
+        deletedAt: null,
       },
       include: { studentProcess: true },
     });
@@ -1787,6 +1807,7 @@ export class StudentsService {
       where: {
         id: studentId,
         type: UserType.STUDENT,
+        deletedAt: null,
       },
       include: {
         studentProcess: {
