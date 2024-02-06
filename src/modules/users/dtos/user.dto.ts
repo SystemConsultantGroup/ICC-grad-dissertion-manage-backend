@@ -14,8 +14,8 @@ export class UserDto {
     this.id = studentData.id;
     this.loginId = studentData.loginId;
     this.name = studentData.name;
-    this.email = studentData.email;
-    this.phone = studentData.phone;
+    this.email = studentData.email ? studentData.email : undefined;
+    this.phone = studentData.phone ? studentData.phone : undefined;
     this.type = studentData.type;
     this.department = studentData.department ? new DepartmentDto(studentData.department) : undefined;
     this.currentPhase = studentData.studentProcess?.currentPhase;
@@ -29,9 +29,9 @@ export class UserDto {
   @ApiProperty({ description: "이름" })
   name: string;
   @ApiProperty({ description: "이메일" })
-  email: string;
+  email?: string;
   @ApiProperty({ description: "연락처" })
-  phone: string;
+  phone?: string;
   @ApiProperty({ description: "사용자 유형", enum: UserType })
   type: UserType;
   @ApiProperty({ description: "학과" })

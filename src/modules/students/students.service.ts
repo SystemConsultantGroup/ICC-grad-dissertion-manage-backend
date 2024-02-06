@@ -55,10 +55,12 @@ export class StudentsService {
     });
     if (foundId)
       throw new BadRequestException("이미 존재하는 아이디입니다. 기존 학생 수정은 학생 수정 페이지를 이용해주세요.");
-    const foundEmail = await this.prismaService.user.findUnique({
-      where: { email },
-    });
-    if (foundEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
+    if (email) {
+      const foundEmail = await this.prismaService.user.findUnique({
+        where: { email },
+      });
+      if (foundEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
+    }
 
     // deptId 올바른지 확인
     const foundDept = await this.prismaService.department.findUnique({
