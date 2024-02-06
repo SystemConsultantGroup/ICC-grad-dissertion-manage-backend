@@ -130,7 +130,7 @@ export class AchievementsController {
   })
   @ApiInternalServerErrorResponse({ description: "논문 실적 조회 실패" })
   @ApiUnauthorizedResponse({ description: "학생은 본인 논문실적만 조회 허용" })
-  @UseUserTypeGuard([UserType.ADMIN, UserType.PROFESSOR])
+  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT])
   @Get(":id")
   async getAchievement(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
     const achievement = await this.achievemenstService.getAchievement(id, user);
