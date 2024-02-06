@@ -9,6 +9,7 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsPositive,
   IsString,
 } from "class-validator";
@@ -30,13 +31,15 @@ export class CreateStudentDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ description: "학생 이메일", example: "abc@gmail.com" })
+  @ApiProperty({ description: "학생 이메일", example: "abc@gmail.com", required: false })
+  @IsOptional()
   @IsNotEmpty()
   @IsString()
   @IsEmail()
   email: string;
 
-  @ApiProperty({ description: "학생 전화번호", example: "010-1111-1222" })
+  @ApiProperty({ description: "학생 전화번호", example: "010-1111-1222", required: false })
+  @IsOptional()
   @IsNotEmpty()
   @IsString()
   phone: string;
