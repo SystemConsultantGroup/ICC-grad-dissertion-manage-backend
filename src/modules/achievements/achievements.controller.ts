@@ -36,7 +36,7 @@ export class AchievementsController {
     description: "논문실적 등록",
   })
   @UseUserTypeGuard([UserType.STUDENT])
-  @Post(":id")
+  @Post()
   @ApiCreatedResponse({
     description: "논문 실적 등록 성공",
     type: CreateAchievementResponseDto,
