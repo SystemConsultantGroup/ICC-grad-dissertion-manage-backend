@@ -13,8 +13,8 @@ model User {
   loginId             String         @unique @db.VarChar(255)
   password            String         @db.VarChar(255)
   name                String         @db.VarChar(255)
-  email               String         @unique @db.VarChar(255)
-  phone               String         @db.VarChar(255)
+  email               String?        @unique @db.VarChar(255)
+  phone               String?        @db.VarChar(255)
   type                UserType
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @default(now()) @updatedAt
