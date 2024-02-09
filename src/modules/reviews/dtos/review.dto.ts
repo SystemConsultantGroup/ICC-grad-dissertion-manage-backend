@@ -2,6 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Review, ThesisInfo, User, File, Status, Process, Department, ThesisFile, Reviewer } from "@prisma/client";
 import { ThesisInfoDto } from "./thesis-info.dto";
 import { FileDto } from "src/modules/files/dtos/file.dto";
+import { UserDto } from "src/modules/users/dtos/user.dto";
 
 export class ReviewDto {
   constructor(
@@ -10,7 +11,7 @@ export class ReviewDto {
         process: Process & { student: User & { department: Department }; reviewers: Reviewer[] };
         thesisFiles: (ThesisFile & { file: File })[];
       };
-      reviewer?: User;
+      reviewer?: User & { department: Department };
       file: File;
     }
   ) {
@@ -30,10 +31,10 @@ export class ReviewDto {
   id: number;
   @ApiProperty({ description: "논문정보", type: () => ThesisInfoDto })
   thesisInfo?: ThesisInfoDto;
-  @ApiProperty({ description: "심사위원" })
-  reviewer?: User;
+  @ApiProperty({ description: "심사위원", type: UserDto })
+  reviewer?: UserDto;
   @ApiProperty({ description: "심사정보 파일", type: FileDto })
-  file?: File;
+  file?: FileDto;
   @ApiProperty({ description: "내용 심사 상태", enum: Status })
   contentStatus: Status;
   @ApiProperty({ description: "구두 심사 상태", enum: Status })

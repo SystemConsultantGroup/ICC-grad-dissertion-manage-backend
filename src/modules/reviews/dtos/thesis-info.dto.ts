@@ -20,7 +20,7 @@ export class ThesisInfoDto {
     thesisInfo: ThesisInfo & {
       process: Process & { student: User & { department: Department }; reviewers: Reviewer[] };
       thesisFiles: (ThesisFile & { file: File })[];
-      reviews?: (Review & { reviewer?: User; file?: File })[];
+      reviews?: (Review & { reviewer?: User & { department: Department }; file?: File })[];
     }
   ) {
     this.id = thesisInfo.id;

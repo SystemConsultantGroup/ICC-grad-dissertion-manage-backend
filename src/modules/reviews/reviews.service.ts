@@ -416,12 +416,21 @@ export class ReviewsService {
         NOT: {
           thesisInfo: {
             stage: Stage.REVISION,
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
           },
         },
         ...(statusQuery && statusQuery),
       },
       include: {
-        reviewer: true,
+        reviewer: {
+          include: {
+            department: true,
+          },
+        },
         file: true,
         thesisInfo: {
           include: {
@@ -461,6 +470,11 @@ export class ReviewsService {
         NOT: {
           thesisInfo: {
             stage: Stage.REVISION,
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
           },
         },
         ...(statusQuery && statusQuery),
@@ -519,12 +533,21 @@ export class ReviewsService {
           NOT: {
             thesisInfo: {
               stage: Stage.REVISION,
+              process: {
+                student: {
+                  deletedAt: null,
+                },
+              },
             },
           },
           ...(statusQuery && statusQuery),
         },
         include: {
-          reviewer: true,
+          reviewer: {
+            include: {
+              department: true,
+            },
+          },
           file: true,
           thesisInfo: {
             include: {
@@ -580,11 +603,20 @@ export class ReviewsService {
         NOT: {
           thesisInfo: {
             stage: Stage.REVISION,
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
           },
         },
       },
       include: {
-        reviewer: true,
+        reviewer: {
+          include: {
+            department: true,
+          },
+        },
         file: true,
         thesisInfo: {
           include: {
@@ -608,7 +640,8 @@ export class ReviewsService {
       },
     });
     if (!review) throw new NotFoundException("존재하지 않는 심사 정보입니다.");
-    if (review.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (review.reviewerId != userId && review.thesisInfo.process.studentId != userId)
+      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     return new ReviewDto(review);
   }
   async updateReview(id: number, updateReviewDto: UpdateReviewReqDto, user: User) {
@@ -619,6 +652,15 @@ export class ReviewsService {
         id,
         reviewerId: user.id,
         isFinal: false,
+        NOT: {
+          thesisInfo: {
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
+          },
+        },
       },
       include: {
         reviewer: true,
@@ -719,7 +761,11 @@ export class ReviewsService {
             ...(fileUUID && { fileId: fileUUID }),
           },
           include: {
-            reviewer: true,
+            reviewer: {
+              include: {
+                department: true,
+              },
+            },
             file: true,
             thesisInfo: {
               include: {
@@ -769,9 +815,22 @@ export class ReviewsService {
         },
         isFinal: true,
         ...(searchQuery.status && { status: searchQuery.status }),
+        NOT: {
+          thesisInfo: {
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
+          },
+        },
       },
       include: {
-        reviewer: true,
+        reviewer: {
+          include: {
+            department: true,
+          },
+        },
         file: true,
         thesisInfo: {
           include: {
@@ -811,6 +870,15 @@ export class ReviewsService {
         ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
         ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
         ...(searchQuery.status && { status: searchQuery.status }),
+        NOT: {
+          thesisInfo: {
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
+          },
+        },
       },
     });
     return {
@@ -836,9 +904,22 @@ export class ReviewsService {
           },
           isFinal: true,
           ...(searchQuery.status && { status: searchQuery.status }),
+          NOT: {
+            thesisInfo: {
+              process: {
+                student: {
+                  deletedAt: null,
+                },
+              },
+            },
+          },
         },
         include: {
-          reviewer: true,
+          reviewer: {
+            include: {
+              department: true,
+            },
+          },
           file: true,
           thesisInfo: {
             include: {
@@ -889,9 +970,22 @@ export class ReviewsService {
       where: {
         id,
         isFinal: true,
+        NOT: {
+          thesisInfo: {
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
+          },
+        },
       },
       include: {
-        reviewer: true,
+        reviewer: {
+          include: {
+            department: true,
+          },
+        },
         file: true,
         thesisInfo: {
           include: {
@@ -921,7 +1015,8 @@ export class ReviewsService {
       },
     });
     if (!review) throw new NotFoundException("존재하지 않는 심사 정보입니다.");
-    if (review.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (review.reviewerId != userId && review.thesisInfo.process.studentId != userId)
+      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     return new ReviewDto(review);
   }
   async updateReviewFinal(id: number, updateReviewFinalDto: UpdateReviewFinalReqDto, user: User) {
@@ -932,6 +1027,15 @@ export class ReviewsService {
         id,
         reviewerId: user.id,
         isFinal: true,
+        NOT: {
+          thesisInfo: {
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
+          },
+        },
       },
       include: {
         reviewer: true,
@@ -1091,7 +1195,11 @@ export class ReviewsService {
             ...(fileUUID && { fileId: fileUUID }),
           },
           include: {
-            reviewer: true,
+            reviewer: {
+              include: {
+                department: true,
+              },
+            },
             file: true,
             thesisInfo: {
               include: {
@@ -1151,9 +1259,22 @@ export class ReviewsService {
           ...(searchQuery.title && { title: { contains: searchQuery.title } }),
         },
         ...(searchQuery.contentStatus && { contentStatus: searchQuery.contentStatus }),
+        NOT: {
+          thesisInfo: {
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
+          },
+        },
       },
       include: {
-        reviewer: true,
+        reviewer: {
+          include: {
+            department: true,
+          },
+        },
         file: true,
         thesisInfo: {
           include: {
@@ -1191,6 +1312,15 @@ export class ReviewsService {
         }),
         ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
         ...(searchQuery.contentStatus && { contentStatus: searchQuery.contentStatus }),
+        NOT: {
+          thesisInfo: {
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
+          },
+        },
       },
     });
     return {
@@ -1216,9 +1346,22 @@ export class ReviewsService {
             ...(searchQuery.title && { title: { contains: searchQuery.title } }),
           },
           ...(searchQuery.contentStatus && { contentStatus: searchQuery.contentStatus }),
+          NOT: {
+            thesisInfo: {
+              process: {
+                student: {
+                  deletedAt: null,
+                },
+              },
+            },
+          },
         },
         include: {
-          reviewer: true,
+          reviewer: {
+            include: {
+              department: true,
+            },
+          },
           file: true,
           thesisInfo: {
             include: {
@@ -1270,9 +1413,22 @@ export class ReviewsService {
         thesisInfo: {
           stage: Stage.REVISION,
         },
+        NOT: {
+          thesisInfo: {
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
+          },
+        },
       },
       include: {
-        reviewer: true,
+        reviewer: {
+          include: {
+            department: true,
+          },
+        },
         file: true,
         thesisInfo: {
           include: {
@@ -1296,7 +1452,8 @@ export class ReviewsService {
       },
     });
     if (!review) throw new NotFoundException("존재하지 않는 심사 정보입니다.");
-    if (review.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (review.reviewerId != userId && review.thesisInfo.process.studentId != userId)
+      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     return new ReviewDto(review);
   }
   async updateRevision(id: number, updateReivisionDto: UpdateRevisionReqDto, user: User) {
@@ -1306,6 +1463,15 @@ export class ReviewsService {
         id,
         reviewerId: user.id,
         isFinal: false,
+        NOT: {
+          thesisInfo: {
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
+          },
+        },
       },
     });
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
@@ -1321,7 +1487,11 @@ export class ReviewsService {
           contentStatus: updateReivisionDto.contentStatus,
         },
         include: {
-          reviewer: true,
+          reviewer: {
+            include: {
+              department: true,
+            },
+          },
           file: true,
           thesisInfo: {
             include: {
@@ -1375,6 +1545,13 @@ export class ReviewsService {
             },
           },
         ],
+        NOT: {
+          process: {
+            student: {
+              deletedAt: null,
+            },
+          },
+        },
       },
       include: {
         process: {
@@ -1394,7 +1571,11 @@ export class ReviewsService {
         },
         reviews: {
           include: {
-            reviewer: true,
+            reviewer: {
+              include: {
+                department: true,
+              },
+            },
           },
         },
       },
@@ -1419,6 +1600,13 @@ export class ReviewsService {
             },
           },
         ],
+        NOT: {
+          process: {
+            student: {
+              deletedAt: null,
+            },
+          },
+        },
       },
     });
     return {
@@ -1449,6 +1637,13 @@ export class ReviewsService {
             },
           },
         ],
+        NOT: {
+          process: {
+            student: {
+              deletedAt: null,
+            },
+          },
+        },
       },
       include: {
         process: {
@@ -1525,6 +1720,13 @@ export class ReviewsService {
     const result = await this.prismaService.thesisInfo.findUnique({
       where: {
         id,
+        NOT: {
+          process: {
+            student: {
+              deletedAt: null,
+            },
+          },
+        },
       },
       include: {
         process: {
@@ -1544,7 +1746,11 @@ export class ReviewsService {
         },
         reviews: {
           include: {
-            reviewer: true,
+            reviewer: {
+              include: {
+                department: true,
+              },
+            },
             file: true,
           },
         },
@@ -1580,6 +1786,13 @@ export class ReviewsService {
             },
           },
         ],
+        NOT: {
+          process: {
+            student: {
+              deletedAt: null,
+            },
+          },
+        },
       },
       include: {
         process: {
@@ -1599,7 +1812,11 @@ export class ReviewsService {
         },
         reviews: {
           include: {
-            reviewer: true,
+            reviewer: {
+              include: {
+                department: true,
+              },
+            },
             file: true,
           },
         },
@@ -1658,6 +1875,13 @@ export class ReviewsService {
               },
             },
           ],
+          NOT: {
+            process: {
+              student: {
+                deletedAt: null,
+              },
+            },
+          },
         },
         include: {
           process: {
@@ -1725,6 +1949,13 @@ export class ReviewsService {
             },
           },
         ],
+        NOT: {
+          process: {
+            student: {
+              deletedAt: null,
+            },
+          },
+        },
       },
       include: {
         process: {
@@ -1776,6 +2007,13 @@ export class ReviewsService {
     const result = await this.prismaService.thesisInfo.findUnique({
       where: {
         id,
+        NOT: {
+          process: {
+            student: {
+              deletedAt: null,
+            },
+          },
+        },
       },
       include: {
         process: {
@@ -1795,7 +2033,11 @@ export class ReviewsService {
         },
         reviews: {
           include: {
-            reviewer: true,
+            reviewer: {
+              include: {
+                department: true,
+              },
+            },
             file: true,
           },
         },
