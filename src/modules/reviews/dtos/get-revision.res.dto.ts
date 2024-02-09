@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Status } from "@prisma/client";
+import { Stage, Status } from "@prisma/client";
 import { ReviewDto } from "./review.dto";
 import { ThesisFileDto } from "./thesis-file.dto";
 
@@ -12,6 +12,7 @@ export class GetRevisionResDto {
     this.abstract = review.thesisInfo.abstract;
     this.thesisFiles = review.thesisInfo.thesisFiles;
     this.contentStatus = review.contentStatus;
+    this.stage = review.thesisInfo.stage;
   }
 
   @ApiProperty({ description: "논문심사 아이디" })
@@ -28,4 +29,6 @@ export class GetRevisionResDto {
   thesisFiles: ThesisFileDto[];
   @ApiProperty({ description: "내용 합격 여부", enum: Status })
   contentStatus: Status;
+  @ApiProperty({ description: "논문 단계", enum: Stage })
+  stage: Stage;
 }
