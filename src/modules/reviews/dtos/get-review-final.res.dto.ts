@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { File, Status } from "@prisma/client";
+import { Stage, Status } from "@prisma/client";
+import { FileDto } from "src/modules/files/dtos/file.dto";
 import { ReviewDto } from "./review.dto";
 import { ThesisFileDto } from "./thesis-file.dto";
 
@@ -13,6 +14,7 @@ export class GetReviewFinalResDto {
     this.status = review.contentStatus;
     this.comment = review.comment;
     this.reviewFile = review.file;
+    this.stage = review.thesisInfo.stage;
   }
 
   @ApiProperty({ description: "논문심사 아이디" })
@@ -32,5 +34,7 @@ export class GetReviewFinalResDto {
   @ApiProperty({ description: "심사 의견" })
   comment: string;
   @ApiProperty({ description: "심사 의견 파일" })
-  reviewFile: File;
+  reviewFile: FileDto;
+  @ApiProperty({ description: "논문 단계", enum: Stage })
+  stage: Stage;
 }
