@@ -257,8 +257,8 @@ export class ReviewsController {
     },
   })
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
-  @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
-  @UseUserTypeGuard([UserType.PROFESSOR])
+  @ApiUnauthorizedResponse({ description: "학생 & 교수 계정 로그인 후 이용 가능" })
+  @UseUserTypeGuard([UserType.PROFESSOR, UserType.STUDENT])
   @Get(":id")
   async getReview(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
     const review = await this.reviewsService.getReview(id, user);
@@ -301,8 +301,8 @@ export class ReviewsController {
     },
   })
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
-  @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
-  @UseUserTypeGuard([UserType.PROFESSOR])
+  @ApiUnauthorizedResponse({ description: "학생 & 교수 계정 로그인 후 이용 가능" })
+  @UseUserTypeGuard([UserType.PROFESSOR, UserType.STUDENT])
   @Get("final/:id")
   async getReviewFinal(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
     const review = await this.reviewsService.getReviewFinal(id, user);
@@ -345,8 +345,8 @@ export class ReviewsController {
     },
   })
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
-  @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
-  @UseUserTypeGuard([UserType.PROFESSOR])
+  @ApiUnauthorizedResponse({ description: "학생 & 교수 계정 로그인 후 이용 가능" })
+  @UseUserTypeGuard([UserType.PROFESSOR, UserType.STUDENT])
   @Get("revision/:id")
   async getRevision(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
     const review = await this.reviewsService.getRevision(id, user);
