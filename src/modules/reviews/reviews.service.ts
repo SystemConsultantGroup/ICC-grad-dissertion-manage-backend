@@ -404,6 +404,7 @@ export class ReviewsService {
         thesisInfo: {
           process: {
             student: {
+              deletedAt: null,
               ...(searchQuery.author && { name: { contains: searchQuery.author } }),
               ...(searchQuery.department && { department: { id: searchQuery.department } }),
             },
@@ -416,11 +417,6 @@ export class ReviewsService {
         NOT: {
           thesisInfo: {
             stage: Stage.REVISION,
-            process: {
-              student: {
-                deletedAt: null,
-              },
-            },
           },
         },
         ...(statusQuery && statusQuery),
@@ -458,6 +454,7 @@ export class ReviewsService {
         thesisInfo: {
           process: {
             student: {
+              deletedAt: null,
               ...(searchQuery.author && { name: { contains: searchQuery.author } }),
               ...(searchQuery.department && { department: { id: searchQuery.department } }),
             },
@@ -521,6 +518,7 @@ export class ReviewsService {
           thesisInfo: {
             process: {
               student: {
+                deletedAt: null,
                 ...(searchQuery.author && { name: { contains: searchQuery.author } }),
                 ...(searchQuery.department && { department: { id: searchQuery.department } }),
               },
@@ -600,14 +598,16 @@ export class ReviewsService {
       where: {
         id,
         isFinal: false,
+        thesisInfo: {
+          process: {
+            student: {
+              deletedAt: null,
+            },
+          },
+        },
         NOT: {
           thesisInfo: {
             stage: Stage.REVISION,
-            process: {
-              student: {
-                deletedAt: null,
-              },
-            },
           },
         },
       },
@@ -652,12 +652,10 @@ export class ReviewsService {
         id,
         reviewerId: user.id,
         isFinal: false,
-        NOT: {
-          thesisInfo: {
-            process: {
-              student: {
-                deletedAt: null,
-              },
+        thesisInfo: {
+          process: {
+            student: {
+              deletedAt: null,
             },
           },
         },
@@ -806,6 +804,7 @@ export class ReviewsService {
           process: {
             headReviewerId: id,
             student: {
+              deletedAt: null,
               ...(searchQuery.author && { name: { contains: searchQuery.author } }),
               ...(searchQuery.department && { department: { id: searchQuery.department } }),
             },
@@ -815,15 +814,6 @@ export class ReviewsService {
         },
         isFinal: true,
         ...(searchQuery.status && { status: searchQuery.status }),
-        NOT: {
-          thesisInfo: {
-            process: {
-              student: {
-                deletedAt: null,
-              },
-            },
-          },
-        },
       },
       include: {
         reviewer: {
@@ -858,6 +848,9 @@ export class ReviewsService {
         thesisInfo: {
           process: {
             headReviewerId: id,
+            student: {
+              deletedAt: null,
+            },
           },
         },
         isFinal: true,
@@ -870,15 +863,6 @@ export class ReviewsService {
         ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
         ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
         ...(searchQuery.status && { status: searchQuery.status }),
-        NOT: {
-          thesisInfo: {
-            process: {
-              student: {
-                deletedAt: null,
-              },
-            },
-          },
-        },
       },
     });
     return {
@@ -895,6 +879,7 @@ export class ReviewsService {
             process: {
               headReviewerId: id,
               student: {
+                deletedAt: null,
                 ...(searchQuery.author && { name: { contains: searchQuery.author } }),
                 ...(searchQuery.department && { department: { id: searchQuery.department } }),
               },
@@ -904,15 +889,6 @@ export class ReviewsService {
           },
           isFinal: true,
           ...(searchQuery.status && { status: searchQuery.status }),
-          NOT: {
-            thesisInfo: {
-              process: {
-                student: {
-                  deletedAt: null,
-                },
-              },
-            },
-          },
         },
         include: {
           reviewer: {
@@ -970,12 +946,10 @@ export class ReviewsService {
       where: {
         id,
         isFinal: true,
-        NOT: {
-          thesisInfo: {
-            process: {
-              student: {
-                deletedAt: null,
-              },
+        thesisInfo: {
+          process: {
+            student: {
+              deletedAt: null,
             },
           },
         },
@@ -1027,12 +1001,10 @@ export class ReviewsService {
         id,
         reviewerId: user.id,
         isFinal: true,
-        NOT: {
-          thesisInfo: {
-            process: {
-              student: {
-                deletedAt: null,
-              },
+        thesisInfo: {
+          process: {
+            student: {
+              deletedAt: null,
             },
           },
         },
@@ -1252,6 +1224,7 @@ export class ReviewsService {
           stage: Stage.REVISION,
           process: {
             student: {
+              deletedAt: null,
               ...(searchQuery.author && { name: { contains: searchQuery.author } }),
               ...(searchQuery.department && { department: { id: searchQuery.department } }),
             },
@@ -1259,15 +1232,6 @@ export class ReviewsService {
           ...(searchQuery.title && { title: { contains: searchQuery.title } }),
         },
         ...(searchQuery.contentStatus && { contentStatus: searchQuery.contentStatus }),
-        NOT: {
-          thesisInfo: {
-            process: {
-              student: {
-                deletedAt: null,
-              },
-            },
-          },
-        },
       },
       include: {
         reviewer: {
@@ -1303,6 +1267,11 @@ export class ReviewsService {
         isFinal: true,
         thesisInfo: {
           stage: Stage.REVISION,
+          process: {
+            student: {
+              deletedAt: null,
+            },
+          },
         },
         ...(searchQuery.author && {
           thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
@@ -1312,15 +1281,6 @@ export class ReviewsService {
         }),
         ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
         ...(searchQuery.contentStatus && { contentStatus: searchQuery.contentStatus }),
-        NOT: {
-          thesisInfo: {
-            process: {
-              student: {
-                deletedAt: null,
-              },
-            },
-          },
-        },
       },
     });
     return {
@@ -1339,6 +1299,7 @@ export class ReviewsService {
             stage: Stage.REVISION,
             process: {
               student: {
+                deletedAt: null,
                 ...(searchQuery.author && { name: { contains: searchQuery.author } }),
                 ...(searchQuery.department && { department: { id: searchQuery.department } }),
               },
@@ -1346,15 +1307,6 @@ export class ReviewsService {
             ...(searchQuery.title && { title: { contains: searchQuery.title } }),
           },
           ...(searchQuery.contentStatus && { contentStatus: searchQuery.contentStatus }),
-          NOT: {
-            thesisInfo: {
-              process: {
-                student: {
-                  deletedAt: null,
-                },
-              },
-            },
-          },
         },
         include: {
           reviewer: {
@@ -1412,13 +1364,9 @@ export class ReviewsService {
         isFinal: false,
         thesisInfo: {
           stage: Stage.REVISION,
-        },
-        NOT: {
-          thesisInfo: {
-            process: {
-              student: {
-                deletedAt: null,
-              },
+          process: {
+            student: {
+              deletedAt: null,
             },
           },
         },
@@ -1463,12 +1411,10 @@ export class ReviewsService {
         id,
         reviewerId: user.id,
         isFinal: false,
-        NOT: {
-          thesisInfo: {
-            process: {
-              student: {
-                deletedAt: null,
-              },
+        thesisInfo: {
+          process: {
+            student: {
+              deletedAt: null,
             },
           },
         },
@@ -1527,6 +1473,7 @@ export class ReviewsService {
       where: {
         process: {
           student: {
+            deletedAt: null,
             ...(searchQuery.author && { name: { contains: searchQuery.author } }),
             ...(searchQuery.department && { department: { id: searchQuery.department } }),
           },
@@ -1545,13 +1492,6 @@ export class ReviewsService {
             },
           },
         ],
-        NOT: {
-          process: {
-            student: {
-              deletedAt: null,
-            },
-          },
-        },
       },
       include: {
         process: {
@@ -1583,9 +1523,12 @@ export class ReviewsService {
     const totalCount = await this.prismaService.thesisInfo.count({
       where: {
         ...(searchQuery.author && { process: { student: { name: { contains: searchQuery.author } } } }),
-        ...(searchQuery.department && {
-          process: { student: { department: { id: searchQuery.department } } },
-        }),
+        process: {
+          student: {
+            deletedAt: null,
+            ...(searchQuery.department && { department: { id: searchQuery.department } }),
+          },
+        },
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
         AND: [
@@ -1600,13 +1543,6 @@ export class ReviewsService {
             },
           },
         ],
-        NOT: {
-          process: {
-            student: {
-              deletedAt: null,
-            },
-          },
-        },
       },
     });
     return {
@@ -1619,6 +1555,7 @@ export class ReviewsService {
       where: {
         process: {
           student: {
+            deletedAt: null,
             ...(searchQuery.author && { name: { contains: searchQuery.author } }),
             ...(searchQuery.department && { department: { id: searchQuery.department } }),
           },
@@ -1637,13 +1574,6 @@ export class ReviewsService {
             },
           },
         ],
-        NOT: {
-          process: {
-            student: {
-              deletedAt: null,
-            },
-          },
-        },
       },
       include: {
         process: {
@@ -1720,11 +1650,9 @@ export class ReviewsService {
     const result = await this.prismaService.thesisInfo.findUnique({
       where: {
         id,
-        NOT: {
-          process: {
-            student: {
-              deletedAt: null,
-            },
+        process: {
+          student: {
+            deletedAt: null,
           },
         },
       },
@@ -1767,6 +1695,7 @@ export class ReviewsService {
       where: {
         process: {
           student: {
+            deletedAt: null,
             ...(searchQuery.author && { name: { contains: searchQuery.author } }),
             ...(searchQuery.department && { department: { id: searchQuery.department } }),
           },
@@ -1786,13 +1715,6 @@ export class ReviewsService {
             },
           },
         ],
-        NOT: {
-          process: {
-            student: {
-              deletedAt: null,
-            },
-          },
-        },
       },
       include: {
         process: {
@@ -1825,9 +1747,12 @@ export class ReviewsService {
     const totalCount = await this.prismaService.thesisInfo.count({
       where: {
         ...(searchQuery.author && { process: { student: { name: { contains: searchQuery.author } } } }),
-        ...(searchQuery.department && {
-          process: { student: { department: { id: searchQuery.department } } },
-        }),
+        process: {
+          student: {
+            deletedAt: null,
+            ...(searchQuery.department && { department: { id: searchQuery.department } }),
+          },
+        },
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
         ...(searchQuery.summary && { summary: searchQuery.summary }),
@@ -1856,6 +1781,7 @@ export class ReviewsService {
         where: {
           process: {
             student: {
+              deletedAt: null,
               ...(searchQuery.author && { name: { contains: searchQuery.author } }),
               ...(searchQuery.department && { department: { id: searchQuery.department } }),
             },
@@ -1875,13 +1801,6 @@ export class ReviewsService {
               },
             },
           ],
-          NOT: {
-            process: {
-              student: {
-                deletedAt: null,
-              },
-            },
-          },
         },
         include: {
           process: {
@@ -1930,6 +1849,7 @@ export class ReviewsService {
       where: {
         process: {
           student: {
+            deletedAt: null,
             ...(searchQuery.author && { name: { contains: searchQuery.author } }),
             ...(searchQuery.department && { department: { id: searchQuery.department } }),
           },
@@ -1949,13 +1869,6 @@ export class ReviewsService {
             },
           },
         ],
-        NOT: {
-          process: {
-            student: {
-              deletedAt: null,
-            },
-          },
-        },
       },
       include: {
         process: {
@@ -2007,11 +1920,9 @@ export class ReviewsService {
     const result = await this.prismaService.thesisInfo.findUnique({
       where: {
         id,
-        NOT: {
-          process: {
-            student: {
-              deletedAt: null,
-            },
+        process: {
+          student: {
+            deletedAt: null,
           },
         },
       },
