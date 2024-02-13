@@ -99,7 +99,7 @@ export class AchievementsService {
 
     const query = {
       where: {
-        ...(departmentId && { User: { department: { departmentId: { equals: departmentId } } } }),
+        ...(departmentId && { User: { department: { id: { equals: departmentId } } } }),
         ...(author && { User: { name: { contains: author } } }),
         ...(paperTitle && { paperTitle: { contains: paperTitle } }),
         ...(performance && { performance: { equals: performance } }),
