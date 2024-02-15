@@ -142,7 +142,7 @@ export class AchievementsController {
   })
   @ApiOkResponse({
     description: "논문 실적 삭제 성공",
-    type: CommonResponseDto
+    type: CommonResponseDto,
   })
   @ApiInternalServerErrorResponse({ description: "논문 실적 삭제 실패" })
   @ApiUnauthorizedResponse({ description: "학생은 본인 논문실적만 삭제 허용" })
@@ -152,5 +152,4 @@ export class AchievementsController {
     await this.achievemenstService.deleteAchievement(id, user);
     return new CommonResponseDto();
   }
-
 }
