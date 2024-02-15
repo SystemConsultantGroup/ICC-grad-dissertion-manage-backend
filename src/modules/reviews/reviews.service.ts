@@ -906,7 +906,7 @@ export class ReviewsService {
       },
     });
     return {
-      reviews: reviews.map((review) => new GetReviewListResDto(new ReviewDto(review))),
+      reviews: reviews.map((review) => new GetReviewFinalListResDto(new ReviewDto(review))),
       totalCount: totalCount,
     };
   }
