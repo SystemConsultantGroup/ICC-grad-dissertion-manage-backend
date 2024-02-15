@@ -239,4 +239,24 @@ export class AchievementsService {
       throw new UnauthorizedException("학생의 경우 본인 논문 실적만 조회가 가능합니다.");
     return achievement;
   }
+
+  async deleteAchievement(id: number, user: User) {
+    const achievement = await this.prismaService.achievements.findFirst({
+      where: {
+        id,
+      },
+    });
+    if (!achievement) throw new BadRequestException("해당 id의 논문실적이 존재하지 않습니다.");
+    if (user.type === UserType.STUDENT && achievement.userId !== user.id)
+      throw new UnauthorizedException("학생의 경우 본인 논문 실적만 조회가 가능합니다.");
+    try {
+      await this.prismaService.achievements.delete({
+        where: {
+          id,
+        },
+      });
+    } catch (e) {
+      throw new InternalServerErrorException(e);
+    }
+  }
 }
