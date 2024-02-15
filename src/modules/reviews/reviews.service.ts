@@ -25,6 +25,7 @@ import { create as createPdf } from "html-pdf";
 import * as path from "path";
 import * as Zip from "jszip";
 import { GetCurrentListResDto } from "./dtos/get-current-list.res.dto";
+import { GetResultResDto } from "./dtos/get-result.res.dto";
 
 @Injectable()
 export class ReviewsService {
@@ -369,6 +370,46 @@ export class ReviewsService {
     }
   }
 
+  async getReviewMe(user: User) {
+    const { id } = user;
+    const thesisInfos = await this.prismaService.thesisInfo.findMany({
+      where: {
+        process: {
+          studentId: id,
+        },
+      },
+      include: {
+        process: {
+          include: {
+            reviewers: true,
+            student: {
+              include: {
+                department: true,
+              },
+            },
+          },
+        },
+        thesisFiles: {
+          include: {
+            file: true,
+          },
+        },
+        reviews: {
+          include: {
+            reviewer: {
+              include: {
+                department: true,
+              },
+            },
+            file: true,
+          },
+        },
+      },
+    });
+    if (!thesisInfos) throw new NotFoundException("존재하지 않는 논문 정보입니다.");
+    return thesisInfos.map((thesisInfo) => new GetResultResDto(new ThesisInfoDto(thesisInfo)));
+  }
+
   async getReviewList(searchQuery: SearchReviewReqDto, user: User) {
     const { id } = user;
     let statusQuery = undefined;
@@ -640,8 +681,7 @@ export class ReviewsService {
       },
     });
     if (!review) throw new NotFoundException("존재하지 않는 심사 정보입니다.");
-    if (review.reviewerId != userId && review.thesisInfo.process.studentId != userId)
-      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (review.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     return new ReviewDto(review);
   }
   async updateReview(id: number, updateReviewDto: UpdateReviewReqDto, user: User) {
@@ -989,8 +1029,7 @@ export class ReviewsService {
       },
     });
     if (!review) throw new NotFoundException("존재하지 않는 심사 정보입니다.");
-    if (review.reviewerId != userId && review.thesisInfo.process.studentId != userId)
-      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (review.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     return new ReviewDto(review);
   }
   async updateReviewFinal(id: number, updateReviewFinalDto: UpdateReviewFinalReqDto, user: User) {
@@ -1400,8 +1439,7 @@ export class ReviewsService {
       },
     });
     if (!review) throw new NotFoundException("존재하지 않는 심사 정보입니다.");
-    if (review.reviewerId != userId && review.thesisInfo.process.studentId != userId)
-      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (review.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     return new ReviewDto(review);
   }
   async updateRevision(id: number, updateReivisionDto: UpdateRevisionReqDto, user: User) {
