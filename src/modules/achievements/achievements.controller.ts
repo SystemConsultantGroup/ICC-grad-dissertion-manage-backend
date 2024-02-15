@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Query, Response, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Response, UseGuards } from "@nestjs/common";
 import { AchievementsService } from "./achievements.service";
 import { PositiveIntPipe } from "../../common/pipes/positive-int.pipe";
 import {
@@ -136,4 +136,21 @@ export class AchievementsController {
     const achievement = await this.achievemenstService.getAchievement(id, user);
     return new CommonResponseDto(new CreateAchievementResponseDto(achievement));
   }
+
+  @ApiOperation({
+    summary: "특정 논문실적 삭제",
+  })
+  @ApiOkResponse({
+    description: "논문 실적 삭제 성공",
+    type: CommonResponseDto
+  })
+  @ApiInternalServerErrorResponse({ description: "논문 실적 삭제 실패" })
+  @ApiUnauthorizedResponse({ description: "학생은 본인 논문실적만 삭제 허용" })
+  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT])
+  @Delete(":id")
+  async deleteAchievement(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
+    await this.achievemenstService.deleteAchievement(id, user);
+    return new CommonResponseDto();
+  }
+
 }
