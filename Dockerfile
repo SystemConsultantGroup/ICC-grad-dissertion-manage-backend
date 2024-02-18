@@ -20,4 +20,4 @@ COPY src ./src
 RUN npm run build
 
 ENTRYPOINT [ "node" ]
-CMD ["dist/main"]
+CMD ["dist/src/main"]
