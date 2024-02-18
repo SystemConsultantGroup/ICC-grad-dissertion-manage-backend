@@ -12,13 +12,13 @@ export class ReviewDto {
         thesisFiles: (ThesisFile & { file: File })[];
       };
       reviewer?: User & { department: Department };
-      file: File;
+      file?: File;
     }
   ) {
     this.id = review.id;
-    this.thesisInfo = review.thesisInfo;
-    this.reviewer = review.reviewer;
-    this.file = review.file;
+    this.thesisInfo = new ThesisInfoDto(review.thesisInfo);
+    if (review.reviewer) this.reviewer = new UserDto(review.reviewer);
+    if (review.file) this.file = new FileDto(review.file);
     this.contentStatus = review.contentStatus;
     this.presentationStatus = review.presentationStatus;
     this.comment = review.comment;
@@ -31,7 +31,7 @@ export class ReviewDto {
   id: number;
   @ApiProperty({ description: "논문정보", type: () => ThesisInfoDto })
   thesisInfo?: ThesisInfoDto;
-  @ApiProperty({ description: "심사위원", type: UserDto })
+  @ApiProperty({ description: "심사위원", type: () => UserDto })
   reviewer?: UserDto;
   @ApiProperty({ description: "심사정보 파일", type: FileDto })
   file?: FileDto;

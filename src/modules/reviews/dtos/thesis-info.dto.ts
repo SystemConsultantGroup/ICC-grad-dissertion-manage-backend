@@ -23,6 +23,7 @@ export class ThesisInfoDto {
       reviews?: (Review & { reviewer?: User & { department: Department }; file?: File })[];
     }
   ) {
+    if (!thesisInfo) return;
     this.id = thesisInfo.id;
     this.process = thesisInfo.process;
     this.title = thesisInfo.title;
@@ -30,7 +31,7 @@ export class ThesisInfoDto {
     this.stage = thesisInfo.stage;
     this.summary = thesisInfo.summary;
     this.thesisFiles = thesisInfo.thesisFiles;
-    this.reviews = thesisInfo.reviews;
+    if (thesisInfo.reviews) this.reviews = thesisInfo.reviews.map((review) => new ReviewDto(review));
   }
 
   @ApiProperty({ description: "논문정보 아이디" })
