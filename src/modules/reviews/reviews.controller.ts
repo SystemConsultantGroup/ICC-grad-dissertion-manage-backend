@@ -85,6 +85,25 @@ export class ReviewsController {
   }
 
   @ApiOperation({
+    summary: "본인 논문 정보 조회 API",
+    description: "로그인한 학생의 논문 정보를 조회할 수 있다.",
+  })
+  @ApiOkResponse({
+    description: "조회 성공",
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(GetResultResDto) }],
+    },
+  })
+  @ApiInternalServerErrorResponse({ description: "서버 오류" })
+  @ApiUnauthorizedResponse({ description: "학생 계정 로그인 후 이용 가능" })
+  @UseUserTypeGuard([UserType.STUDENT])
+  @Get("me")
+  async getReviewMe(@CurrentUser() user: User) {
+    const thesisInfos = await this.reviewsService.getReviewMe(user);
+    return new CommonResponseDto(thesisInfos);
+  }
+
+  @ApiOperation({
     summary: "최종 심사 대상 논문 리스트 조회 API",
     description: "로그인한 교수가 최종심사해야하는 논문 리스트를 조회할 수 있다.",
   })
@@ -152,7 +171,7 @@ export class ReviewsController {
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
   @UseUserTypeGuard([UserType.PROFESSOR])
-  @Get("final/excel")
+  @Get("revision/excel")
   async getReivisionListExcel(
     @Query() searchQuery: SearchRevisionReqDto,
     @CurrentUser() user: User,
@@ -258,7 +277,7 @@ export class ReviewsController {
   })
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "학생 & 교수 계정 로그인 후 이용 가능" })
-  @UseUserTypeGuard([UserType.PROFESSOR, UserType.STUDENT])
+  @UseUserTypeGuard([UserType.PROFESSOR])
   @Get(":id")
   async getReview(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
     const review = await this.reviewsService.getReview(id, user);
@@ -302,7 +321,7 @@ export class ReviewsController {
   })
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "학생 & 교수 계정 로그인 후 이용 가능" })
-  @UseUserTypeGuard([UserType.PROFESSOR, UserType.STUDENT])
+  @UseUserTypeGuard([UserType.PROFESSOR])
   @Get("final/:id")
   async getReviewFinal(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
     const review = await this.reviewsService.getReviewFinal(id, user);
@@ -346,7 +365,7 @@ export class ReviewsController {
   })
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "학생 & 교수 계정 로그인 후 이용 가능" })
-  @UseUserTypeGuard([UserType.PROFESSOR, UserType.STUDENT])
+  @UseUserTypeGuard([UserType.PROFESSOR])
   @Get("revision/:id")
   async getRevision(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
     const review = await this.reviewsService.getRevision(id, user);

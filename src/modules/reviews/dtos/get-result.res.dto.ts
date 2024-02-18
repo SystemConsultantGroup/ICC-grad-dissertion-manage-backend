@@ -30,6 +30,6 @@ export class GetResultResDto {
   abstract: string;
   @ApiProperty({ description: "연관 파일", type: [ThesisFileDto] })
   thesisFiles: ThesisFileDto[];
-  @ApiProperty({ description: "심사 결과 목록", type: [ReviewDto] })
+  @ApiProperty({ description: "심사 결과 목록", type: () => [ReviewDto] })
   reviews: ReviewDto[];
 }
