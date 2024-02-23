@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsEmail, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
+import { IsKoreanPhoneNumber } from "src/common/decorators/is-kr-phone-number.decorator";
 
 export class UpdateStudentDto {
   @ApiProperty({ description: "로그인 아이디(학번)", required: false, example: "20200313131" })
@@ -32,6 +33,7 @@ export class UpdateStudentDto {
   @IsOptional()
   @IsNotEmpty()
   @IsString()
+  @IsKoreanPhoneNumber()
   phone: string;
 
   @ApiProperty({ description: "학과 아이디", required: false, example: "1" })

@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsKoreanPhoneNumber } from "src/common/decorators/is-kr-phone-number.decorator";
 
 export class UpdateUserDto {
   @ApiProperty({ description: "수정할 이메일", example: "email@gmail.com" })
@@ -19,6 +20,7 @@ export class UpdateUserDto {
   @IsOptional()
   @IsNotEmpty()
   @IsString()
+  @IsKoreanPhoneNumber()
   phone: string;
 
   @ApiProperty({
