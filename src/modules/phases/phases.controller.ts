@@ -39,7 +39,7 @@ export class PhasesController {
     return new CommonResponseDto(new PhasesListDto(phases));
   }
 
-  @UseUserTypeGuard([UserType.ADMIN])
+  @UseUserTypeGuard([UserType.ADMIN, UserType.PROFESSOR, UserType.STUDENT])
   @Get("current")
   @ApiOperation({ summary: "현재 시스템 단계 조회" })
   @ApiOkResponse({
