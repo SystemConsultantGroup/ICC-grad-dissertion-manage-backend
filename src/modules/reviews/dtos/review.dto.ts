@@ -1,8 +1,20 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Review, ThesisInfo, User, File, Status, Process, Department, ThesisFile, Reviewer } from "@prisma/client";
+import {
+  Review,
+  ThesisInfo,
+  User,
+  File,
+  Status,
+  Process,
+  Department,
+  ThesisFile,
+  Reviewer,
+  Summary,
+} from "@prisma/client";
 import { ThesisInfoDto } from "./thesis-info.dto";
 import { FileDto } from "src/modules/files/dtos/file.dto";
 import { UserDto } from "src/modules/users/dtos/user.dto";
+import { GetReviewFinalResDto } from "./get-review-final.res.dto";
 
 export class ReviewDto {
   constructor(
@@ -47,4 +59,42 @@ export class ReviewDto {
   createdAt: Date;
   @ApiProperty({ description: "updatedAt" })
   updatedAt: Date;
+}
+
+type OtherReview = Review & {
+  reviewer: { name: string };
+  file: { uuid: string };
+};
+
+export class OtherReviewDto {
+  constructor(otherReview: OtherReview) {
+    this.name = otherReview.reviewer.name;
+    this.presentationResult = otherReview.presentationStatus;
+    this.contentResult = otherReview.contentStatus;
+    this.fileId = otherReview.file.uuid;
+  }
+
+  @ApiProperty({ description: "심사위원 이름" })
+  name: string;
+
+  @ApiProperty({ description: "내용 심사결과", enum: Summary })
+  presentationResult: Summary;
+
+  @ApiProperty({ description: "구두 심사결과", enum: Summary })
+  contentResult: Summary;
+
+  @ApiProperty({ description: "심사 의견 파일" })
+  fileId: string;
+}
+export class FinalReviewDto {
+  constructor(review: GetReviewFinalResDto, otherReviews?: OtherReviewDto[]) {
+    this.finalReview = review;
+    if (otherReviews) this.otherReviews = [...otherReviews];
+  }
+
+  @ApiProperty({ description: "심사위원장 심사 정보", type: () => GetReviewFinalResDto })
+  finalReview: GetReviewFinalResDto;
+
+  @ApiProperty({ description: "심사위원 심사 정보", required: false, isArray: true })
+  otherReviews?: OtherReviewDto[];
 }
