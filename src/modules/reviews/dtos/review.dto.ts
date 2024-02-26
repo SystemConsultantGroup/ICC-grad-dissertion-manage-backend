@@ -63,7 +63,7 @@ export class ReviewDto {
 
 type OtherReview = Review & {
   reviewer: { name: string };
-  file: { uuid: string };
+  fileId: string;
 };
 
 export class OtherReviewDto {
@@ -71,7 +71,8 @@ export class OtherReviewDto {
     this.name = otherReview.reviewer.name;
     this.presentationResult = otherReview.presentationStatus;
     this.contentResult = otherReview.contentStatus;
-    this.fileId = otherReview.file.uuid;
+    if (otherReview.fileId) this.fileId = otherReview.fileId;
+    else this.fileId = null;
   }
 
   @ApiProperty({ description: "심사위원 이름" })

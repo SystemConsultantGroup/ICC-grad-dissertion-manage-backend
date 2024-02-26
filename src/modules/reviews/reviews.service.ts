@@ -1043,11 +1043,6 @@ export class ReviewsService {
             name: true,
           },
         },
-        file: {
-          select: {
-            uuid: true,
-          },
-        },
       },
     });
     return { review, otherReviews };
