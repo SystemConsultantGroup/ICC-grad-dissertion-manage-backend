@@ -1033,18 +1033,24 @@ export class ReviewsService {
 
     const otherReviews = await this.prismaService.review.findMany({
       where: {
-        isFinal: true,
-        thesisInfo: {
-          id: review.thesisInfo.id,
-          process: {
-            student: {
-              deletedAt: null,
-            },
+        isFinal: false,
+        thesisInfoId: review.thesisInfo.id,
+      },
+
+      include: {
+        reviewer: {
+          select: {
+            name: true,
+          },
+        },
+        file: {
+          select: {
+            uuid: true,
           },
         },
       },
     });
-    return new ReviewDto(review);
+    return { review, otherReviews };
   }
   async updateReviewFinal(id: number, updateReviewFinalDto: UpdateReviewFinalReqDto, user: User) {
     const userId = user.id;
