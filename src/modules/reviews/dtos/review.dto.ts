@@ -92,9 +92,9 @@ export class FinalReviewDto {
     if (otherReviews) this.otherReviews = [...otherReviews];
   }
 
-  @ApiProperty({ description: "심사위원장 심사 정보", type: () => ReviewDto })
+  @ApiProperty({ description: "심사위원장 심사 정보", type: () => GetReviewFinalResDto })
   finalReview: GetReviewFinalResDto;
 
   @ApiProperty({ description: "심사위원 심사 정보", required: false, isArray: true })
-  otherReviews: OtherReviewDto[];
+  otherReviews?: OtherReviewDto[];
 }
