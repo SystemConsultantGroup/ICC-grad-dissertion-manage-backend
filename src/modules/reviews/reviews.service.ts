@@ -1043,6 +1043,7 @@ export class ReviewsService {
             name: true,
           },
         },
+        file: true,
       },
     });
     return { review, otherReviews };

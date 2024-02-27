@@ -63,7 +63,7 @@ export class ReviewDto {
 
 type OtherReview = Review & {
   reviewer: { name: string };
-  fileId: string;
+  file?: File;
 };
 
 export class OtherReviewDto {
@@ -71,8 +71,8 @@ export class OtherReviewDto {
     this.name = otherReview.reviewer.name;
     this.presentationResult = otherReview.presentationStatus;
     this.contentResult = otherReview.contentStatus;
-    if (otherReview.fileId) this.fileId = otherReview.fileId;
-    else this.fileId = null;
+    if (otherReview.file) this.file = otherReview.file;
+    else this.file = null;
   }
 
   @ApiProperty({ description: "심사위원 이름" })
@@ -85,7 +85,7 @@ export class OtherReviewDto {
   contentResult: Summary;
 
   @ApiProperty({ description: "심사 의견 파일" })
-  fileId: string;
+  file: File;
 }
 export class FinalReviewDto {
   constructor(review: GetReviewFinalResDto, otherReviews?: OtherReviewDto[]) {
