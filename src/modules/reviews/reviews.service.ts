@@ -32,7 +32,7 @@ export class ReviewsService {
   constructor(
     private readonly minioClientService: MinioClientService,
     private readonly prismaService: PrismaService
-  ) {}
+  ) { }
 
   buildFilename(base, searchQuery, isRevision = false) {
     let queryString = "";
@@ -1518,18 +1518,6 @@ export class ReviewsService {
         },
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
-        AND: [
-          {
-            NOT: {
-              summary: Summary.UNEXAMINED,
-            },
-          },
-          {
-            NOT: {
-              summary: Summary.PENDING,
-            },
-          },
-        ],
       },
       include: {
         process: {
@@ -1600,18 +1588,6 @@ export class ReviewsService {
         },
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
-        AND: [
-          {
-            NOT: {
-              summary: Summary.UNEXAMINED,
-            },
-          },
-          {
-            NOT: {
-              summary: Summary.PENDING,
-            },
-          },
-        ],
       },
       include: {
         process: {
@@ -1653,6 +1629,14 @@ export class ReviewsService {
               record["심사 현황"] += "(지도교수)/";
               return;
             }
+            else if (reviewer.role == Role.COMMITTEE_CHAIR) {
+              record["심사 현황"] += "(심사위원장)/";
+              return;
+            }
+            else if (reviewer.role == Role.COMMITTEE_MEMBER) {
+              record["심사 현황"] += "(심사위원)/";
+              return;
+            }
           }
         });
         if ((result.stage == Stage.MAIN || result.stage == Stage.PRELIMINARY) && review.isFinal == false) {
@@ -1661,15 +1645,15 @@ export class ReviewsService {
               review.presentationStatus == Status.PASS) ||
             review.presentationStatus == Status.FAIL
           )
-            record["심사 현황"] += "진행완료\n";
-          else record["심사 현황"] += "진행중\n";
+            record["심사 현황"] += "진행완료  ";
+          else record["심사 현황"] += "진행중  ";
         } else if (review.isFinal) {
           if (review.contentStatus == Status.PASS || review.contentStatus == Status.FAIL)
-            record["심사 현황"] += "진행완료\n";
-          else record["심사 현황"] += "진행중\n";
+            record["심사 현황"] += "(최종심사)진행완료  ";
+          else record["심사 현황"] += "(최종심사)진행중  ";
         } else if (result.stage == Stage.REVISION) {
-          if (review.contentStatus == Status.PASS) record["심사 현황"] += "진행완료\n";
-          else record["심사 현황"] += "진행중\n";
+          if (review.contentStatus == Status.PASS) record["심사 현황"] += "진행완료  ";
+          else record["심사 현황"] += "진행중 ";
         }
       });
       return record;
