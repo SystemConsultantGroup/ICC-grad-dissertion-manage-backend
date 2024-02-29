@@ -9,7 +9,7 @@ COPY nest-cli.json ./
 COPY tsconfig.json ./
 COPY tsconfig.build.json ./
 COPY .env ./
-COPY resources ./
+
 # package.json, package-lock.json
 COPY package*.json ./
 RUN npm install
@@ -18,6 +18,7 @@ COPY prisma ./prisma
 RUN npx prisma generate
 
 COPY src ./src
+COPY resources ./resources
 RUN npm run build
 
 ENTRYPOINT [ "node" ]
