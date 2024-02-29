@@ -49,7 +49,7 @@ export class FilesController {
   @ApiResponse({ description: "학생 일괄등록 엑셀 양식", status: 200 })
   @ApiBadRequestResponse({ description: "파일 다운로드 실패" })
   async getStudentExcelForm(@Response() res) {
-    const fileName = "정통대대학원논문심사_학생_일괄등록_엘섹_양식.xlsx";
+    const fileName = "정통대대학원논문심사_학생_일괄등록_양식.xlsx";
     const stream = await this.filesService.getLocalFile("format", fileName);
 
     res.setHeader("Content-Disposition", `attachment; filename=${encodeURI(fileName)}`);
