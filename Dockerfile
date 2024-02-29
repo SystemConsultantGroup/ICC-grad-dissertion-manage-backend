@@ -9,6 +9,7 @@ COPY nest-cli.json ./
 COPY tsconfig.json ./
 COPY tsconfig.build.json ./
 COPY .env ./
+COPY resources ./
 # package.json, package-lock.json
 COPY package*.json ./
 RUN npm install
