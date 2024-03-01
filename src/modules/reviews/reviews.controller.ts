@@ -297,7 +297,7 @@ export class ReviewsController {
   })
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
-  @UseUserTypeGuard([UserType.PROFESSOR])
+  @UseUserTypeGuard([UserType.PROFESSOR, UserType.ADMIN])
   @Put(":id")
   async updateReview(
     @Param("id", PositiveIntPipe) id: number,
@@ -341,7 +341,7 @@ export class ReviewsController {
   })
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
-  @UseUserTypeGuard([UserType.PROFESSOR])
+  @UseUserTypeGuard([UserType.PROFESSOR, UserType.ADMIN])
   @Put("final/:id")
   async updateReviewFinal(
     @Param("id", PositiveIntPipe) id: number,
@@ -385,7 +385,7 @@ export class ReviewsController {
   })
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "교수 계정 로그인 후 이용 가능" })
-  @UseUserTypeGuard([UserType.PROFESSOR])
+  @UseUserTypeGuard([UserType.PROFESSOR, UserType.ADMIN])
   @Put("revision/:id")
   async updateRevision(
     @Param("id", PositiveIntPipe) id: number,
