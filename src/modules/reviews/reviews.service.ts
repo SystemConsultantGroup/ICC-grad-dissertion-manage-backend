@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
-import { Role, User } from "@prisma/client";
+import { Role, User, UserType } from "@prisma/client";
 import { PrismaService } from "src/config/database/prisma.service";
 import { Stage, Status, Summary } from "@prisma/client";
 import { GetReviewListResDto } from "./dtos/get-review-list.res.dto";
@@ -32,7 +32,7 @@ export class ReviewsService {
   constructor(
     private readonly minioClientService: MinioClientService,
     private readonly prismaService: PrismaService
-  ) { }
+  ) {}
 
   buildFilename(base, searchQuery, isRevision = false) {
     let queryString = "";
@@ -686,6 +686,7 @@ export class ReviewsService {
   }
   async updateReview(id: number, updateReviewDto: UpdateReviewReqDto, user: User) {
     const userId = user.id;
+    const userType = user.type;
     const fileUUID = updateReviewDto.fileUUID;
     const foundReview = await this.prismaService.review.findUnique({
       where: {
@@ -718,7 +719,8 @@ export class ReviewsService {
       },
     });
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
-    if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (userType == UserType.PROFESSOR && foundReview.reviewerId != userId)
+      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     if (
       (foundReview.contentStatus == Status.PASS || foundReview.contentStatus == Status.FAIL) &&
       (foundReview.presentationStatus == Status.PASS || foundReview.presentationStatus == Status.FAIL)
@@ -1034,6 +1036,7 @@ export class ReviewsService {
   }
   async updateReviewFinal(id: number, updateReviewFinalDto: UpdateReviewFinalReqDto, user: User) {
     const userId = user.id;
+    const userType = user.type;
     const fileUUID = updateReviewFinalDto.fileUUID;
     const foundReview = await this.prismaService.review.findUnique({
       where: {
@@ -1072,7 +1075,8 @@ export class ReviewsService {
       },
     });
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
-    if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (userType == UserType.PROFESSOR && foundReview.reviewerId != userId)
+      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     if (foundReview.contentStatus == Status.PASS || foundReview.contentStatus == Status.FAIL)
       throw new BadRequestException("수정 불가능한 논문심사입니다.");
     if (fileUUID) {
@@ -1444,6 +1448,7 @@ export class ReviewsService {
   }
   async updateRevision(id: number, updateReivisionDto: UpdateRevisionReqDto, user: User) {
     const userId = user.id;
+    const userType = user.type;
     const foundReview = await this.prismaService.review.findUnique({
       where: {
         id,
@@ -1459,7 +1464,8 @@ export class ReviewsService {
       },
     });
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
-    if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (userType == UserType.PROFESSOR && foundReview.reviewerId != userId)
+      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     try {
       const review = await this.prismaService.review.update({
         where: {
@@ -1628,12 +1634,10 @@ export class ReviewsService {
             if (reviewer.role == Role.ADVISOR) {
               record["심사 현황"] += "(지도교수)/";
               return;
-            }
-            else if (reviewer.role == Role.COMMITTEE_CHAIR) {
+            } else if (reviewer.role == Role.COMMITTEE_CHAIR) {
               record["심사 현황"] += "(심사위원장)/";
               return;
-            }
-            else if (reviewer.role == Role.COMMITTEE_MEMBER) {
+            } else if (reviewer.role == Role.COMMITTEE_MEMBER) {
               record["심사 현황"] += "(심사위원)/";
               return;
             }
