@@ -77,53 +77,23 @@ export class ReviewsService {
     };
     const fileName = (isMain ? "" : "예비") + "심사결과보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
-    // "./resources/format/" + isMain ? "" : "예비" + "심사보고서_양식.html";
     try {
-      readFile(filePath, "utf8", async (err, formatHtml) => {
-        if (err) throw new Error("reading format html file failed: " + filePath);
-        let signPath = "";
-        const replacerKeys = Object.keys(replacer);
-        if (isMain) {
-          for (const key of replacerKeys) {
-            if (key == "$심사위원장") {
-              for (const slot of replacer[key]) {
-                formatHtml = formatHtml.replace(
-                  "$row",
-                  `
-                <tr class="row_1">
-                  <td class="label_1">
-                      <span>심사위원장</span><br>
-                      Committee Chair
-                  </td>
-                  <td>
-                      $성명
-                  </td>
-                  <td>
-                      $내용:합격
-                  </td>
-                  <td>
-                      $내용:불합격
-                  </td>
-                  <td>
-                      $구두:합격
-                  </td>
-                  <td>
-                      $구두:불합격
-                  </td>
-                </tr>
-              `
-                );
-                for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
-              }
-            } else if (key == "$심사위원") {
-              for (const slot of replacer[key]) {
-                formatHtml = formatHtml.replace(
-                  "$row",
-                  `
+      return new Promise((resolve, reject) => {
+        readFile(filePath, "utf8", async (err, formatHtml) => {
+          if (err) throw new Error("reading format html file failed: " + filePath);
+          let signPath = "";
+          const replacerKeys = Object.keys(replacer);
+          if (isMain) {
+            for (const key of replacerKeys) {
+              if (key == "$심사위원장") {
+                for (const slot of replacer[key]) {
+                  formatHtml = formatHtml.replace(
+                    "$row",
+                    `
                   <tr class="row_1">
                     <td class="label_1">
-                        <span>심사위원</span><br>
-                        Committee Member
+                        <span>심사위원장</span><br>
+                        Committee Chair
                     </td>
                     <td>
                         $성명
@@ -140,93 +110,99 @@ export class ReviewsService {
                     <td>
                         $구두:불합격
                     </td>
-                </tr>
-              `
-                );
-                for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
-              }
-            } else if (key == "$지도교수") {
-              for (const slot of replacer[key]) {
-                formatHtml = formatHtml.replace(
-                  "$row",
-                  `
-                  <tr class="row_1">
-                    <td class="label_1">
-                        <span>지도교수</span><br>
-                        Advisor
-                    </td>
-                    <td>
-                        $성명
-                    </td>
-                    <td>
-                        $내용:합격
-                    </td>
-                    <td>
-                        $내용:불합격
-                    </td>
-                    <td>
-                        $구두:합격
-                    </td>
-                    <td>
-                        $구두:불합격
-                    </td>
-                </tr>
-              `
-                );
-                for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
-              }
-            } else if (key == "$서명") {
-              const readable = await this.minioClientService.getFile(replacer[key]);
-              signPath = path.join("resource", "img", "tmp", replacer[key]);
-              const writeStream = new Promise((resolve) => {
-                const ws = createWriteStream(signPath);
-                readable.pipe(ws);
-                readable.on("end", () => {
-                  resolve(null);
+                  </tr>
+                `
+                  );
+                  for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+                }
+              } else if (key == "$심사위원") {
+                for (const slot of replacer[key]) {
+                  formatHtml = formatHtml.replace(
+                    "$row",
+                    `
+                    <tr class="row_1">
+                      <td class="label_1">
+                          <span>심사위원</span><br>
+                          Committee Member
+                      </td>
+                      <td>
+                          $성명
+                      </td>
+                      <td>
+                          $내용:합격
+                      </td>
+                      <td>
+                          $내용:불합격
+                      </td>
+                      <td>
+                          $구두:합격
+                      </td>
+                      <td>
+                          $구두:불합격
+                      </td>
+                  </tr>
+                `
+                  );
+                  for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+                }
+              } else if (key == "$지도교수") {
+                for (const slot of replacer[key]) {
+                  formatHtml = formatHtml.replace(
+                    "$row",
+                    `
+                    <tr class="row_1">
+                      <td class="label_1">
+                          <span>지도교수</span><br>
+                          Advisor
+                      </td>
+                      <td>
+                          $성명
+                      </td>
+                      <td>
+                          $내용:합격
+                      </td>
+                      <td>
+                          $내용:불합격
+                      </td>
+                      <td>
+                          $구두:합격
+                      </td>
+                      <td>
+                          $구두:불합격
+                      </td>
+                  </tr>
+                `
+                  );
+                  for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+                }
+              } else if (key == "$서명") {
+                const readable = await this.minioClientService.getFile(replacer[key]);
+                signPath = path.join("resource", "img", "tmp", replacer[key]);
+                const writeStream = new Promise((resolve) => {
+                  const ws = createWriteStream(signPath);
+                  readable.pipe(ws);
+                  readable.on("end", () => {
+                    resolve(null);
+                  });
                 });
-              });
-              await writeStream;
-              formatHtml = formatHtml.replace(key, signPath);
-            } else {
-              formatHtml = formatHtml.replace(key, replacer[key]);
-            }
-          }
-          formatHtml = formatHtml.replaceAll("$row", "");
-        } else {
-          for (const key of replacerKeys) {
-            if (key == "$심사위원장") {
-              for (const slot of replacer[key]) {
-                formatHtml = formatHtml.replace(
-                  "$row",
-                  `
-                <tr class="row_1">
-                  <td class="label_1">
-                      <span>심사위원장</span><br>
-                      Committee Chair
-                  </td>
-                  <td>
-                      $성명
-                  </td>
-                  <td>
-                      $합격
-                  </td>
-                  <td>
-                      $불합격
-                  </td>
-                </tr>
-              `
-                );
-                for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+                await writeStream;
+                formatHtml = formatHtml.replace(key, signPath);
+              } else {
+                formatHtml = formatHtml.replace(key, replacer[key]);
               }
-            } else if (key == "$심사위원") {
-              for (const slot of replacer[key]) {
-                formatHtml = formatHtml.replace(
-                  "$row",
-                  `
+            }
+            formatHtml = formatHtml.replaceAll("$row", "");
+          } else {
+            for (const key of replacerKeys) {
+              if (key == "$심사위원장") {
+                for (const slot of replacer[key]) {
+                  formatHtml = formatHtml.replace(
+                    "$row",
+                    `
                   <tr class="row_1">
                     <td class="label_1">
-                        <span>심사위원</span><br>
-                        Committee Member
+                        <span>심사위원장</span><br>
+                        Committee Chair
                     </td>
                     <td>
                         $성명
@@ -237,63 +213,90 @@ export class ReviewsService {
                     <td>
                         $불합격
                     </td>
-                </tr>
-              `
-                );
-                for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+                  </tr>
+                `
+                  );
+                  for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+                }
+              } else if (key == "$심사위원") {
+                for (const slot of replacer[key]) {
+                  formatHtml = formatHtml.replace(
+                    "$row",
+                    `
+                    <tr class="row_1">
+                      <td class="label_1">
+                          <span>심사위원</span><br>
+                          Committee Member
+                      </td>
+                      <td>
+                          $성명
+                      </td>
+                      <td>
+                          $합격
+                      </td>
+                      <td>
+                          $불합격
+                      </td>
+                  </tr>
+                `
+                  );
+                  for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+                }
+              } else if (key == "$지도교수") {
+                for (const slot of replacer[key]) {
+                  formatHtml = formatHtml.replace(
+                    "$row",
+                    `
+                    <tr class="row_1">
+                      <td class="label_1">
+                          <span>지도교수</span><br>
+                          Advisor
+                      </td>
+                      <td>
+                          $성명
+                      </td>
+                      <td>
+                          $합격
+                      </td>
+                      <td>
+                          $불합격
+                      </td>
+                  </tr>
+                `
+                  );
+                  for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
+                }
+              } else {
+                formatHtml = formatHtml.replace(key, replacer[key]);
               }
-            } else if (key == "$지도교수") {
-              for (const slot of replacer[key]) {
-                formatHtml = formatHtml.replace(
-                  "$row",
-                  `
-                  <tr class="row_1">
-                    <td class="label_1">
-                        <span>지도교수</span><br>
-                        Advisor
-                    </td>
-                    <td>
-                        $성명
-                    </td>
-                    <td>
-                        $합격
-                    </td>
-                    <td>
-                        $불합격
-                    </td>
-                </tr>
-              `
-                );
-                for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
-              }
-            } else {
-              formatHtml = formatHtml.replace(key, replacer[key]);
             }
+            formatHtml = formatHtml.replaceAll("$row", "");
           }
-          formatHtml = formatHtml.replaceAll("$row", "");
-        }
-        const key = v1();
-        const createdAt = new Date();
-        await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
-          if (err) throw new Error("Creating PDF Buffer failed!");
-          await this.minioClientService.uploadFile(
-            key,
-            buffer,
-            Buffer.byteLength(buffer),
-            createdAt,
-            reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-            "application/pdf"
-          );
-        });
-        unlink(signPath, async (err) => {
-          if (err) throw new Error("Deleting temporary img file failed: " + signPath);
-          return await tx.file.create({
-            data: {
-              name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-              mimeType: "application/pdf",
-              uuid: key,
-              createdAt: createdAt,
-            },
+          const key = v1();
+          const createdAt = new Date();
+          await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
+            if (err) throw new Error("Creating PDF Buffer failed!");
+            await this.minioClientService.uploadFile(
+              key,
+              buffer,
+              Buffer.byteLength(buffer),
+              createdAt,
+              reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+              "application/pdf"
+            );
+          });
+          unlink(signPath, async (err) => {
+            if (err) throw new Error("Deleting temporary img file failed: " + signPath);
+            resolve(
+              await tx.file.create({
+                data: {
+                  name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+                  mimeType: "application/pdf",
+                  uuid: key,
+                  createdAt: createdAt,
+                },
+              })
+            );
           });
         });
       });
@@ -319,48 +322,52 @@ export class ReviewsService {
     const filePath = path.join("resources", "format", fileName);
     try {
       let signPath = "";
-      readFile(filePath, "utf8", async (err, formatHtml) => {
-        if (err) throw new Error("reading format html file failed: " + filePath);
-        const replacerKeys = Object.keys(replacer);
-        for (const key of replacerKeys) {
-          if (key == "$서명") {
-            const readable = await this.minioClientService.getFile(replacer[key]);
-            signPath = path.join("resources", "img", "tmp", replacer[key]);
-            const writeStream = new Promise((resolve) => {
-              const ws = createWriteStream(signPath);
-              readable.pipe(ws);
-              ws.on("close", () => {
-                resolve(null);
+      return new Promise((resolve, reject) => {
+        readFile(filePath, "utf8", async (err, formatHtml) => {
+          if (err) throw new Error("reading format html file failed: " + filePath);
+          const replacerKeys = Object.keys(replacer);
+          for (const key of replacerKeys) {
+            if (key == "$서명") {
+              const readable = await this.minioClientService.getFile(replacer[key]);
+              signPath = path.join("resources", "img", "tmp", replacer[key]);
+              const writeStream = new Promise((resolve) => {
+                const ws = createWriteStream(signPath);
+                readable.pipe(ws);
+                ws.on("close", () => {
+                  resolve(null);
+                });
               });
-            });
-            await writeStream;
-            formatHtml = formatHtml.replace(key, signPath);
-          } else {
-            formatHtml = formatHtml.replaceAll(key, replacer[key]);
+              await writeStream;
+              formatHtml = formatHtml.replace(key, signPath);
+            } else {
+              formatHtml = formatHtml.replaceAll(key, replacer[key]);
+            }
           }
-        }
-        const key = v1();
-        const createdAt = new Date();
-        await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
-          if (err) throw new Error("Creating PDF Buffer failed!");
-          await this.minioClientService.uploadFile(
-            key,
-            buffer,
-            Buffer.byteLength(buffer),
-            createdAt,
-            reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-            "application/pdf"
-          );
-        });
-        unlink(signPath, async (err) => {
-          if (err) throw new Error("Deleting temporary img file failed: " + signPath);
-          return await tx.file.create({
-            data: {
-              name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-              mimeType: "application/pdf",
-              uuid: key,
-              createdAt: createdAt,
-            },
+          const key = v1();
+          const createdAt = new Date();
+          await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
+            if (err) throw new Error("Creating PDF Buffer failed!");
+            await this.minioClientService.uploadFile(
+              key,
+              buffer,
+              Buffer.byteLength(buffer),
+              createdAt,
+              reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+              "application/pdf"
+            );
+          });
+          unlink(signPath, async (err) => {
+            if (err) throw new Error("Deleting temporary img file failed: " + signPath);
+            return resolve(
+              await tx.file.create({
+                data: {
+                  name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+                  mimeType: "application/pdf",
+                  uuid: key,
+                  createdAt: createdAt,
+                },
+              })
+            );
           });
         });
       });
@@ -691,7 +698,6 @@ export class ReviewsService {
     const foundReview = await this.prismaService.review.findUnique({
       where: {
         id,
-        reviewerId: user.id,
         isFinal: false,
         thesisInfo: {
           process: {
@@ -719,13 +725,14 @@ export class ReviewsService {
       },
     });
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
-    if (userType == UserType.PROFESSOR && foundReview.reviewerId != userId)
-      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
-    if (
-      (foundReview.contentStatus == Status.PASS || foundReview.contentStatus == Status.FAIL) &&
-      (foundReview.presentationStatus == Status.PASS || foundReview.presentationStatus == Status.FAIL)
-    )
-      throw new BadRequestException("수정 불가능한 논문심사입니다.");
+    if (userType == UserType.PROFESSOR) {
+      if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+      if (
+        (foundReview.contentStatus == Status.PASS || foundReview.contentStatus == Status.FAIL) &&
+        (foundReview.presentationStatus == Status.PASS || foundReview.presentationStatus == Status.FAIL)
+      )
+        throw new BadRequestException("수정 불가능한 논문심사입니다.");
+    }
     if (fileUUID) {
       const foundFile = await this.prismaService.file.findUnique({
         where: {
@@ -789,7 +796,6 @@ export class ReviewsService {
         return await tx.review.update({
           where: {
             id,
-            reviewerId: user.id,
             isFinal: false,
           },
           data: {
@@ -1041,7 +1047,6 @@ export class ReviewsService {
     const foundReview = await this.prismaService.review.findUnique({
       where: {
         id,
-        reviewerId: user.id,
         isFinal: true,
         thesisInfo: {
           process: {
@@ -1075,10 +1080,11 @@ export class ReviewsService {
       },
     });
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
-    if (userType == UserType.PROFESSOR && foundReview.reviewerId != userId)
-      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
-    if (foundReview.contentStatus == Status.PASS || foundReview.contentStatus == Status.FAIL)
-      throw new BadRequestException("수정 불가능한 논문심사입니다.");
+    if (userType == UserType.PROFESSOR) {
+      if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+      if (foundReview.contentStatus == Status.PASS || foundReview.contentStatus == Status.FAIL)
+        throw new BadRequestException("수정 불가능한 논문심사입니다.");
+    }
     if (fileUUID) {
       const foundFile = await this.prismaService.file.findUnique({
         where: {
@@ -1201,7 +1207,6 @@ export class ReviewsService {
         const review = await tx.review.update({
           where: {
             id,
-            reviewerId: user.id,
             isFinal: true,
           },
           data: {
@@ -1452,7 +1457,6 @@ export class ReviewsService {
     const foundReview = await this.prismaService.review.findUnique({
       where: {
         id,
-        reviewerId: user.id,
         isFinal: false,
         thesisInfo: {
           process: {
@@ -1464,13 +1468,13 @@ export class ReviewsService {
       },
     });
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
-    if (userType == UserType.PROFESSOR && foundReview.reviewerId != userId)
-      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    if (userType == UserType.PROFESSOR) {
+      if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
+    }
     try {
       const review = await this.prismaService.review.update({
         where: {
           id,
-          reviewerId: user.id,
           isFinal: false,
         },
         data: {
