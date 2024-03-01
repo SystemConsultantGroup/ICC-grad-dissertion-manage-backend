@@ -13,6 +13,7 @@ import { ProfessorsModule } from "./modules/professors/professors.module";
 import { ReviewsModule } from "./modules/reviews/reviews.module";
 import { TaskModule } from "./modules/task/task.module";
 import { AchievementsModule } from "./modules/achievements/achievements.module";
+import { ThesesModule } from "./modules/theses/theses.module";
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AchievementsModule } from "./modules/achievements/achievements.module";
     ReviewsModule,
     TaskModule,
     AchievementsModule,
+    ThesesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -20,7 +20,7 @@ import { ThesisInfoDto } from "./dtos/thesis-info.dto";
 
 @Controller("theses")
 @UseGuards(JwtGuard)
-@ApiTags("학생 API")
+@ApiTags("논문 정보 API")
 @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
 @ApiBearerAuth("access-token")
 export class ThesesController {
@@ -43,7 +43,7 @@ export class ThesesController {
   })
   async updateThesis(@Param("id", PositiveIntPipe) id: number, @Body() updateThesisInfoDto: UpdateThesisInfoDto) {
     const updateThesisInfo = await this.thesesService.updateThesis(id, updateThesisInfoDto);
-    // const thesisInfoDto = new ThesisInfoDto(updateThesisInfo);
-    // return new CommonResponseDto(thesisInfoDto);
+    const thesisInfoDto = new ThesisInfoDto(updateThesisInfo);
+    return new CommonResponseDto(thesisInfoDto);
   }
 }
