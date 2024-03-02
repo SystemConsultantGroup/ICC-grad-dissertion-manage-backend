@@ -791,12 +791,11 @@ export class StudentsService {
                 });
 
                 // 본심에 해당하는 논문 정보(thesis_info), 논문 파일(thesis_file), 리뷰(review) 생성
-                // TODO 추후 수정(예심 -> 본심 업데이트)
                 await tx.thesisInfo.create({
                   data: {
                     // 본심 논문 정보 생성
                     processId: process.id,
-                    title: thesisTitle,
+                    title: updateSystemDto.thesisTitle,
                     stage: Stage.MAIN,
                     summary: Summary.UNEXAMINED,
                     thesisFiles: {
@@ -827,11 +826,11 @@ export class StudentsService {
                 });
                 if (updatedStudent.department.modificationFlag) {
                   // 수정지시사항 단계가 있는 학생인 경우
-                  // TODO 추후 수정
                   await tx.thesisInfo.create({
                     data: {
                       // 수정지시사항 정보 생성
                       processId: process.id,
+                      title: updateSystemDto.thesisTitle,
                       stage: Stage.REVISION,
                       summary: Summary.UNEXAMINED,
                       thesisFiles: {
@@ -856,9 +855,9 @@ export class StudentsService {
               }
 
               students.push(updatedStudent);
-            } else {
-              // 신규 학생 생성
-
+            }
+            // 신규 학생 생성
+            else {
               // 엑셀 입력 값을 적절한 값으로 맵핑
               const createStudentDto = new CreateStudentDto();
               createStudentDto.loginId = studentNumber;
@@ -1370,6 +1369,7 @@ export class StudentsService {
             data: {
               // 수정지시사항 정보 생성
               processId: process.id,
+              title: thesisTitle,
               stage: Stage.REVISION,
               summary: Summary.UNEXAMINED,
               thesisFiles: {
