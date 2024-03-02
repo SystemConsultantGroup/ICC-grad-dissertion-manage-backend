@@ -1038,7 +1038,23 @@ export class ReviewsService {
     });
     if (!review) throw new NotFoundException("존재하지 않는 심사 정보입니다.");
     if (review.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
-    return new ReviewDto(review);
+
+    const otherReviews = await this.prismaService.review.findMany({
+      where: {
+        isFinal: false,
+        thesisInfoId: review.thesisInfo.id,
+      },
+
+      include: {
+        reviewer: {
+          select: {
+            name: true,
+          },
+        },
+        file: true,
+      },
+    });
+    return { review, otherReviews };
   }
   async updateReviewFinal(id: number, updateReviewFinalDto: UpdateReviewFinalReqDto, user: User) {
     const userId = user.id;
@@ -1528,6 +1544,7 @@ export class ReviewsService {
         },
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
+        summary: { in: [Summary.PENDING, Summary.UNEXAMINED] },
       },
       include: {
         process: {
@@ -1598,6 +1615,7 @@ export class ReviewsService {
         },
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
+        summary: { in: [Summary.PENDING, Summary.UNEXAMINED] },
       },
       include: {
         process: {

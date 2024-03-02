@@ -28,10 +28,10 @@ export class AuthService {
     });
   }
 
-  async loginUser(loginId: string) {
+  async loginUser(id: number) {
     const user: User = await this.prismaService.user.findUnique({
       where: {
-        loginId: loginId,
+        id,
       },
     });
     if (!user) throw new BadRequestException("존재하지않는 id입니다");

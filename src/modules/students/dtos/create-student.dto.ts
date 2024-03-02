@@ -13,6 +13,7 @@ import {
   IsPositive,
   IsString,
 } from "class-validator";
+import { IsKoreanPhoneNumber } from "src/common/decorators/is-kr-phone-number.decorator";
 
 export class CreateStudentDto {
   // 사용자 정보
@@ -42,6 +43,7 @@ export class CreateStudentDto {
   @IsOptional()
   @IsNotEmpty()
   @IsString()
+  @IsKoreanPhoneNumber()
   phone: string;
 
   @ApiProperty({ description: "학과 아이디", example: "1" })

@@ -72,7 +72,7 @@ export class PhasesService {
             end: UTC2KST(updatePhaseDto.end),
           },
         });
-
+        if (id == 1 || id == 4) return; //예심/본심 논문제출은 cron 존재 x
         await this.taskSerivce.resetCronJob(updatedPhase);
       });
     } catch (error) {
