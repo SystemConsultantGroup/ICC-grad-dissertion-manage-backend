@@ -272,7 +272,7 @@ export class StudentsController {
   }
 
   @Put("/:id/thesis")
-  @UseUserTypeGuard([UserType.ADMIN])
+  @UseUserTypeGuard([UserType.STUDENT])
   @ApiOperation({
     summary: "학생 논문 정보 수정 API(학생용)",
     description:
