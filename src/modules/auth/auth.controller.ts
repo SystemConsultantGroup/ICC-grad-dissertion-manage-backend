@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { LoginRequestDto } from "./dto/login-request.dto";
 import { CommonResponseDto } from "../../common/dtos/common-response.dto";
@@ -6,6 +6,7 @@ import { UseUserTypeGuard } from "./decorators/user-type-guard.decorator";
 import { UserType } from "@prisma/client";
 import { ApiBadRequestResponse, ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { LoginResponseDto } from "./dto/login-response.dto";
+import { JwtGuard } from "./guards/jwt.guard";
 
 @ApiTags("Auth(로그인) API")
 @Controller("auth")
@@ -28,6 +29,7 @@ export class AuthController {
   }
 
   @UseUserTypeGuard([UserType.ADMIN])
+  @UseGuards(JwtGuard)
   @Get(":id")
   @ApiOperation({ summary: "특정 계정으로 로그인" })
   @ApiResponse({ description: "특정 계정 로그인 성공", type: LoginResponseDto, status: 200 })

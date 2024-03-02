@@ -7,7 +7,7 @@ export class AchievementDto {
     this.performance = achievement.performance;
     this.journalName = achievement.journalName;
     this.paperTitle = achievement.paperTitle;
-    this.ISSN = achievement.ISSN;
+    if (achievement.ISSN) this.ISSN = achievement.ISSN;
     this.publicationDate = achievement.publicationDate;
     this.authorType = achievement.authorType;
     this.authorNumbers = achievement.authorNumbers;
@@ -26,8 +26,8 @@ export class AchievementDto {
   @ApiProperty({ description: "논문 제목" })
   paperTitle: string;
 
-  @ApiProperty({ description: "ISSN" })
-  ISSN: string;
+  @ApiProperty({ description: "ISSN", required: false })
+  ISSN?: string;
 
   @ApiProperty({ description: "게재년월일" })
   publicationDate: Date;
@@ -51,7 +51,7 @@ export class CreateAchievementResponseDto {
     this.performance = achievement.performance;
     this.journalName = achievement.journalName;
     this.paperTitle = achievement.paperTitle;
-    this.ISSN = achievement.ISSN;
+    if (achievement.ISSN) this.ISSN = achievement.ISSN;
     this.publicationDate = achievement.publicationDate;
     this.authorType = achievement.authorType;
     this.authorNumbers = achievement.authorNumbers;
@@ -70,7 +70,7 @@ export class CreateAchievementResponseDto {
   paperTitle: string;
 
   @ApiProperty({ description: "ISSN" })
-  ISSN: string;
+  ISSN?: string;
 
   @ApiProperty({ description: "게재년월일" })
   publicationDate: Date;
