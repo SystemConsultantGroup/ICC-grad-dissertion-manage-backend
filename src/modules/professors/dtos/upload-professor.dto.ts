@@ -5,15 +5,15 @@ import { IsKoreanPhoneNumber } from "src/common/decorators/is-kr-phone-number.de
 
 export class UploadProfessorDto {
   constructor(excelRecord) {
-    this.loginId = excelRecord["아이디"];
+    this.loginId = excelRecord["내선번호"].toString();
     this.name = excelRecord["이름"];
     this.password = excelRecord["비밀번호"] ? excelRecord["비밀번호"].toString() : undefined;
-    this.email = excelRecord["이메일"];
-    this.phone = excelRecord["연락처"].toString();
-    this.departmentName = excelRecord["소속학과"];
+    this.email = excelRecord["이메일"] ? excelRecord["이메일"].toString() : undefined;
+    this.phone = excelRecord["연락처"] ? excelRecord["연락처"].toString() : undefined;
+    this.departmentName = excelRecord["학과"];
   }
 
-  @ApiProperty({ description: "아이디" })
+  @ApiProperty({ description: "내선번호" })
   @Type(() => String)
   loginId: string;
 
@@ -35,7 +35,7 @@ export class UploadProfessorDto {
   @Type(() => String)
   phone: string;
 
-  @ApiProperty({ description: "소속학과" })
+  @ApiProperty({ description: "학과" })
   @Type(() => String)
   departmentName: string;
 }
