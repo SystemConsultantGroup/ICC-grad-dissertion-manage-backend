@@ -35,6 +35,7 @@ import { GetResultResDto } from "./dtos/get-result.res.dto";
 import { SearchCurrentReqDto } from "./dtos/search-current.req.dto";
 import { GetRevisionListResDto } from "./dtos/get-revision-list.res.dto";
 import { UpdateRevisionReqDto } from "./dtos/update-revision.req.dto";
+import { FinalReviewDto, OtherReviewDto, ReviewDto } from "./dtos/review.dto";
 
 @ApiTags("심사정보 API")
 @UseGuards(JwtGuard)
@@ -316,16 +317,21 @@ export class ReviewsController {
   @ApiOkResponse({
     description: "조회 성공",
     schema: {
-      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(GetReviewFinalResDto) }],
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(FinalReviewDto) }],
     },
   })
   @ApiInternalServerErrorResponse({ description: "서버 오류" })
   @ApiUnauthorizedResponse({ description: "학생 & 교수 계정 로그인 후 이용 가능" })
+  @ApiExtraModels(FinalReviewDto)
   @UseUserTypeGuard([UserType.PROFESSOR])
   @Get("final/:id")
   async getReviewFinal(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
-    const review = await this.reviewsService.getReviewFinal(id, user);
-    return new CommonResponseDto(new GetReviewFinalResDto(review));
+    const { review, otherReviews } = await this.reviewsService.getReviewFinal(id, user);
+    const reviewDto = new ReviewDto(review);
+    const otherReviewsDto = otherReviews.map((otherReview) => {
+      return new OtherReviewDto(otherReview);
+    });
+    return new CommonResponseDto(new FinalReviewDto(new GetReviewFinalResDto(reviewDto), otherReviewsDto));
   }
 
   @ApiOperation({

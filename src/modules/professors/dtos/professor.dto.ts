@@ -22,7 +22,7 @@ export class ProfessorDto {
   @ApiProperty({ description: "아이디" })
   @Type(() => Number)
   id: number;
-  @ApiProperty({ description: "로그인 아이디" })
+  @ApiProperty({ description: "내선번호" })
   @Type(() => String)
   loginId: string;
   @ApiProperty({ description: "이름" })
@@ -43,11 +43,11 @@ export class ProfessorDto {
 
   converDtoToExcelRecord() {
     return {
-      아이디: this.loginId,
+      내선번호: this.loginId,
       이름: this.name,
       이메일: this.email,
       연락처: this.phone,
-      소속학과: this.department.name,
+      학과: this.department.name,
     };
   }
 }
