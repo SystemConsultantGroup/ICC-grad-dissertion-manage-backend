@@ -409,25 +409,35 @@ export class StudentsService {
               // stage 를 변경하지 않는 경우 - 현재 단계에서 논문 정보와 지도 정보 수정
               if (!stage || stage === foundStudent.studentProcess.currentPhase) {
                 // 수정할 학생의 현재 심사 단계 정보 가져오기
-                // TODO 아래처럼 단순화 해도 될듯. 대신 thesisInfos 종류 바뀌는거 영향 확인하기
-                // const process = foundStudent.studentProcess;
-                const process = await this.prismaService.process.findUnique({
-                  where: { studentId: foundStudent.id },
-                  include: {
-                    thesisInfos: {
-                      where: { stage: foundStudent.studentProcess.currentPhase },
-                      include: { thesisFiles: true },
-                    },
-                  },
-                });
+                const process = foundStudent.studentProcess;
+                // 논문 정보 확인. 논문 정보가 없을 경우 undefined 할당
+                const preThesisInfo = process.thesisInfos.filter(
+                  (thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY
+                )[0];
+                const mainThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.MAIN)[0];
+                const revisionThesisInfo = process.thesisInfos.filter(
+                  (thesisInfo) => thesisInfo.stage === Stage.REVISION
+                )[0];
 
-                // 논문 정보(논문 제목) 수정
-                // TODO 추후 수정. 본심 단계일 경우와 수정 단계일 경우 구분 필요...?
-                const currentThesisInfo = process.thesisInfos[0]; // process를 가져올 때 미리 필터링 완료
-                await tx.thesisInfo.update({
-                  where: { id: currentThesisInfo.id },
-                  data: { title: thesisTitle },
-                });
+                // 논문 정보(논문 제목) 수정.학생의 현재 단계에 따라 구분
+                // 예심일 경우 예심 논문 제목만 업데이트
+                if (process.currentPhase === Stage.PRELIMINARY) {
+                  await tx.thesisInfo.update({
+                    where: { id: preThesisInfo.id },
+                    data: { title: thesisTitle },
+                  });
+                }
+                // 본심 또는 수정지시사항 단계일 경우 두 개를 한꺼번에 업데이트
+                else {
+                  await tx.thesisInfo.update({
+                    where: { id: mainThesisInfo.id },
+                    data: { title: thesisTitle },
+                  });
+                  await tx.thesisInfo.update({
+                    where: { id: revisionThesisInfo.id },
+                    data: { title: thesisTitle },
+                  });
+                }
 
                 // 지도 정보 수정 (reviewer, review)
                 const currentReviewers = foundStudent.studentProcess.reviewers;
@@ -464,15 +474,6 @@ export class StudentsService {
                   });
 
                   // review 생성
-                  // 논문 정보 확인. 논문 정보가 없을 경우 undefined 할당
-                  // TODO : 해당하는 논문 정보가 없을 경우 인덱스 에러 안나나?
-                  const preThesisInfo = process.thesisInfos.filter(
-                    (thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY
-                  )[0];
-                  const mainThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.MAIN)[0];
-                  const revisionThesisInfo = process.thesisInfos.filter(
-                    (thesisInfo) => thesisInfo.stage === Stage.REVISION
-                  )[0];
                   // 존재하는 논문 정보에 대해 review data 미리 정리
                   const reviewData = [];
                   if (preThesisInfo) {
@@ -573,16 +574,6 @@ export class StudentsService {
                       }),
                     });
                     // review 생성
-                    // 논문 정보 확인. 논문 정보가 없을 경우 undefined 할당
-                    const preThesisInfo = process.thesisInfos.filter(
-                      (thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY
-                    )[0];
-                    const mainThesisInfo = process.thesisInfos.filter(
-                      (thesisInfo) => thesisInfo.stage === Stage.MAIN
-                    )[0];
-                    const revisionThesisInfo = process.thesisInfos.filter(
-                      (thesisInfo) => thesisInfo.stage === Stage.REVISION
-                    )[0];
                     // 존재하는 논문 정보에 대해 review data 미리 정리
                     const reviewData = [];
                     if (preThesisInfo) {
@@ -672,16 +663,6 @@ export class StudentsService {
                       }),
                     });
                     // review 생성
-                    // 논문 정보 확인. 논문 정보가 없을 경우 undefined 할당
-                    const preThesisInfo = process.thesisInfos.filter(
-                      (thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY
-                    )[0];
-                    const mainThesisInfo = process.thesisInfos.filter(
-                      (thesisInfo) => thesisInfo.stage === Stage.MAIN
-                    )[0];
-                    const revisionThesisInfo = process.thesisInfos.filter(
-                      (thesisInfo) => thesisInfo.stage === Stage.REVISION
-                    )[0];
                     // 존재하는 논문 정보에 대해 review data 미리 정리
                     const reviewData = [];
                     if (preThesisInfo) {
@@ -1473,7 +1454,6 @@ export class StudentsService {
   }
 
   async updateThesisInfo(studentId: number, updateThesisInfoDto: UpdateThesisInfoDto, currentUser: User) {
-    const currentUserType = currentUser.type;
     const { title, abstract, thesisFileUUID, presentationFileUUID, revisionReportFileUUID } = updateThesisInfoDto;
     const userId = currentUser.id;
 
@@ -1484,13 +1464,16 @@ export class StudentsService {
         type: UserType.STUDENT,
         deletedAt: null,
       },
-      include: { studentProcess: true },
+      include: {
+        studentProcess: { include: { thesisInfos: { include: { thesisFiles: true } } } },
+      },
     });
     if (!foundStudent) throw new BadRequestException("존재하지 않는 학생입니다.");
+    const process = foundStudent.studentProcess;
     const currentStage = foundStudent.studentProcess.currentPhase;
 
     // 접근 권한 확인
-    if (currentUserType === UserType.STUDENT && userId !== studentId) {
+    if (userId !== studentId) {
       throw new UnauthorizedException("타 학생의 정보는 수정할 수 없습니다.");
     }
 
@@ -1523,54 +1506,118 @@ export class StudentsService {
       if (!revisionReportFile) throw new BadRequestException("수정지시사항 보고서 파일이 존재하지 않습니다.");
     }
 
-    // 수정할 학생의 현재 심사 단계 정보 가져오기
-    const process = await this.prismaService.process.findUnique({
-      where: { studentId },
-      include: {
-        thesisInfos: {
-          where: { stage: currentStage },
-          include: { thesisFiles: true },
-        },
-      },
-    });
-    // 업데이트에 파일 id 를 사용하기 위해 미리 불러옴
-    const newFileQuery = []; // 파일 업데이트에 쓰일 쿼리 배열
-    const currentThesisInfo = process.thesisInfos[0];
-    if (thesisFileUUID) {
-      const currentThesisFile = currentThesisInfo.thesisFiles.find((file) => file.type === ThesisFileType.THESIS);
-      newFileQuery.push({ where: { id: currentThesisFile.id }, data: { fileId: thesisFileUUID } });
-    }
-    if (presentationFileUUID) {
-      const currentPPTFile = currentThesisInfo.thesisFiles.find((file) => file.type === ThesisFileType.PRESENTATION);
-      newFileQuery.push({ where: { id: currentPPTFile.id }, data: { fileId: presentationFileUUID } });
-    }
-    if (revisionReportFileUUID) {
-      const currentRevisionFile = currentThesisInfo.thesisFiles.find(
-        (file) => file.type === ThesisFileType.REVISION_REPORT
-      );
-      newFileQuery.push({ where: { id: currentRevisionFile.id }, data: { fileId: revisionReportFileUUID } });
-    }
+    const preThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY)[0];
+    const mainThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.MAIN)[0];
+    const revisionThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.REVISION)[0];
 
-    // 업데이트 진행
     try {
-      return await this.prismaService.thesisInfo.update({
-        where: { id: currentThesisInfo.id },
-        data: {
-          title,
-          abstract,
-          thesisFiles: {
-            update: newFileQuery,
+      // 현재 phase에 따라 논문 정보 업데이트 진행 후 리턴
+      // 예심 단계일 경우
+      if (currentStage === Stage.PRELIMINARY) {
+        // 예심의 논문 제목, 초록, 논문 파일, 발표 파일 업데이트
+        const preThesisFile = preThesisInfo.thesisFiles.filter(
+          (thesisFile) => thesisFile.type === ThesisFileType.THESIS
+        )[0];
+        const prePPTFile = preThesisInfo.thesisFiles.filter(
+          (thesisFile) => thesisFile.type === ThesisFileType.PRESENTATION
+        )[0];
+
+        return await this.prismaService.thesisInfo.update({
+          where: { id: preThesisInfo.id },
+          data: {
+            title,
+            abstract,
+            thesisFiles: {
+              update: [
+                {
+                  where: { id: preThesisFile.id },
+                  data: { fileId: thesisFileUUID },
+                },
+                {
+                  where: { id: prePPTFile.id },
+                  data: { fileId: presentationFileUUID },
+                },
+              ],
+            },
           },
-        },
-        include: {
-          process: {
-            include: { student: { include: { department: true } } },
+          include: {
+            process: {
+              include: { student: { include: { department: true } } },
+            },
+            thesisFiles: {
+              include: { file: true },
+            },
           },
-          thesisFiles: {
-            include: { file: true },
+        });
+      } // 본심 단계일 경우
+      else if (currentStage === Stage.MAIN) {
+        // 본심의 논문 제목, 초록, 논문 파일, 논문 발표 파일, 수정단계의 논문 제목, 초록 업데이트
+        const mainThesisFile = mainThesisInfo.thesisFiles.filter(
+          (thesisFile) => thesisFile.type === ThesisFileType.THESIS
+        )[0];
+        const mainPPTFile = mainThesisInfo.thesisFiles.filter(
+          (thesisFile) => thesisFile.type === ThesisFileType.PRESENTATION
+        )[0];
+
+        const [thesisInfo] = await this.prismaService.$transaction([
+          // 본심 논문 정보 업데이트
+          this.prismaService.thesisInfo.update({
+            where: { id: mainThesisInfo.id },
+            data: {
+              title,
+              abstract,
+              thesisFiles: {
+                update: [
+                  {
+                    where: { id: mainThesisFile.id },
+                    data: { fileId: thesisFileUUID },
+                  },
+                  {
+                    where: { id: mainPPTFile.id },
+                    data: { fileId: presentationFileUUID },
+                  },
+                ],
+              },
+            },
+            include: {
+              process: {
+                include: { student: { include: { department: true } } },
+              },
+              thesisFiles: {
+                include: { file: true },
+              },
+            },
+          }),
+          // 수정지시사항 논문 정보 업데이트
+          this.prismaService.thesisInfo.update({
+            where: { id: revisionThesisInfo.id },
+            data: {
+              title,
+              abstract,
+            },
+          }),
+        ]);
+
+        return thesisInfo;
+      } // 수정 지시사항 반영 단계일 경우
+      else if (currentStage === Stage.REVISION) {
+        // 수정 지시사항 단계의 수정 논문 파일, 수정 지시사항 보고서 업데이트. 제목과 초록은 변경 불가
+        return await this.prismaService.thesisInfo.update({
+          where: { id: revisionThesisInfo.id },
+          data: {
+            title,
+            abstract,
           },
-        },
-      });
+          include: {
+            process: {
+              include: { student: { include: { department: true } } },
+            },
+            thesisFiles: {
+              include: { file: true },
+            },
+          },
+        });
+      }
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException("업데이트 실패");
