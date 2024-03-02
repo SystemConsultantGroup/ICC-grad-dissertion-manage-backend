@@ -1,24 +1,9 @@
 import { ProfessorDto } from "./dtos/professor.dto";
 import { CommonResponseDto } from "src/common/dtos/common-response.dto";
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-  Res,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
-} from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UploadedFile, UseGuards } from "@nestjs/common";
 import { ProfessorsService } from "./professors.service";
 import {
   ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiOperation,
@@ -37,8 +22,6 @@ import { ProfessorListDto } from "./dtos/professors-list.dto";
 import { Response } from "express";
 import { ApiFile } from "../files/decorators/api-file.decorator";
 import { PositiveIntPipe } from "src/common/pipes/positive-int.pipe";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { ExcelFilter } from "src/common/pipes/excel.filter";
 
 @ApiTags("교수 API")
 @UseGuards(JwtGuard)

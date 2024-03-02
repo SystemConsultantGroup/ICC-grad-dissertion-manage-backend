@@ -205,8 +205,13 @@ export class ProfessorsService {
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const contents = utils.sheet_to_json(worksheet, { defval: undefined });
 
-    const professors = await contents.map((content) => new UploadProfessorDto(content));
-
+    const professors = contents.map((content) => {
+      try {
+        return new UploadProfessorDto(content);
+      } catch (error) {
+        throw new BadRequestException("참고 내용 삭제 후 업로드해야 합니다.");
+      }
+    });
     if (!professors.length) throw new BadRequestException("업로드할 교수가 없습니다.");
 
     try {
