@@ -409,6 +409,8 @@ export class StudentsService {
               // stage 를 변경하지 않는 경우 - 현재 단계에서 논문 정보와 지도 정보 수정
               if (!stage || stage === foundStudent.studentProcess.currentPhase) {
                 // 수정할 학생의 현재 심사 단계 정보 가져오기
+                // TODO 아래처럼 단순화 해도 될듯. 대신 thesisInfos 종류 바뀌는거 영향 확인하기
+                // const process = foundStudent.studentProcess;
                 const process = await this.prismaService.process.findUnique({
                   where: { studentId: foundStudent.id },
                   include: {
@@ -418,7 +420,10 @@ export class StudentsService {
                     },
                   },
                 });
-                const currentThesisInfo = process.thesisInfos[0];
+
+                // 논문 정보(논문 제목) 수정
+                // TODO 추후 수정. 본심 단계일 경우와 수정 단계일 경우 구분 필요...?
+                const currentThesisInfo = process.thesisInfos[0]; // process를 가져올 때 미리 필터링 완료
                 await tx.thesisInfo.update({
                   where: { id: currentThesisInfo.id },
                   data: { title: thesisTitle },
@@ -460,6 +465,7 @@ export class StudentsService {
 
                   // review 생성
                   // 논문 정보 확인. 논문 정보가 없을 경우 undefined 할당
+                  // TODO : 해당하는 논문 정보가 없을 경우 인덱스 에러 안나나?
                   const preThesisInfo = process.thesisInfos.filter(
                     (thesisInfo) => thesisInfo.stage === Stage.PRELIMINARY
                   )[0];
@@ -785,6 +791,7 @@ export class StudentsService {
                 });
 
                 // 본심에 해당하는 논문 정보(thesis_info), 논문 파일(thesis_file), 리뷰(review) 생성
+                // TODO 추후 수정(예심 -> 본심 업데이트)
                 await tx.thesisInfo.create({
                   data: {
                     // 본심 논문 정보 생성
@@ -820,6 +827,7 @@ export class StudentsService {
                 });
                 if (updatedStudent.department.modificationFlag) {
                   // 수정지시사항 단계가 있는 학생인 경우
+                  // TODO 추후 수정
                   await tx.thesisInfo.create({
                     data: {
                       // 수정지시사항 정보 생성
@@ -991,6 +999,7 @@ export class StudentsService {
                     data: {
                       // 수정지시사항 정보 생성
                       processId: process.id,
+                      title: createStudentDto.thesisTitle,
                       stage: Stage.REVISION,
                       summary: Summary.UNEXAMINED,
                       thesisFiles: {
