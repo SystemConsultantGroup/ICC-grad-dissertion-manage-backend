@@ -1,10 +1,11 @@
 import { UseInterceptors, applyDecorators } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBody, ApiConsumes } from "@nestjs/swagger";
+import { ExcelFilter } from "src/common/pipes/excel.filter";
 
 export function ApiFile(fieldName = "file") {
   return applyDecorators(
-    UseInterceptors(FileInterceptor(fieldName)),
+    UseInterceptors(FileInterceptor(fieldName, { fileFilter: ExcelFilter })),
     ApiConsumes("multipart/form-data"),
     ApiBody({
       schema: {

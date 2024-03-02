@@ -97,19 +97,7 @@ export class ProfessorsController {
   }
 
   @Post("/excel")
-  @UseInterceptors(FileInterceptor("file", { fileFilter: ExcelFilter }))
-  @ApiConsumes("multipart/form-data")
-  @ApiBody({
-    schema: {
-      type: "object",
-      properties: {
-        file: {
-          type: "string",
-          format: "binary",
-        },
-      },
-    },
-  })
+  @ApiFile("file")
   @ApiOperation({
     summary: "교수 엑셀 업로드",
     description: "교수 엑셀 업로드",
