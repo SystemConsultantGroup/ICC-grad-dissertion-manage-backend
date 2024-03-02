@@ -206,6 +206,7 @@ export class StudentsService {
               data: {
                 // 수정지시사항 정보 생성
                 processId: process.id,
+                title: thesisTitle,
                 stage: Stage.REVISION,
                 summary: Summary.UNEXAMINED,
                 thesisFiles: {
