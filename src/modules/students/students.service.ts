@@ -898,7 +898,7 @@ export class StudentsService {
                 data: {
                   studentId: user.id,
                   headReviewerId: createStudentDto.headReviewerId,
-                  phaseId: stage === Stage.PRELIMINARY ? 1 : 4, // 1: 예심 논문 제출, 4: 본심 논문 제출
+                  phaseId: createStudentDto.stage === Stage.PRELIMINARY ? 1 : 4, // 1: 예심 논문 제출, 4: 본심 논문 제출
                   currentPhase: createStudentDto.stage,
                 },
               });
@@ -937,14 +937,16 @@ export class StudentsService {
                         ...reviewerIds.map((reviewerId) => {
                           return {
                             reviewerId,
-                            status: ReviewStatus.UNEXAMINED,
+                            contentStatus: ReviewStatus.UNEXAMINED,
+                            presentationStatus: ReviewStatus.PASS, // 예심은 구두 심사 없음
                             isFinal: false,
                           };
                         }),
                         // 예심 최종 심사 생성
                         {
                           reviewerId: createStudentDto.headReviewerId,
-                          status: ReviewStatus.UNEXAMINED,
+                          contentStatus: ReviewStatus.UNEXAMINED,
+                          presentationStatus: ReviewStatus.PASS, // 예심은 구두 심사 없음
                           isFinal: true,
                         },
                       ],
@@ -970,14 +972,16 @@ export class StudentsService {
                         ...reviewerIds.map((reviewerId) => {
                           return {
                             reviewerId,
-                            status: ReviewStatus.UNEXAMINED,
+                            contentStatus: ReviewStatus.UNEXAMINED,
+                            presentationStatus: ReviewStatus.UNEXAMINED,
                             isFinal: false,
                           };
                         }),
                         // 본심 최종 심사 생성
                         {
                           reviewerId: headReviewerId,
-                          status: ReviewStatus.UNEXAMINED,
+                          contentStatus: ReviewStatus.UNEXAMINED,
+                          presentationStatus: ReviewStatus.PASS, // 최종 심사는 구두 심사 없음
                           isFinal: true,
                         },
                       ],
@@ -1001,7 +1005,8 @@ export class StudentsService {
                           ...reviewerIds.map((reviewerId) => {
                             return {
                               reviewerId,
-                              status: ReviewStatus.UNEXAMINED,
+                              contentStatus: ReviewStatus.UNEXAMINED,
+                              presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
                               isFinal: false,
                             };
                           }),
