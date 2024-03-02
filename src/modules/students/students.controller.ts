@@ -272,14 +272,14 @@ export class StudentsController {
   }
 
   @Put("/:id/thesis")
-  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT])
+  @UseUserTypeGuard([UserType.ADMIN])
   @ApiOperation({
-    summary: "학생 논문 정보 수정 API",
+    summary: "학생 논문 정보 수정 API(학생용)",
     description:
       "아이디에 해당하는 학생의 현재 단계에 해당하는 논문 정보를 수정할 수 있다.\n\n'논문 제목', '논문 초록', '논문 파일', '발표 파일', '수정지시사항 보고서' 수정 가능",
   })
-  @ApiUnauthorizedResponse({ description: "[관리자 | 학생] 로그인 후 접근 가능, 학생은 본인의 정보만 수정 가능," })
-  @ApiBadRequestResponse({ description: "[관리자] 논문 제목만 업데이트 가능'" })
+  @ApiUnauthorizedResponse({ description: "[학생] 로그인 후 접근 가능, 학생은 본인의 정보만 수정 가능" })
+  @ApiBadRequestResponse({ description: "잘못된 요청'" })
   @ApiOkResponse({
     description: "학생 논문 정보 수정 성공",
     schema: {
