@@ -97,7 +97,7 @@ export class ProfessorsController {
   }
 
   @Post("/excel")
-  @ApiFile("file")
+  @ApiFile("file", true)
   @ApiOperation({
     summary: "교수 엑셀 업로드",
     description: "교수 엑셀 업로드",
