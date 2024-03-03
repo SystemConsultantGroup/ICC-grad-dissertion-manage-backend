@@ -81,7 +81,7 @@ export class ReviewsService {
       let signPath = "";
       return new Promise((resolve, reject) => {
         readFile(filePath, "utf8", async (err, formatHtml) => {
-          if (err) throw new Error("reading format html file failed: " + filePath);
+          if (err) throw new InternalServerErrorException("reading format html file failed: " + filePath);
           const replacerKeys = Object.keys(replacer);
           if (isMain) {
             for (const key of replacerKeys) {
@@ -285,7 +285,7 @@ export class ReviewsService {
               "application/pdf"
             );
             unlink(signPath, async (err) => {
-              if (err) throw new Error("Deleting temporary img file failed: " + signPath);
+              if (err) throw new InternalServerErrorException("Deleting temporary img file failed: " + signPath);
             });
           });
 
@@ -325,7 +325,7 @@ export class ReviewsService {
       let signPath = "";
       return new Promise((resolve, reject) => {
         readFile(filePath, "utf8", async (err, formatHtml) => {
-          if (err) throw new Error("reading format html file failed: " + filePath);
+          if (err) throw new InternalServerErrorException("reading format html file failed: " + filePath);
           const replacerKeys = Object.keys(replacer);
           for (const key of replacerKeys) {
             if (key == "$서명") {
@@ -357,7 +357,7 @@ export class ReviewsService {
               "application/pdf"
             );
             unlink(signPath, async (err) => {
-              if (err) throw new Error("Deleting temporary img file failed: " + signPath);
+              if (err) throw new InternalServerErrorException("Deleting temporary img file failed: " + signPath);
             });
           });
           return resolve(
