@@ -72,11 +72,8 @@ export class ReviewsService {
         top: "2.8in",
         bottom: "2.8in",
       },
-      base: "file://" + path.resolve("./") + "/",
+      base: "file:///" + path.resolve("./") + "/",
       localUrlAccess: true,
-
-      phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
-      phantomArgs: ["--ignore-ssl-errors=yes"],
     };
     const fileName = (isMain ? "" : "예비") + "심사결과보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
@@ -278,7 +275,7 @@ export class ReviewsService {
           const key = v1();
           const createdAt = new Date();
           await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
-            if (err) throw new Error("Creating PDF Buffer failed!");
+            if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
             await this.minioClientService.uploadFile(
               key,
               buffer,
@@ -319,11 +316,8 @@ export class ReviewsService {
         top: "2.8in",
         bottom: "2.8in",
       },
-      base: "file://" + path.resolve("./") + "/",
+      base: "file:///" + path.resolve("./") + "/",
       localUrlAccess: true,
-
-      phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
-      phantomArgs: ["--ignore-ssl-errors=yes"],
     };
     const fileName = (isMain ? "" : "예비") + "심사보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
@@ -353,7 +347,7 @@ export class ReviewsService {
           const key = v1();
           const createdAt = new Date();
           await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
-            if (err) throw new Error("Creating PDF Buffer failed!");
+            if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
             await this.minioClientService.uploadFile(
               key,
               buffer,
