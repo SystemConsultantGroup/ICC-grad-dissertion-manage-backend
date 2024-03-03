@@ -1602,11 +1602,28 @@ export class StudentsService {
       } // 수정 지시사항 반영 단계일 경우
       else if (currentStage === Stage.REVISION) {
         // 수정 지시사항 단계의 수정 논문 파일, 수정 지시사항 보고서 업데이트. 제목과 초록은 변경 불가
+        const revisionThesisFile = revisionThesisInfo.thesisFiles.filter(
+          (thesisFile) => thesisFile.type === ThesisFileType.THESIS
+        )[0];
+        const revisionReportFile = revisionThesisInfo.thesisFiles.filter(
+          (thesisFile) => thesisFile.type === ThesisFileType.REVISION_REPORT
+        )[0];
+
         return await this.prismaService.thesisInfo.update({
           where: { id: revisionThesisInfo.id },
           data: {
-            title,
-            abstract,
+            thesisFiles: {
+              update: [
+                {
+                  where: { id: revisionThesisFile.id },
+                  data: { fileId: thesisFileUUID },
+                },
+                {
+                  where: { id: revisionReportFile.id },
+                  data: { fileId: revisionReportFileUUID },
+                },
+              ],
+            },
           },
           include: {
             process: {

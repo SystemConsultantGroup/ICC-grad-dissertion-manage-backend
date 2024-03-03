@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { UpdateThesisInfoDto } from "./dtos/update-thesis.dto";
 import { PrismaService } from "src/config/database/prisma.service";
-import { ThesisFileType } from "@prisma/client";
+import { Stage, ThesisFileType } from "@prisma/client";
 
 @Injectable()
 export class ThesesService {
@@ -16,71 +16,164 @@ export class ThesesService {
         id,
         process: { student: { deletedAt: null } },
       },
-      include: { thesisFiles: true },
+      include: {
+        thesisFiles: true,
+        process: { include: { thesisInfos: true } },
+      },
     });
     if (!foundThesisInfo) throw new BadRequestException("해당 논문 정보는 존재하지 않습니다.");
+    const targetStage = foundThesisInfo.stage;
 
-    // 파일 존재 여부 확인 & 파일 업데이트 쿼리 미리 작성
-    const newFileQuery = [];
-    if (thesisFileUUID) {
-      // DB에 파일이 있는지 확인
-      const foundThesisFile = await this.prismaService.file.findUnique({
-        where: { uuid: thesisFileUUID },
-        include: { thesisFile: true },
-      });
-      if (!foundThesisFile) throw new BadRequestException("논문 파일이 존재하지 않습니다.");
-      // 업데이트 쿼리에 추가
-      const currentThesisFile = foundThesisInfo.thesisFiles.find((file) => file.type === ThesisFileType.THESIS);
-      if (!currentThesisFile) throw new BadRequestException("논문 파일을 업데이트할 수 없습니다.");
-      newFileQuery.push({ where: { id: currentThesisFile.id }, data: { fileId: thesisFileUUID } });
-    }
-    if (presentationFileUUID) {
-      // DB에 파일이 있는지 확인
-      const foundPresentationFile = await this.prismaService.file.findUnique({
-        where: { uuid: presentationFileUUID },
-        include: { thesisFile: true },
-      });
-      if (!foundPresentationFile) throw new BadRequestException("논문 발표 파일이 존재하지 않습니다.");
-      // 업데이트 쿼리에 추가
-      const currentPPTFile = foundThesisInfo.thesisFiles.find((file) => file.type === ThesisFileType.PRESENTATION);
-      if (!currentPPTFile) throw new BadRequestException("논문 발표 파일을 업데이트할 수 없습니다.");
-      newFileQuery.push({ where: { id: currentPPTFile.id }, data: { fileId: presentationFileUUID } });
-    }
-    if (revisionReportFileUUID) {
-      // DB에 파일이 있는지 확인
-      const revisionReportFile = await this.prismaService.file.findUnique({
-        where: { uuid: revisionReportFileUUID },
-        include: { thesisFile: true },
-      });
-      if (!revisionReportFile) throw new BadRequestException("수정지시사항 보고서 파일이 존재하지 않습니다.");
-      // 업데이트 쿼리에 추가
-      const currentRevisionFile = foundThesisInfo.thesisFiles.find(
-        (file) => file.type === ThesisFileType.REVISION_REPORT
-      );
-      if (!currentRevisionFile) throw new BadRequestException("수정지시사항 보고서 파일을 업데이트할 수 없습니다.");
-      newFileQuery.push({ where: { id: currentRevisionFile.id }, data: { fileId: revisionReportFileUUID } });
-    }
-
-    // 업데이트 진행
     try {
-      return await this.prismaService.thesisInfo.update({
-        where: { id },
-        data: {
-          title,
-          abstract,
-          thesisFiles: {
-            update: newFileQuery,
+      // 변경하고자 하는 phase에 따라 논문 정보 업데이트 진행 후 리턴
+      // 예심 단계일 경우
+      if (targetStage === Stage.PRELIMINARY) {
+        // 예심의 논문 제목, 초록, 논문 파일, 발표 파일 업데이트
+        const preThesisFile = foundThesisInfo.thesisFiles.filter(
+          (thesisFile) => thesisFile.type === ThesisFileType.THESIS
+        )[0];
+        const prePPTFile = foundThesisInfo.thesisFiles.filter(
+          (thesisFile) => thesisFile.type === ThesisFileType.PRESENTATION
+        )[0];
+
+        return await this.prismaService.thesisInfo.update({
+          where: { id },
+          data: {
+            title,
+            abstract,
+            thesisFiles: {
+              update: [
+                {
+                  where: { id: preThesisFile.id },
+                  data: { fileId: thesisFileUUID },
+                },
+                {
+                  where: { id: prePPTFile.id },
+                  data: { fileId: presentationFileUUID },
+                },
+              ],
+            },
           },
-        },
-        include: {
-          process: {
-            include: { student: { include: { department: true } } },
+          include: {
+            process: {
+              include: { student: { include: { department: true } } },
+            },
+            thesisFiles: {
+              include: { file: true },
+            },
           },
-          thesisFiles: {
-            include: { file: true },
-          },
-        },
-      });
+        });
+      } // 본심 단계일 경우
+      else if (targetStage === Stage.MAIN) {
+        // 본심의 논문 제목, 초록, 논문 파일, 논문 발표 파일, 수정단계의 논문 제목, 초록 업데이트
+        const mainThesisFile = foundThesisInfo.thesisFiles.filter(
+          (thesisFile) => thesisFile.type === ThesisFileType.THESIS
+        )[0];
+        const mainPPTFile = foundThesisInfo.thesisFiles.filter(
+          (thesisFile) => thesisFile.type === ThesisFileType.PRESENTATION
+        )[0];
+
+        // 수정 지시사항 단계의 논문 정보 id 찾기 (없는 경우 undefined)
+        const revisionThesisInfo = foundThesisInfo.process.thesisInfos.filter(
+          (thesisInfo) => thesisInfo.stage === Stage.REVISION
+        )[0];
+
+        const [thesisInfo] = await this.prismaService.$transaction([
+          // 본심 논문 정보 업데이트
+          this.prismaService.thesisInfo.update({
+            where: { id },
+            data: {
+              title,
+              abstract,
+              thesisFiles: {
+                update: [
+                  {
+                    where: { id: mainThesisFile.id },
+                    data: { fileId: thesisFileUUID },
+                  },
+                  {
+                    where: { id: mainPPTFile.id },
+                    data: { fileId: presentationFileUUID },
+                  },
+                ],
+              },
+            },
+            include: {
+              process: {
+                include: { student: { include: { department: true } } },
+              },
+              thesisFiles: {
+                include: { file: true },
+              },
+            },
+          }),
+          // 수정지시사항 논문 정보 업데이트
+          this.prismaService.thesisInfo.update({
+            where: { id: revisionThesisInfo.id },
+            data: {
+              title,
+              abstract,
+            },
+          }),
+        ]);
+
+        return thesisInfo;
+      } // 수정 지시사항 반영 단계일 경우
+      else if (targetStage === Stage.REVISION) {
+        // 수정 지시사항 단계의 제목, 초록, 수정 논문 파일, 수정 지시사항 보고서, 본심 단계의 논문 제목, 논문 초록 업데이트
+        const revisionThesisFile = foundThesisInfo.thesisFiles.filter(
+          (thesisFile) => thesisFile.type === ThesisFileType.THESIS
+        )[0];
+        const revisionReportFile = foundThesisInfo.thesisFiles.filter(
+          (thesisFile) => thesisFile.type === ThesisFileType.REVISION_REPORT
+        )[0];
+
+        // 본심 단계의 논문 정보 찾기
+        const mainThesisInfo = foundThesisInfo.process.thesisInfos.filter(
+          (thesisInfo) => thesisInfo.stage === Stage.MAIN
+        )[0];
+
+        const [thesisInfo] = await this.prismaService.$transaction([
+          // 수정지시사항 논문 정보 업데이트
+          this.prismaService.thesisInfo.update({
+            where: { id },
+            data: {
+              title,
+              abstract,
+              thesisFiles: {
+                update: [
+                  {
+                    where: { id: revisionThesisFile.id },
+                    data: { fileId: thesisFileUUID },
+                  },
+                  {
+                    where: { id: revisionReportFile.id },
+                    data: { fileId: revisionReportFileUUID },
+                  },
+                ],
+              },
+            },
+            include: {
+              process: {
+                include: { student: { include: { department: true } } },
+              },
+              thesisFiles: {
+                include: { file: true },
+              },
+            },
+          }),
+          // 본심 논문 정보 업데이트
+          this.prismaService.thesisInfo.update({
+            where: { id: mainThesisInfo.id },
+            data: {
+              title,
+              abstract,
+            },
+          }),
+        ]);
+
+        return thesisInfo;
+      }
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException("업데이트 실패");
