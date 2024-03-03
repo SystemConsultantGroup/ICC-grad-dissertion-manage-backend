@@ -1584,18 +1584,7 @@ export class ReviewsService {
         },
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
-        AND: [
-          {
-            NOT: {
-              summary: Summary.UNEXAMINED,
-            },
-          },
-          {
-            NOT: {
-              summary: Summary.PENDING,
-            },
-          },
-        ],
+        summary: { in: [Summary.PENDING, Summary.UNEXAMINED] },
       },
     });
     return {
