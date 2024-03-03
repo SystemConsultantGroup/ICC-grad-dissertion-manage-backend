@@ -72,11 +72,8 @@ export class ReviewsService {
         top: "2.8in",
         bottom: "2.8in",
       },
-      base: "file://" + path.resolve("./") + "/",
+      base: "file:///" + path.resolve("./") + "/",
       localUrlAccess: true,
-
-      phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
-      phantomArgs: ["--ignore-ssl-errors=yes"],
     };
     const fileName = (isMain ? "" : "예비") + "심사결과보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
@@ -84,7 +81,7 @@ export class ReviewsService {
       let signPath = "";
       return new Promise((resolve, reject) => {
         readFile(filePath, "utf8", async (err, formatHtml) => {
-          if (err) throw new Error("reading format html file failed: " + filePath);
+          if (err) throw new InternalServerErrorException("reading format html file failed: " + filePath);
           const replacerKeys = Object.keys(replacer);
           if (isMain) {
             for (const key of replacerKeys) {
@@ -278,7 +275,7 @@ export class ReviewsService {
           const key = v1();
           const createdAt = new Date();
           await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
-            if (err) throw new Error("Creating PDF Buffer failed!");
+            if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
             await this.minioClientService.uploadFile(
               key,
               buffer,
@@ -288,7 +285,7 @@ export class ReviewsService {
               "application/pdf"
             );
             unlink(signPath, async (err) => {
-              if (err) throw new Error("Deleting temporary img file failed: " + signPath);
+              if (err) throw new InternalServerErrorException("Deleting temporary img file failed: " + signPath);
             });
           });
 
@@ -319,11 +316,8 @@ export class ReviewsService {
         top: "2.8in",
         bottom: "2.8in",
       },
-      base: "file://" + path.resolve("./") + "/",
+      base: "file:///" + path.resolve("./") + "/",
       localUrlAccess: true,
-
-      phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
-      phantomArgs: ["--ignore-ssl-errors=yes"],
     };
     const fileName = (isMain ? "" : "예비") + "심사보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
@@ -331,7 +325,7 @@ export class ReviewsService {
       let signPath = "";
       return new Promise((resolve, reject) => {
         readFile(filePath, "utf8", async (err, formatHtml) => {
-          if (err) throw new Error("reading format html file failed: " + filePath);
+          if (err) throw new InternalServerErrorException("reading format html file failed: " + filePath);
           const replacerKeys = Object.keys(replacer);
           for (const key of replacerKeys) {
             if (key == "$서명") {
@@ -353,7 +347,7 @@ export class ReviewsService {
           const key = v1();
           const createdAt = new Date();
           await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
-            if (err) throw new Error("Creating PDF Buffer failed!");
+            if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
             await this.minioClientService.uploadFile(
               key,
               buffer,
@@ -363,7 +357,7 @@ export class ReviewsService {
               "application/pdf"
             );
             unlink(signPath, async (err) => {
-              if (err) throw new Error("Deleting temporary img file failed: " + signPath);
+              if (err) throw new InternalServerErrorException("Deleting temporary img file failed: " + signPath);
             });
           });
           return resolve(
