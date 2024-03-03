@@ -329,7 +329,7 @@ export class ReviewsService {
     const filePath = path.join("resources", "format", fileName);
     try {
       let signPath = "";
-      return new Promise<void>((resolve, reject) => {
+      return new Promise((resolve, reject) => {
         readFile(filePath, "utf8", async (err, formatHtml) => {
           if (err) throw new Error("reading format html file failed: " + filePath);
           const replacerKeys = Object.keys(replacer);
