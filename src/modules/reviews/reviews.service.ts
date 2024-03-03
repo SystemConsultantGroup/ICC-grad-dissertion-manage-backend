@@ -72,16 +72,19 @@ export class ReviewsService {
         top: "2.8in",
         bottom: "2.8in",
       },
-      base: "file:///" + path.resolve("./") + "/",
+      base: "file://" + path.resolve("./") + "/",
       localUrlAccess: true,
+
+      phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
+      phantomArgs: ["--ignore-ssl-errors=yes"],
     };
     const fileName = (isMain ? "" : "예비") + "심사결과보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     try {
+      let signPath = "";
       return new Promise((resolve, reject) => {
         readFile(filePath, "utf8", async (err, formatHtml) => {
           if (err) throw new Error("reading format html file failed: " + filePath);
-          let signPath = "";
           const replacerKeys = Object.keys(replacer);
           if (isMain) {
             for (const key of replacerKeys) {
@@ -177,7 +180,7 @@ export class ReviewsService {
                 }
               } else if (key == "$서명") {
                 const readable = await this.minioClientService.getFile(replacer[key]);
-                signPath = path.join("resource", "img", "tmp", replacer[key]);
+                signPath = path.join("resources", "img", "tmp", replacer[key]);
                 const writeStream = new Promise((resolve) => {
                   const ws = createWriteStream(signPath);
                   readable.pipe(ws);
@@ -284,20 +287,21 @@ export class ReviewsService {
               reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
               "application/pdf"
             );
+            unlink(signPath, async (err) => {
+              if (err) throw new Error("Deleting temporary img file failed: " + signPath);
+            });
           });
-          unlink(signPath, async (err) => {
-            if (err) throw new Error("Deleting temporary img file failed: " + signPath);
-            resolve(
-              await tx.file.create({
-                data: {
-                  name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-                  mimeType: "application/pdf",
-                  uuid: key,
-                  createdAt: createdAt,
-                },
-              })
-            );
-          });
+
+          return resolve(
+            await tx.file.create({
+              data: {
+                name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+                mimeType: "application/pdf",
+                uuid: key,
+                createdAt: createdAt,
+              },
+            })
+          );
         });
       });
     } catch (error) {
@@ -315,8 +319,11 @@ export class ReviewsService {
         top: "2.8in",
         bottom: "2.8in",
       },
-      base: "file:///" + path.resolve("./") + "/",
+      base: "file://" + path.resolve("./") + "/",
       localUrlAccess: true,
+
+      phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
+      phantomArgs: ["--ignore-ssl-errors=yes"],
     };
     const fileName = (isMain ? "" : "예비") + "심사보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
@@ -355,20 +362,20 @@ export class ReviewsService {
               reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
               "application/pdf"
             );
+            unlink(signPath, async (err) => {
+              if (err) throw new Error("Deleting temporary img file failed: " + signPath);
+            });
           });
-          unlink(signPath, async (err) => {
-            if (err) throw new Error("Deleting temporary img file failed: " + signPath);
-            return resolve(
-              await tx.file.create({
-                data: {
-                  name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-                  mimeType: "application/pdf",
-                  uuid: key,
-                  createdAt: createdAt,
-                },
-              })
-            );
-          });
+          return resolve(
+            await tx.file.create({
+              data: {
+                name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+                mimeType: "application/pdf",
+                uuid: key,
+                createdAt: createdAt,
+              },
+            })
+          );
         });
       });
     } catch (error) {
