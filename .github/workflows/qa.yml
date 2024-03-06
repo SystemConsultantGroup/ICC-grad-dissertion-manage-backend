@@ -6,6 +6,9 @@ on:
 env:
   dockerimage_tag: ${{ github.sha }}
   dockerimage_name: harbor.k8s.scg.skku.ac.kr/library/ice-gs-thesis-be
+  DATABASE_URL_QA: ${{secrets.DATABASE_URL_QA}}
+  JWT_SECRET: ${{secrets.JWT_SECRET}}
+  MINIO_SECRET_KEY: ${{secrets.MINIO_SECRET_KEY}}
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,12 +46,12 @@ jobs:
         run: |
           echo APP_ENV=${{secrets.APP_ENV}} >> .env
           echo APP_PORT=${{secrets.APP_PORT}} >> .env
-          echo DATABASE_URL=${{secrets.DATABASE_URL_QA}} >> .env
-          echo JWT_SECRET=${{secrets.JWT_SECRET}} >> .env
+          echo DATABASE_URL=$DATABASE_URL_QA >> .env
+          echo JWT_SECRET=$JWT_SECRET >> .env
           echo MINIO_END_POINT=${{secrets.MINIO_END_POINT}} >> .env
           echo MINIO_PORT=${{secrets.MINIO_PORT}} >> .env
           echo MINIO_ACCESS_KEY=${{secrets.MINIO_ACCESS_KEY}} >> .env
-          echo MINIO_SECRET_KEY=${{secrets.MINIO_SECRET_KEY}} >> .env
+          echo MINIO_SECRET_KEY=secrets.MINIO_SECRET_KEY >> .env
           echo MINIO_BUCKET_NAME=${{secrets.MINIO_BUCKET_NAME_QA}} >> .env
           cat .env
       - name: Docker 이미지 빌드+푸시
