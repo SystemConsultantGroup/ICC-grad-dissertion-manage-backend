@@ -51,7 +51,7 @@ jobs:
           echo MINIO_END_POINT=${{secrets.MINIO_END_POINT}} >> .env
           echo MINIO_PORT=${{secrets.MINIO_PORT}} >> .env
           echo MINIO_ACCESS_KEY=${{secrets.MINIO_ACCESS_KEY}} >> .env
-          echo MINIO_SECRET_KEY=secrets.MINIO_SECRET_KEY >> .env
+          echo MINIO_SECRET_KEY=$MINIO_SECRET_KEY >> .env
           echo MINIO_BUCKET_NAME=${{secrets.MINIO_BUCKET_NAME_QA}} >> .env
           cat .env
       - name: Docker 이미지 빌드+푸시
