@@ -3,7 +3,12 @@
 
 
 ### local에서 실행 (port=4000)
+local 환경에 맞는 .env 파일 생성
 ```bash
 npm intall
+npx prisma db seed
 npm run start
 ```
+
+### 개발중..
+- PDF 생성 모듈 MSA 전환
