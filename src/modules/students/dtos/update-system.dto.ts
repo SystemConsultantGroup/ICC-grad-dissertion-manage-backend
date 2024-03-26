@@ -1,6 +1,15 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsInt, IsNotEmpty, IsPositive, IsString } from "class-validator";
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from "class-validator";
 
 export class UpdateSystemDto {
   // 심사 위원 정보
@@ -30,7 +39,8 @@ export class UpdateSystemDto {
   committeeIds: number[];
 
   // 논문 정보
-  @ApiProperty({ description: "논문 제목", example: "논문 제목 예시" })
+  @ApiProperty({ description: "논문 제목", example: "논문 제목 예시", required: false })
+  @IsOptional()
   @IsNotEmpty()
   @IsString()
   thesisTitle: string;

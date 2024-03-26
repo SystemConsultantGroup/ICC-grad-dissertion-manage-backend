@@ -36,4 +36,6 @@ lerna-debug.log*
 
 # Prisma
 migrations/
+
+# Environment
 .env
