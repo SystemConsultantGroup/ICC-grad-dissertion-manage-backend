@@ -41,7 +41,6 @@ export class UpdateSystemDto {
   // 논문 정보
   @ApiProperty({ description: "논문 제목", example: "논문 제목 예시", required: false })
   @IsOptional()
-  @IsNotEmpty()
   @IsString()
   thesisTitle: string;
 }
