@@ -92,12 +92,13 @@ export class ProfessorsService {
       }
     }
 
-    const checkDepartment = await this.prismaService.department.findUnique({
-      where: { id: deptId },
-    });
-
-    if (!checkDepartment) {
-      throw new BadRequestException("존재하지 않는 학과입니다.");
+    if (deptId) {
+      const checkDepartment = await this.prismaService.department.findUnique({
+        where: { id: deptId },
+      });
+      if (!checkDepartment) {
+        throw new BadRequestException("존재하지 않는 학과입니다.");
+      }
     }
 
     try {
