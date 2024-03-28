@@ -5,7 +5,7 @@
 ### local에서 실행 (port=4000)
 local 환경에 맞는 .env 파일 생성
 ```bash
-npm intall
+npm install
 npx prisma db seed
 npm run start
 ```
