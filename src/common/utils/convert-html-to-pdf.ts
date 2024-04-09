@@ -18,7 +18,7 @@ export const convertHTMLToPDF = async (html, callback, options = null, puppeteer
 
   const page = await browser.newPage();
   if (!options) {
-    options = { width: "16.5in",height: "23.4in", preferCSSPageSize: false };
+    options = { width: "16.5in",height: "23.4in", preferCSSPageSize: false, printBackground: true };
   }
 
   if (remoteContent === true) {
