@@ -2040,7 +2040,10 @@ export class StudentsService {
   async deleteStudentsList() {
     try {
       return await this.prismaService.user.updateMany({
-        where: { type: UserType.STUDENT },
+        where: {
+          type: UserType.STUDENT,
+          deletedAt: null,
+        },
         data: {
           deletedAt: DateUtil.getCurrentTime().fullDateTime,
         },
