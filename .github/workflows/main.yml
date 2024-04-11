@@ -6,6 +6,7 @@ on:
 env:
   dockerimage_tag: ${{ github.sha }}
   dockerimage_name: harbor.k8s.scg.skku.ac.kr/library/ice-gs-thesis-be
+  database_url: ${{secrets.DATABASE_URL_PROD}}
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,7 +44,7 @@ jobs:
         run: |
           echo APP_ENV=${{secrets.APP_ENV}} >> .env
           echo APP_PORT=${{secrets.APP_PORT}} >> .env
-          echo DATABASE_URL=${{secrets.DATABASE_URL_PROD}} >> .env
+          echo DATABASE_URL=${{env.database_url}} >> .env
           echo JWT_SECRET=${{secrets.JWT_SECRET}} >> .env
           echo MINIO_END_POINT=${{secrets.MINIO_END_POINT}} >> .env
           echo MINIO_PORT=${{secrets.MINIO_PORT}} >> .env
