@@ -394,4 +394,18 @@ export class StudentsController {
     const reviewersDto = new ReviewersDto(headReviewer, advisors, committees);
     return new CommonResponseDto(reviewersDto);
   }
+
+  @Delete("")
+  @ApiOperation({
+    summary: "학생 목록 삭제",
+    description: "학생 목록 삭제",
+  })
+  @UseUserTypeGuard([UserType.ADMIN])
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
+  async deleteStudentsList() {
+    await this.studentsService.deleteStudentsList();
+
+    return new CommonResponseDto();
+  }
 }
