@@ -20,12 +20,13 @@ import { GetRevisionListResDto } from "./dtos/get-revision-list.res.dto";
 import { SearchCurrentReqDto } from "./dtos/search-current.req.dto";
 import { MinioClientService } from "src/config/file/minio-client.service";
 import { v1 } from "uuid";
-import { readFile, createWriteStream, unlink } from "fs";
-import { create as createPdf } from "html-pdf";
+import { readFile } from "fs";
 import * as path from "path";
 import * as Zip from "jszip";
 import { GetCurrentListResDto } from "./dtos/get-current-list.res.dto";
 import { GetResultResDto } from "./dtos/get-result.res.dto";
+import { readableToBuffer } from "src/common/utils/readable-to-buf";
+import { convertHTMLToPDF } from "src/common/utils/convert-html-to-pdf";
 
 @Injectable()
 export class ReviewsService {
@@ -64,21 +65,9 @@ export class ReviewsService {
   }
 
   async buildResultPdf(tx, reviewId, replacer, isMain) {
-    const options = {
-      width: "16.5in",
-      height: "23.4in",
-      orientation: "portrait",
-      border: {
-        top: "2.8in",
-        bottom: "2.8in",
-      },
-      base: "file:///" + path.resolve("./") + "/",
-      localUrlAccess: true,
-    };
     const fileName = (isMain ? "" : "예비") + "심사결과보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     try {
-      let signPath = "";
       return new Promise((resolve, reject) => {
         readFile(filePath, "utf8", async (err, formatHtml) => {
           if (err) throw new InternalServerErrorException("reading format html file failed: " + filePath);
@@ -176,22 +165,13 @@ export class ReviewsService {
                   for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
                 }
               } else if (key == "$서명") {
-                const readable = await this.minioClientService.getFile(replacer[key]);
-                signPath = path.join("resources", "img", "tmp", replacer[key]);
-                const writeStream = new Promise((resolve) => {
-                  const ws = createWriteStream(signPath);
-                  readable.pipe(ws);
-                  readable.on("end", () => {
-                    resolve(null);
-                  });
-                });
-                await writeStream;
-                formatHtml = formatHtml.replace(key, signPath);
+                const readable = await this.minioClientService.getFile(replacer[key]);    
+                const buf = await readableToBuffer(readable);
+                formatHtml = formatHtml.replace(key, `data:image/png;base64, ${buf.toString('base64')}`);
               } else {
                 formatHtml = formatHtml.replace(key, replacer[key]);
               }
             }
-            formatHtml = formatHtml.replaceAll("$row", "");
           } else {
             for (const key of replacerKeys) {
               if (key == "$심사위원장") {
@@ -272,22 +252,20 @@ export class ReviewsService {
             }
             formatHtml = formatHtml.replaceAll("$row", "");
           }
+
           const key = v1();
           const createdAt = new Date();
-          await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
+          await convertHTMLToPDF(formatHtml, async(pdf) => {
             if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
             await this.minioClientService.uploadFile(
               key,
-              buffer,
-              Buffer.byteLength(buffer),
+              pdf,
+              Buffer.byteLength(pdf),
               createdAt,
               reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
               "application/pdf"
             );
-            unlink(signPath, async (err) => {
-              if (err) throw new InternalServerErrorException("Deleting temporary img file failed: " + signPath);
-            });
-          });
+          })
 
           return resolve(
             await tx.file.create({
@@ -308,58 +286,37 @@ export class ReviewsService {
   }
 
   async buildReportPdf(tx, reviewId, replacer, isMain) {
-    const options = {
-      width: "16.5in",
-      height: "23.4in",
-      orientation: "portrait",
-      border: {
-        top: "2.8in",
-        bottom: "2.8in",
-      },
-      base: "file:///" + path.resolve("./") + "/",
-      localUrlAccess: true,
-    };
     const fileName = (isMain ? "" : "예비") + "심사보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     try {
-      let signPath = "";
       return new Promise((resolve, reject) => {
         readFile(filePath, "utf8", async (err, formatHtml) => {
           if (err) throw new InternalServerErrorException("reading format html file failed: " + filePath);
           const replacerKeys = Object.keys(replacer);
           for (const key of replacerKeys) {
             if (key == "$서명") {
-              const readable = await this.minioClientService.getFile(replacer[key]);
-              signPath = path.join("resources", "img", "tmp", replacer[key]);
-              const writeStream = new Promise((resolve) => {
-                const ws = createWriteStream(signPath);
-                readable.pipe(ws);
-                ws.on("close", () => {
-                  resolve(null);
-                });
-              });
-              await writeStream;
-              formatHtml = formatHtml.replace(key, signPath);
+              const readable = await this.minioClientService.getFile(replacer[key]);   
+              const buf = await readableToBuffer(readable);
+              formatHtml = formatHtml.replace(key, `data:image/png;base64, ${buf.toString('base64')}`);
             } else {
               formatHtml = formatHtml.replaceAll(key, replacer[key]);
             }
           }
+
           const key = v1();
           const createdAt = new Date();
-          await createPdf(formatHtml, options).toBuffer(async (err, buffer) => {
+          await convertHTMLToPDF(formatHtml, async (pdf) => {
             if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
             await this.minioClientService.uploadFile(
               key,
-              buffer,
-              Buffer.byteLength(buffer),
+              pdf,
+              Buffer.byteLength(pdf),
               createdAt,
               reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
               "application/pdf"
             );
-            unlink(signPath, async (err) => {
-              if (err) throw new InternalServerErrorException("Deleting temporary img file failed: " + signPath);
-            });
-          });
+          })
+         
           return resolve(
             await tx.file.create({
               data: {
