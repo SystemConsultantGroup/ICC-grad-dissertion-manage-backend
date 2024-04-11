@@ -12,13 +12,18 @@ export const convertHTMLToPDF = async (html, callback, options = null, puppeteer
   } else {
     browser = await puppeteer.launch({
       executablePath: "/usr/bin/chromium-browser",
-      args: ["--no-sandbox", "--disable-dev-shm-usage", "--allow-file-access-from-files", "--enable-local-file-accesses"],
+      args: [
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+        "--allow-file-access-from-files",
+        "--enable-local-file-accesses",
+      ],
     });
   }
 
   const page = await browser.newPage();
   if (!options) {
-    options = { width: "16.5in",height: "23.4in", preferCSSPageSize: false, printBackground: true };
+    options = { width: "16.5in", height: "23.4in", preferCSSPageSize: false, printBackground: true };
   }
 
   if (remoteContent === true) {

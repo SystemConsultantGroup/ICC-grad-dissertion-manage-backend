@@ -165,9 +165,9 @@ export class ReviewsService {
                   for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
                 }
               } else if (key == "$서명") {
-                const readable = await this.minioClientService.getFile(replacer[key]);    
+                const readable = await this.minioClientService.getFile(replacer[key]);
                 const buf = await readableToBuffer(readable);
-                formatHtml = formatHtml.replace(key, `data:image/png;base64, ${buf.toString('base64')}`);
+                formatHtml = formatHtml.replace(key, `data:image/png;base64, ${buf.toString("base64")}`);
               } else {
                 formatHtml = formatHtml.replace(key, replacer[key]);
               }
@@ -255,7 +255,7 @@ export class ReviewsService {
 
           const key = v1();
           const createdAt = new Date();
-          await convertHTMLToPDF(formatHtml, async(pdf) => {
+          await convertHTMLToPDF(formatHtml, async (pdf) => {
             if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
             await this.minioClientService.uploadFile(
               key,
@@ -265,7 +265,7 @@ export class ReviewsService {
               reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
               "application/pdf"
             );
-          })
+          });
 
           return resolve(
             await tx.file.create({
@@ -295,9 +295,9 @@ export class ReviewsService {
           const replacerKeys = Object.keys(replacer);
           for (const key of replacerKeys) {
             if (key == "$서명") {
-              const readable = await this.minioClientService.getFile(replacer[key]);   
+              const readable = await this.minioClientService.getFile(replacer[key]);
               const buf = await readableToBuffer(readable);
-              formatHtml = formatHtml.replace(key, `data:image/png;base64, ${buf.toString('base64')}`);
+              formatHtml = formatHtml.replace(key, `data:image/png;base64, ${buf.toString("base64")}`);
             } else {
               formatHtml = formatHtml.replaceAll(key, replacer[key]);
             }
@@ -315,8 +315,8 @@ export class ReviewsService {
               reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
               "application/pdf"
             );
-          })
-         
+          });
+
           return resolve(
             await tx.file.create({
               data: {
