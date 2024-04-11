@@ -92,12 +92,13 @@ export class ProfessorsService {
       }
     }
 
-    const checkDepartment = await this.prismaService.department.findUnique({
-      where: { id: deptId },
-    });
-
-    if (!checkDepartment) {
-      throw new BadRequestException("존재하지 않는 학과입니다.");
+    if (deptId) {
+      const checkDepartment = await this.prismaService.department.findUnique({
+        where: { id: deptId },
+      });
+      if (!checkDepartment) {
+        throw new BadRequestException("존재하지 않는 학과입니다.");
+      }
     }
 
     try {
@@ -220,12 +221,15 @@ export class ProfessorsService {
           professors.map(async (professor, index) => {
             const { loginId, name, password, email, phone, departmentName } = professor;
 
-            const dept = await tx.department.findFirst({
-              where: { name: departmentName },
-              select: { id: true },
-            });
+            let dept;
+            if (departmentName) {
+              dept = await tx.department.findFirst({
+                where: { name: departmentName },
+                select: { id: true },
+              });
 
-            if (!dept) throw new BadRequestException(`${index + 2}번째 줄의 소속학과가 존재하지 않습니다.`);
+              if (!dept) throw new BadRequestException(`${index + 2}번째 줄의 소속학과가 존재하지 않습니다.`);
+            }
 
             // 해당 ID가 존재할 경우 업데이트 진행
             // 없는 경우 생성 진행
@@ -269,14 +273,13 @@ export class ProfessorsService {
                 data: {
                   name,
                   phone,
-                  deptId: dept.id,
+                  deptId: dept ? dept.id : undefined,
                   password: password ? await this.authService.createHash(password) : undefined,
                 },
                 include: { department: true },
               });
             } else {
               // 새로 생성하는 유저
-              if (!departmentName) throw new BadRequestException(`${index + 2}번째 줄의 소속학과를 입력해주세요.`);
               if (!name) throw new BadRequestException(`${index + 2}번째 줄의 이름을 입력해주세요.`);
               if (!password) throw new BadRequestException(`${index + 2}번째 줄의 비밀번호를 입력해주세요.`);
               if (existingEmail)
@@ -295,7 +298,7 @@ export class ProfessorsService {
                   name,
                   email,
                   phone,
-                  deptId: dept.id,
+                  deptId: dept ? dept.id : undefined,
                   password: await this.authService.createHash(password),
                   type: UserType.PROFESSOR,
                 },

@@ -47,7 +47,7 @@ export class ProfessorDto {
       이름: this.name,
       이메일: this.email,
       연락처: this.phone,
-      학과: this.department.name,
+      학과: this.department ? this.department.name : null,
     };
   }
 }
