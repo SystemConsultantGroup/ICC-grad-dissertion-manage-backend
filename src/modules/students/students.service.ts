@@ -2039,8 +2039,11 @@ export class StudentsService {
 
   async deleteStudentsList() {
     try {
-      return await this.prismaService.user.deleteMany({
+      return await this.prismaService.user.updateMany({
         where: { type: UserType.STUDENT },
+        data: {
+          deletedAt: DateUtil.getCurrentTime().fullDateTime,
+        },
       });
     } catch (e) {
       throw new InternalServerErrorException("학생 목록 삭제에 실패했습니다.");
