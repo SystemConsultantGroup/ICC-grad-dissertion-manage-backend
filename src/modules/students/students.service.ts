@@ -2036,4 +2036,20 @@ export class StudentsService {
       .map((reviewerInfo) => reviewerInfo.reviewer);
     return { headReviewer, advisors, committees };
   }
+
+  async deleteStudentsList() {
+    try {
+      return await this.prismaService.user.updateMany({
+        where: {
+          type: UserType.STUDENT,
+          deletedAt: null,
+        },
+        data: {
+          deletedAt: DateUtil.getCurrentTime().fullDateTime,
+        },
+      });
+    } catch (e) {
+      throw new InternalServerErrorException("학생 목록 삭제에 실패했습니다.");
+    }
+  }
 }
