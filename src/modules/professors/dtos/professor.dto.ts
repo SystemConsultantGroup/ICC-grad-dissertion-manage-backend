@@ -43,7 +43,7 @@ export class ProfessorDto {
 
   converDtoToExcelRecord() {
     return {
-      내선번호: this.loginId,
+      로그인아이디: this.loginId,
       이름: this.name,
       이메일: this.email,
       연락처: this.phone,
