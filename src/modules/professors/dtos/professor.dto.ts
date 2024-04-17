@@ -22,7 +22,7 @@ export class ProfessorDto {
   @ApiProperty({ description: "아이디" })
   @Type(() => Number)
   id: number;
-  @ApiProperty({ description: "내선번호" })
+  @ApiProperty({ description: "로그인 아이디" })
   @Type(() => String)
   loginId: string;
   @ApiProperty({ description: "이름" })
