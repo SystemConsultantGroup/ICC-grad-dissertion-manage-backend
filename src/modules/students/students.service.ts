@@ -291,7 +291,7 @@ export class StudentsService {
               }
             }
 
-            // 교수들 내선번호 > Id로 변경
+            // 교수들 로그인아이디 > Id로 변경
             let advisor1Id: number,
               advisor2Id: number,
               committee1Id: number,
@@ -299,42 +299,42 @@ export class StudentsService {
               headReviewerId: number;
             if (advisor1) {
               const foundProfessor = await this.prismaService.user.findUnique({
-                where: { loginId: advisor1, type: UserType.PROFESSOR, deletedAt: null }, // 내선번호 사용
+                where: { loginId: advisor1, type: UserType.PROFESSOR, deletedAt: null }, // 로그인 아이디 사용
               });
               if (!foundProfessor)
-                throw new BadRequestException(`${index + 2}행 : 교수 내선번호 ${advisor1}를 확인하십시오.`);
+                throw new BadRequestException(`${index + 2}행 : 교수 로그인 아이디 ${advisor1}를 확인하십시오.`);
               advisor1Id = foundProfessor.id;
             }
             if (advisor2) {
               const foundProfessor = await this.prismaService.user.findUnique({
-                where: { loginId: advisor2, type: UserType.PROFESSOR, deletedAt: null }, // 내선번호 사용
+                where: { loginId: advisor2, type: UserType.PROFESSOR, deletedAt: null }, // 로그인 아이디 사용
               });
               if (!foundProfessor)
-                throw new BadRequestException(`${index + 2}행 : 교수 내선번호 ${advisor2}를 확인하십시오.`);
+                throw new BadRequestException(`${index + 2}행 : 교수 로그인 아이디 ${advisor2}를 확인하십시오.`);
               advisor2Id = foundProfessor.id;
             }
             if (committee1) {
               const foundProfessor = await this.prismaService.user.findUnique({
-                where: { loginId: committee1, type: UserType.PROFESSOR, deletedAt: null }, // 내선번호 사용
+                where: { loginId: committee1, type: UserType.PROFESSOR, deletedAt: null }, // 로그인 아이디 사용
               });
               if (!foundProfessor)
-                throw new BadRequestException(`${index + 2}행 : 교수 내선번호 ${committee1}를 확인하십시오.`);
+                throw new BadRequestException(`${index + 2}행 : 교수 로그인 아이디 ${committee1}를 확인하십시오.`);
               committee1Id = foundProfessor.id;
             }
             if (committee2) {
               const foundProfessor = await this.prismaService.user.findUnique({
-                where: { loginId: committee2, type: UserType.PROFESSOR, deletedAt: null }, // 내선번호 사용
+                where: { loginId: committee2, type: UserType.PROFESSOR, deletedAt: null }, // 로그인 아이디 사용
               });
               if (!foundProfessor)
-                throw new BadRequestException(`${index + 2}행 : 교수 내선번호 ${committee2}를 확인하십시오.`);
+                throw new BadRequestException(`${index + 2}행 : 교수 로그인 아이디 ${committee2}를 확인하십시오.`);
               committee2Id = foundProfessor.id;
             }
             if (headReviewer) {
               const foundProfessor = await this.prismaService.user.findUnique({
-                where: { loginId: headReviewer, type: UserType.PROFESSOR, deletedAt: null }, // 내선번호 사용
+                where: { loginId: headReviewer, type: UserType.PROFESSOR, deletedAt: null }, // 로그인 아이디 사용
               });
               if (!foundProfessor)
-                throw new BadRequestException(`${index + 2}행 : 교수 내선번호 ${headReviewer}를 확인하십시오.`);
+                throw new BadRequestException(`${index + 2}행 : 교수 로그인 아이디 ${headReviewer}를 확인하십시오.`);
               headReviewerId = foundProfessor.id;
             }
 
