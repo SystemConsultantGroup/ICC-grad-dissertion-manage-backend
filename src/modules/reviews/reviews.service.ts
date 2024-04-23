@@ -804,7 +804,7 @@ export class ReviewsService {
     const { id } = user;
     let status;
     if (searchQuery.status == SearchStatus.PENDING) {
-      status = Status.UNEXAMINED;
+      status = [Status.UNEXAMINED];
     } else if (searchQuery.status == SearchStatus.COMPLETE) {
       status = [Status.PASS, Status.FAIL];
     }
@@ -874,7 +874,7 @@ export class ReviewsService {
         }),
         ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
         ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
-        ...(searchQuery.status && { status: searchQuery.status }),
+        ...(searchQuery.status && { contentStatus: { in: status } }),
       },
     });
     return {
