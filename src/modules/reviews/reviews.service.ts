@@ -802,6 +802,12 @@ export class ReviewsService {
 
   async getReviewFinalList(searchQuery: SearchReviewReqDto, user: User) {
     const { id } = user;
+    let status;
+    if (searchQuery.status == SearchStatus.PENDING) {
+      status = Status.UNEXAMINED;
+    } else if (searchQuery.status == SearchStatus.COMPLETE) {
+      status = [Status.PASS, Status.FAIL];
+    }
     const reviews = await this.prismaService.review.findMany({
       skip: searchQuery.getOffset(),
       take: searchQuery.getLimit(),
@@ -817,9 +823,9 @@ export class ReviewsService {
           },
           ...(searchQuery.stage && { stage: searchQuery.stage }),
           ...(searchQuery.title && { title: { contains: searchQuery.title } }),
-          ...(searchQuery.status && { status: searchQuery.status }),
         },
         isFinal: true,
+        ...(searchQuery.status && { contentStatus: { in: status } }),
       },
       include: {
         reviewer: {
