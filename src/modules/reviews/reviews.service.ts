@@ -415,16 +415,16 @@ export class ReviewsService {
               ...(searchQuery.department && { department: { id: searchQuery.department } }),
             },
           },
-          ...(searchQuery.stage && { stage: searchQuery.stage }),
+          stage: { in: [Stage.MAIN, Stage.PRELIMINARY] },
           ...(searchQuery.title && { title: { contains: searchQuery.title } }),
         },
         reviewerId: id,
         isFinal: false,
-        NOT: {
-          thesisInfo: {
-            stage: Stage.REVISION,
-          },
-        },
+        // NOT: {
+        //   thesisInfo: {
+        //     stage: Stage.REVISION,
+        //   },
+        // },
         ...(statusQuery && statusQuery),
       },
       include: {
@@ -817,9 +817,9 @@ export class ReviewsService {
           },
           ...(searchQuery.stage && { stage: searchQuery.stage }),
           ...(searchQuery.title && { title: { contains: searchQuery.title } }),
+          ...(searchQuery.status && { status: searchQuery.status }),
         },
         isFinal: true,
-        ...(searchQuery.status && { status: searchQuery.status }),
       },
       include: {
         reviewer: {
