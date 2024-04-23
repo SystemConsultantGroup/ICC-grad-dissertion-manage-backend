@@ -41,7 +41,7 @@ jobs:
           password: ${{ secrets.HARBOR_PASSWORD }}
       - name: env 파일 생성
         run: |
-          echo APP_ENV=${{secrets.APP_ENV}} >> .env
+          echo APP_ENV=development >> .env
           echo APP_PORT=${{secrets.APP_PORT}} >> .env
           echo DATABASE_URL=${{secrets.DATABASE_URL_QA}} >> .env
           echo JWT_SECRET=${{secrets.JWT_SECRET}} >> .env
