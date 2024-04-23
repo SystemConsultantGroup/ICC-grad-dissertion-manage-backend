@@ -2,7 +2,7 @@ name: Docker Image CI
 
 on:
   push:
-    branches: ["qa"]
+    branches: ["main"]
 env:
   dockerimage_tag: ${{ github.sha }}
   dockerimage_name: harbor.k8s.scg.skku.ac.kr/library/ice-gs-thesis-be
@@ -43,13 +43,13 @@ jobs:
         run: |
           echo APP_ENV=${{secrets.APP_ENV}} >> .env
           echo APP_PORT=${{secrets.APP_PORT}} >> .env
-          echo DATABASE_URL=${{secrets.DATABASE_URL_QA}} >> .env
-          echo JWT_SECRET=${{secrets.JWT_SECRET}} >> .env
-          echo MINIO_END_POINT=${{secrets.MINIO_END_POINT}} >> .env
+          echo DATABASE_URL="${{secrets.DATABASE_URL_PROD}}" >> .env
+          echo JWT_SECRET="${{secrets.JWT_SECRET}}" >> .env
+          echo MINIO_END_POINT="${{secrets.MINIO_END_POINT}}" >> .env
           echo MINIO_PORT=${{secrets.MINIO_PORT}} >> .env
-          echo MINIO_ACCESS_KEY=${{secrets.MINIO_ACCESS_KEY}} >> .env
-          echo MINIO_SECRET_KEY=${{secrets.MINIO_SECRET_KEY}} >> .env
-          echo MINIO_BUCKET_NAME=${{secrets.MINIO_BUCKET_NAME_QA}} >> .env
+          echo MINIO_ACCESS_KEY="${{secrets.MINIO_ACCESS_KEY}}" >> .env
+          echo MINIO_SECRET_KEY="${{secrets.MINIO_SECRET_KEY}}" >> .env
+          echo MINIO_BUCKET_NAME="${{secrets.MINIO_BUCKET_NAME_PROD}}" >> .env
           cat .env
       - name: Docker 이미지 빌드+푸시
         id: build-and-push
@@ -77,7 +77,7 @@ jobs:
         uses: imranismail/setup-kustomize@v2.0.0
       - name: Config Repo 이미지 값 업데이트 (Kustomize)
         run: |
-          cd ice-grad-thesis-config/overlays/qa/be/
+          cd ice-grad-thesis-config/overlays/prod/be/
           kustomize edit set image ${{ env.dockerimage_name }}:${{ env.dockerimage_tag }}
           cat kustomization.yaml
       - name: Config Repo 변경사항 푸시

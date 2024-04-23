@@ -5,7 +5,7 @@ import { PageQuery } from "src/common/dtos/pagination.dto";
 
 export class ProfessorListPaginationQuery extends PageQuery {
   // 다중 상속이 안됨....
-  @ApiProperty({ description: "아이디", required: false })
+  @ApiProperty({ description: "로그인 아이디", required: false })
   @IsOptional()
   @IsNotEmpty()
   @Type(() => String)
@@ -39,7 +39,7 @@ export class ProfessorListPaginationQuery extends PageQuery {
 }
 
 export class ProfessorListQuery {
-  @ApiProperty({ description: "아이디", required: false })
+  @ApiProperty({ description: "로그인 아이디", required: false })
   @IsOptional()
   @IsNotEmpty()
   @Type(() => String)

@@ -90,8 +90,8 @@ export class CreateStudentDto {
   committeeIds: number[];
 
   // 논문 정보
-  @ApiProperty({ description: "논문 제목", example: "논문 제목 예시" })
-  @IsNotEmpty()
+  @ApiProperty({ description: "논문 제목", example: "논문 제목 예시", required: false })
+  @IsOptional()
   @IsString()
   thesisTitle: string;
 }

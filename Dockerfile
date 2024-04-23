@@ -10,6 +10,13 @@ COPY tsconfig.json ./
 COPY tsconfig.build.json ./
 COPY .env ./
 
+RUN apk update
+RUN apk upgrade
+RUN apk add --no-cache udev ttf-freefont chromium
+
+ENV LANG=ko_KR.UTF-8
+ENV LANGUAGE=ko_KR.UTF-
+
 # package.json, package-lock.json
 COPY package*.json ./
 RUN npm install

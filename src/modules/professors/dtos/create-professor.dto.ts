@@ -37,7 +37,7 @@ export class CreateProfessorDto {
     required: false,
   })
   @IsOptional()
-  @IsNotEmpty({ message: "이메일을 입력해주세요." })
+  @IsNotEmpty()
   @IsEmail()
   @Type(() => String)
   email: string;
@@ -48,7 +48,7 @@ export class CreateProfessorDto {
     required: false,
   })
   @IsOptional()
-  @IsNotEmpty({ message: "연락처를 입력해주세요." })
+  @IsNotEmpty()
   @IsString()
   @IsKoreanPhoneNumber()
   @Type(() => String)
@@ -58,7 +58,8 @@ export class CreateProfessorDto {
     description: "학과 아이디",
     example: 1,
   })
-  @IsNotEmpty({ message: "학과 아이디를 입력해주세요." })
+  @IsOptional()
+  @IsNotEmpty()
   @Type(() => Number)
   deptId: number;
 }
