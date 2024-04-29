@@ -165,9 +165,13 @@ export class ReviewsService {
                   for (const key of Object.keys(slot)) formatHtml = formatHtml.replace(key, slot[key]);
                 }
               } else if (key == "$서명") {
-                const readable = await this.minioClientService.getFile(replacer[key]);
-                const buf = await readableToBuffer(readable);
-                formatHtml = formatHtml.replace(key, `data:image/png;base64, ${buf.toString("base64")}`);
+                if (replacer[key]) {
+                  const readable = await this.minioClientService.getFile(replacer[key]);
+                  const buf = await readableToBuffer(readable);
+                  formatHtml = formatHtml.replace(key, `data:image/png;base64, ${buf.toString("base64")}`);
+                } else {
+                  formatHtml = formatHtml.replace(key, "");
+                }
               } else {
                 formatHtml = formatHtml.replace(key, replacer[key]);
               }
@@ -295,9 +299,13 @@ export class ReviewsService {
           const replacerKeys = Object.keys(replacer);
           for (const key of replacerKeys) {
             if (key == "$서명") {
-              const readable = await this.minioClientService.getFile(replacer[key]);
-              const buf = await readableToBuffer(readable);
-              formatHtml = formatHtml.replace(key, `data:image/png;base64, ${buf.toString("base64")}`);
+              if (replacer[key]) {
+                const readable = await this.minioClientService.getFile(replacer[key]);
+                const buf = await readableToBuffer(readable);
+                formatHtml = formatHtml.replace(key, `data:image/png;base64, ${buf.toString("base64")}`);
+              } else {
+                formatHtml = formatHtml.replace(key, "");
+              }
             } else {
               formatHtml = formatHtml.replaceAll(key, replacer[key]);
             }
@@ -802,6 +810,12 @@ export class ReviewsService {
 
   async getReviewFinalList(searchQuery: SearchReviewReqDto, user: User) {
     const { id } = user;
+    let status;
+    if (searchQuery.status == SearchStatus.PENDING) {
+      status = [Status.UNEXAMINED];
+    } else if (searchQuery.status == SearchStatus.COMPLETE) {
+      status = [Status.PASS, Status.FAIL];
+    }
     const reviews = await this.prismaService.review.findMany({
       skip: searchQuery.getOffset(),
       take: searchQuery.getLimit(),
@@ -817,9 +831,9 @@ export class ReviewsService {
           },
           ...(searchQuery.stage && { stage: searchQuery.stage }),
           ...(searchQuery.title && { title: { contains: searchQuery.title } }),
-          ...(searchQuery.status && { status: searchQuery.status }),
         },
         isFinal: true,
+        ...(searchQuery.status && { contentStatus: { in: status } }),
       },
       include: {
         reviewer: {
@@ -868,7 +882,7 @@ export class ReviewsService {
         }),
         ...(searchQuery.stage && { thesisInfo: { stage: searchQuery.stage } }),
         ...(searchQuery.title && { thesisInfo: { title: { contains: searchQuery.title } } }),
-        ...(searchQuery.status && { status: searchQuery.status }),
+        ...(searchQuery.status && { contentStatus: { in: status } }),
       },
     });
     return {

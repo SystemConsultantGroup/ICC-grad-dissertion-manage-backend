@@ -42,11 +42,11 @@ jobs:
       - name: env 파일 생성
         run: |
           echo APP_ENV="development" >> .env
-          echo APP_PORT=${{secrets.APP_PORT}} >> .env
+          echo APP_PORT="${{secrets.APP_PORT}}" >> .env
           echo DATABASE_URL="${{secrets.DATABASE_URL_QA}}" >> .env
           echo JWT_SECRET="${{secrets.JWT_SECRET}}" >> .env
           echo MINIO_END_POINT="${{secrets.MINIO_END_POINT}}" >> .env
-          echo MINIO_PORT=${{secrets.MINIO_PORT}} >> .env
+          echo MINIO_PORT="${{secrets.MINIO_PORT}}" >> .env
           echo MINIO_ACCESS_KEY="${{secrets.MINIO_ACCESS_KEY}}" >> .env
           echo MINIO_SECRET_KEY="${{secrets.MINIO_SECRET_KEY}}" >> .env
           echo MINIO_BUCKET_NAME="${{secrets.MINIO_BUCKET_NAME_QA}}" >> .env
