@@ -216,99 +216,60 @@ export class ProfessorsService {
     if (!professors.length) throw new BadRequestException("업로드할 교수가 없습니다.");
 
     try {
-      return await this.prismaService.$transaction(async (tx) => {
-        const result = await Promise.all(
-          professors.map(async (professor, index) => {
-            const { loginId, name, password, email, phone, departmentName } = professor;
+      const result = await Promise.all(
+        professors.map(async (professor, index) => {
+          const { loginId, name, password, email, phone, departmentName } = professor;
 
-            let dept;
-            if (departmentName) {
-              dept = await tx.department.findFirst({
-                where: { name: departmentName },
-                select: { id: true },
-              });
-
-              if (!dept) throw new BadRequestException(`${index + 2}번째 줄의 소속학과가 존재하지 않습니다.`);
-            }
-
-            // 해당 ID가 존재할 경우 업데이트 진행
-            // 없는 경우 생성 진행
-            const existingUser = await tx.user.findUnique({
-              where: { loginId },
+          let dept;
+          if (departmentName) {
+            dept = await this.prismaService.department.findFirst({
+              where: { name: departmentName },
+              select: { id: true },
             });
+          }
 
-            let existingEmail;
-            // 해당 이메일 존재 여부 확인
-            if (email) {
-              existingEmail = await tx.user.findUnique({
-                where: { email },
-              });
+          if (email) {
+            // 중복 확인
+            const existingEmail = await this.prismaService.user.findUnique({
+              where: { email },
+            });
+            if (existingEmail.loginId !== loginId) {
+              throw new BadRequestException(`${index + 2}번째 줄의 이메일이 이미 존재합니다.`);
             }
-
-            // 존재하는 유저의 경우
-            if (existingUser) {
-              // 이메일의 경우 중복이 아닐 경우 업데이트
-              if (email && !existingEmail) {
-                const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-                if (!regex.test(email)) {
-                  throw new BadRequestException(`${index + 2}번째 줄의 이메일 형식이 잘못되었습니다.`);
-                }
-
-                await tx.user.update({
-                  where: { loginId },
-                  data: { email },
-                });
-              } else if (existingEmail.loginId !== loginId) {
-                throw new BadRequestException(`${index + 2}번째 줄의 이메일은 다른 유저가 사용 중입니다.`);
-              }
-              if (phone) {
-                const regex = /^\d{3}-\d{4}-\d{4}$/;
-                if (!(await regex.test(phone))) {
-                  throw new BadRequestException(`${index + 2}번째 줄의 연락처 형식이 잘못되었습니다. (000-0000-0000)`);
-                }
-              }
-              // 중복 허용 되는 값은 그냥 다시 넣어줌 (이름, 연락처, 학과, 비밀번호(undefined))
-              return await tx.user.update({
-                where: { loginId },
-                data: {
-                  name,
-                  phone,
-                  deptId: dept ? dept.id : undefined,
-                  password: password ? await this.authService.createHash(password) : undefined,
-                },
-                include: { department: true },
-              });
-            } else {
-              // 새로 생성하는 유저
-              if (!name) throw new BadRequestException(`${index + 2}번째 줄의 이름을 입력해주세요.`);
-              if (!password) throw new BadRequestException(`${index + 2}번째 줄의 비밀번호를 입력해주세요.`);
-              if (existingEmail)
-                throw new BadRequestException(`${index + 2}번째 줄의 이메일은 다른 유저가 사용 중입니다.`);
-
-              if (phone) {
-                const regex = /^\d{3}-\d{4}-\d{4}$/;
-                if (!(await regex.test(phone))) {
-                  throw new BadRequestException(`${index + 2}번째 줄의 연락처 형식이 잘못되었습니다. (000-0000-0000)`);
-                }
-              }
-
-              return await tx.user.create({
-                data: {
-                  loginId,
-                  name,
-                  email,
-                  phone,
-                  deptId: dept ? dept.id : undefined,
-                  password: await this.authService.createHash(password),
-                  type: UserType.PROFESSOR,
-                },
-                include: { department: true },
-              });
+            const regex_email = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!regex_email.test(email)) {
+              throw new BadRequestException(`${index + 2}번째 줄의 이메일 형식이 잘못되었습니다.`);
             }
-          })
-        );
-        return result;
-      });
+          }
+
+          const regex_phone = /^\d{3}-\d{4}-\d{4}$/;
+          if (phone && !regex_phone.test(phone)) {
+            throw new BadRequestException(`${index + 2}번째 줄의 연락처 형식이 잘못되었습니다. (000-0000-0000)`);
+          }
+
+          return await this.prismaService.user.upsert({
+            where: { loginId },
+            update: {
+              name,
+              email,
+              phone,
+              deptId: dept ? dept.id : undefined,
+              password: password ? await this.authService.createHash(password) : undefined,
+            },
+            create: {
+              loginId,
+              name,
+              email,
+              phone,
+              deptId: dept ? dept.id : undefined,
+              password: password ? await this.authService.createHash(password) : undefined,
+              type: UserType.PROFESSOR,
+            },
+            include: { department: true },
+          });
+        })
+      );
+      return result;
     } catch (error) {
       if (error.status === 400) throw new BadRequestException(error.message);
       else throw new InternalServerErrorException("엑셀 파일 업로드에 실패했습니다.");
