@@ -707,6 +707,8 @@ export class ReviewsService {
       });
       if (!foundFile) throw new NotFoundException("존재하지 않는 심사파일입니다.");
     }
+    const isMain = foundReview.thesisInfo.stage == Stage.MAIN ? true : false;
+
     try {
       const review = await this.prismaService.$transaction(async (tx) => {
         let file;
@@ -735,7 +737,8 @@ export class ReviewsService {
                 "$심사위원:성명": foundReview.reviewer.name,
                 $서명: foundReview.reviewer.signId,
               };
-            }
+              file = await this.buildReportPdf(tx, foundReview.id, replacer, isMain);
+            } //내용심사 & 구두심사 중 하나라도 보류중인 경우 파일생성없이 comment와 상태만 업데이트
           } else if (foundReview.thesisInfo.stage == Stage.PRELIMINARY) {
             // 예심 (=내용 심사 only)
             if (updateReviewDto.contentStatus == Status.PASS || updateReviewDto.contentStatus == Status.FAIL) {
@@ -753,10 +756,9 @@ export class ReviewsService {
                 "$심사위원:성명": foundReview.reviewer.name,
                 $서명: foundReview.reviewer.signId,
               };
+              file = await this.buildReportPdf(tx, foundReview.id, replacer, isMain);
             }
           }
-          const isMain = foundReview.thesisInfo.stage == Stage.MAIN ? true : false;
-          file = await this.buildReportPdf(tx, foundReview.id, replacer, isMain);
         }
         const fileUUID = updateReviewDto.fileUUID ? updateReviewDto.fileUUID : file.uuid;
         return await tx.review.update({
