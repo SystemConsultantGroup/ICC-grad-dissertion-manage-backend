@@ -712,6 +712,7 @@ export class ReviewsService {
     try {
       const review = await this.prismaService.$transaction(async (tx) => {
         let file;
+        file.uuid = null;
         if (!updateReviewDto.fileUUID) {
           // 파일 업로드 없음 = 보고서를 자동으로 채워서 만들어야 됨
           let replacer;
