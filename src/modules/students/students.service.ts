@@ -445,21 +445,17 @@ export class StudentsService {
                 const currentHeadReviewer = currentReviewers.filter(
                   (reviewer) => reviewer.role === Role.COMMITTEE_CHAIR
                 )[0];
-                if (headReviewerId && headReviewerId !== currentHeadReviewer.id) {
+                console.log(`심사위원장 교체?: ${headReviewerId} !== ${currentHeadReviewer.reviewerId}`)
+                if (headReviewerId && headReviewerId !== currentHeadReviewer.reviewerId) {
                   // 심사위원장 교체
-                  // 기존 심사위원장의 review 삭제 (soft delete)
-                  await tx.review.updateMany({
+
+                  // 기존 심사위원장 리뷰 삭제 (hard delete)
+                  await tx.review.deleteMany({
                     where: {
                       reviewerId: currentHeadReviewer.reviewerId,
-                      thesisInfo: {
-                        processId: process.id,
-                      },
-                    },
-                    data: {
-                      thesisInfoId: null,
-                      reviewerId: null,
-                    },
-                  });
+                      thesisInfo: { processId: process.id }
+                    }
+                  })
 
                   // process 수정
                   await tx.process.update({
@@ -536,33 +532,30 @@ export class StudentsService {
                 if (advisorIds.length !== 0) {
                   const currentAdvisorIds = currentReviewers
                     .filter((reviewer) => reviewer.role === Role.ADVISOR)
-                    .map((advisor) => advisor.id);
-
-                  // 지도 교수 삭제
+                    .map((advisor) => advisor.reviewerId);
                   const deleteAdvisorIds = currentAdvisorIds.filter((id) => !advisorIds.includes(id)); // 현재 지도교수 중 삭제될 지도교수
-                  if (deleteAdvisorIds) {
-                    // review 삭제 (soft delete)
-                    await tx.review.updateMany({
+                  const newAdvisorIds = advisorIds.filter((id) => !currentAdvisorIds.includes(id)); // 새롭게 추가될 지도교수
+                  
+                  // 지도 교수 삭제
+                  if (deleteAdvisorIds.length !== 0) {
+                    // review 삭제 (hard delete)
+                    await tx.review.deleteMany({
                       where: {
                         reviewerId: { in: deleteAdvisorIds },
                         thesisInfo: { processId: process.id },
-                      },
-                      data: {
-                        thesisInfoId: null,
-                        reviewerId: null,
-                      },
-                    });
+                      }
+                    })
+
                     await tx.reviewer.deleteMany({
                       where: {
-                        id: { in: deleteAdvisorIds },
+                        reviewerId: { in: deleteAdvisorIds },
                         processId: process.id,
                       },
                     });
                   }
 
                   // 지도 교수 추가
-                  const newAdvisorIds = advisorIds.filter((id) => !currentAdvisorIds.includes(id)); // 새롭게 추가될 지도교수
-                  if (newAdvisorIds) {
+                  if (newAdvisorIds.length !== 0) {
                     // reviewer 생성
                     await tx.reviewer.createMany({
                       data: newAdvisorIds.map((id) => {
@@ -625,33 +618,33 @@ export class StudentsService {
                 if (committeeIds.length !== 0) {
                   const currentCommitteeIds = currentReviewers
                     .filter((reviewer) => reviewer.role === Role.COMMITTEE_MEMBER)
-                    .map((committee) => committee.id);
+                    .map((committee) => committee.reviewerId);
                   const deleteCommitteeIds = currentCommitteeIds.filter((id) => !committeeIds.includes(id)); // 현재 심사위원 중 삭제될 심사위원
                   const newCommitteeIds = committeeIds.filter((id) => !currentCommitteeIds.includes(id)); // 새롭게 추가될 심사위원
 
+                  console.log(`currentCommitteIds: ${currentCommitteeIds}`);
+                  console.log(`deleteCommitteIds: ${deleteCommitteeIds}`);
+                  console.log(`newCommitteIds: ${newCommitteeIds}`);
+
                   // 심사위원 삭제
-                  if (deleteCommitteeIds) {
-                    // review 삭제 (soft delete)
-                    await tx.review.updateMany({
+                  if (deleteCommitteeIds.length !== 0) {
+                    // review 삭제 (hard delete)
+                    await tx.review.deleteMany({
                       where: {
                         reviewerId: { in: deleteCommitteeIds },
                         thesisInfo: { processId: process.id },
-                      },
-                      data: {
-                        thesisInfoId: null,
-                        reviewerId: null,
-                      },
-                    });
+                      }
+                    })
                     await tx.reviewer.deleteMany({
                       where: {
-                        id: { in: deleteCommitteeIds },
+                        reviewerId: { in: deleteCommitteeIds },
                         processId: process.id,
                       },
                     });
                   }
 
                   // 심사위원 추가
-                  if (newCommitteeIds) {
+                  if (newCommitteeIds.length !== 0) {
                     // reviewer 생성
                     await tx.reviewer.createMany({
                       data: newCommitteeIds.map((id) => {
