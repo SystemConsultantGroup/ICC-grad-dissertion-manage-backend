@@ -1729,7 +1729,7 @@ export class StudentsService {
         const revisionThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.REVISION)[0];
         // 존재하는 논문 정보에 대해 review data 미리 정리
         const reviewData = [];
-        if (preThesisInfo) {
+        if (foundStudent.studentProcess.currentPhase === Stage.PRELIMINARY) {
           reviewData.push({
             thesisInfoId: preThesisInfo.id,
             reviewerId,
@@ -1738,7 +1738,7 @@ export class StudentsService {
             isFinal: false,
           });
         }
-        if (mainThesisInfo) {
+        if (foundStudent.studentProcess.currentPhase === Stage.MAIN) {
           reviewData.push({
             thesisInfoId: mainThesisInfo.id,
             reviewerId,
@@ -1746,15 +1746,16 @@ export class StudentsService {
             presentationStatus: ReviewStatus.UNEXAMINED,
             isFinal: false,
           });
-        }
-        if (revisionThesisInfo) {
-          reviewData.push({
-            thesisInfoId: revisionThesisInfo.id,
-            reviewerId,
-            contentStatus: ReviewStatus.UNEXAMINED,
-            presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
-            isFinal: false,
-          });
+          if (revisionThesisInfo) {
+            // 수정 지시 사항 단계가 있는 경우
+            reviewData.push({
+              thesisInfoId: revisionThesisInfo.id,
+              reviewerId,
+              contentStatus: ReviewStatus.UNEXAMINED,
+              presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
+              isFinal: false,
+            });
+          }
         }
         // review 생성
         await tx.review.createMany({
