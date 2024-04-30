@@ -1830,22 +1830,35 @@ export class StudentsService {
     if (reviewerList.length < 2)
       throw new BadRequestException(`${foundReviewer.role}이 2명일 때만 배정 취소가 가능합니다.`);
 
-    // 배정 취소
+    // 배정 취소 (review, reviewer 삭제)
     try {
       await this.prismaService.$transaction(async (tx) => {
-        // review 삭제 (soft delete)
-        await tx.review.updateMany({
+        // review 삭제 (hard delete)
+        await tx.review.deleteMany({
           where: {
             reviewerId,
             thesisInfo: {
               processId: process.id,
+              OR: [
+                { stage: foundStudent.studentProcess.currentPhase }, // 본심 단계에서 교수 정보 수정할 때 예심 단계의 review 삭제 방지
+                { stage: Stage.REVISION },
+              ],
             },
           },
-          data: {
-            thesisInfoId: null,
-            reviewerId: null,
-          },
         });
+
+        // await tx.review.updateMany({
+        //   where: {
+        //     reviewerId,
+        //     thesisInfo: {
+        //       processId: process.id,
+        //     },
+        //   },
+        //   data: {
+        //     thesisInfoId: null,
+        //     reviewerId: null,
+        //   },
+        // });
         await tx.reviewer.delete({
           where: {
             id: foundReviewer.id,
