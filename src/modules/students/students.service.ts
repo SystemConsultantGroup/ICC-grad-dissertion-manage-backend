@@ -621,10 +621,6 @@ export class StudentsService {
                   const deleteCommitteeIds = currentCommitteeIds.filter((id) => !committeeIds.includes(id)); // 현재 심사위원 중 삭제될 심사위원
                   const newCommitteeIds = committeeIds.filter((id) => !currentCommitteeIds.includes(id)); // 새롭게 추가될 심사위원
 
-                  console.log(`currentCommitteIds: ${currentCommitteeIds}`);
-                  console.log(`deleteCommitteIds: ${deleteCommitteeIds}`);
-                  console.log(`newCommitteIds: ${newCommitteeIds}`);
-
                   // 심사위원 삭제
                   if (deleteCommitteeIds.length !== 0) {
                     // review 삭제 (hard delete)
@@ -1846,19 +1842,6 @@ export class StudentsService {
             },
           },
         });
-
-        // await tx.review.updateMany({
-        //   where: {
-        //     reviewerId,
-        //     thesisInfo: {
-        //       processId: process.id,
-        //     },
-        //   },
-        //   data: {
-        //     thesisInfoId: null,
-        //     reviewerId: null,
-        //   },
-        // });
         await tx.reviewer.delete({
           where: {
             id: foundReviewer.id,
@@ -1930,17 +1913,17 @@ export class StudentsService {
     // 심사위원장 교체
     try {
       await this.prismaService.$transaction(async (tx) => {
-        // 기존 심사위원장의 review 삭제 (soft delete)
-        await tx.review.updateMany({
+        // 기존 심사위원장의 review 삭제 (hard delete)
+        await tx.review.deleteMany({
           where: {
             reviewerId: currentHeadReviewer.reviewerId,
             thesisInfo: {
               processId: process.id,
+              OR: [
+                { stage: foundStudent.studentProcess.currentPhase }, // 본심 단계에서 교수 정보 수정할 때 예심 단계의 review 삭제 방지
+                { stage: Stage.REVISION },
+              ],
             },
-          },
-          data: {
-            thesisInfoId: null,
-            reviewerId: null,
           },
         });
 
@@ -1963,7 +1946,7 @@ export class StudentsService {
         const revisionThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.REVISION)[0];
         // 존재하는 논문 정보에 대해 review data 미리 정리
         const reviewData = [];
-        if (preThesisInfo) {
+        if (foundStudent.studentProcess.currentPhase === Stage.PRELIMINARY) {
           reviewData.push(
             // 예심 심사
             {
@@ -1983,7 +1966,7 @@ export class StudentsService {
             }
           );
         }
-        if (mainThesisInfo) {
+        if (foundStudent.studentProcess.currentPhase === Stage.MAIN) {
           reviewData.push(
             // 본심 심사
             {
@@ -2002,19 +1985,21 @@ export class StudentsService {
               isFinal: true,
             }
           );
+          if (revisionThesisInfo) {
+            // 수정 지시사항 정보 까지 있다면
+            reviewData.push(
+              // 수정지시사항 반영 확인
+              {
+                thesisInfoId: revisionThesisInfo.id,
+                reviewerId: headReviewerId,
+                contentStatus: ReviewStatus.UNEXAMINED,
+                presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
+                isFinal: false,
+              }
+            );
+          }
         }
-        if (revisionThesisInfo) {
-          reviewData.push(
-            // 수정지시사항 반영 확인
-            {
-              thesisInfoId: revisionThesisInfo.id,
-              reviewerId: headReviewerId,
-              contentStatus: ReviewStatus.UNEXAMINED,
-              presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
-              isFinal: false,
-            }
-          );
-        }
+
         await tx.review.createMany({
           data: reviewData,
         });
