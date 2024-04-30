@@ -445,7 +445,6 @@ export class StudentsService {
                 const currentHeadReviewer = currentReviewers.filter(
                   (reviewer) => reviewer.role === Role.COMMITTEE_CHAIR
                 )[0];
-                console.log(`심사위원장 교체?: ${headReviewerId} !== ${currentHeadReviewer.reviewerId}`)
                 if (headReviewerId && headReviewerId !== currentHeadReviewer.reviewerId) {
                   // 심사위원장 교체
 
@@ -453,9 +452,9 @@ export class StudentsService {
                   await tx.review.deleteMany({
                     where: {
                       reviewerId: currentHeadReviewer.reviewerId,
-                      thesisInfo: { processId: process.id }
-                    }
-                  })
+                      thesisInfo: { processId: process.id },
+                    },
+                  });
 
                   // process 수정
                   await tx.process.update({
@@ -535,7 +534,7 @@ export class StudentsService {
                     .map((advisor) => advisor.reviewerId);
                   const deleteAdvisorIds = currentAdvisorIds.filter((id) => !advisorIds.includes(id)); // 현재 지도교수 중 삭제될 지도교수
                   const newAdvisorIds = advisorIds.filter((id) => !currentAdvisorIds.includes(id)); // 새롭게 추가될 지도교수
-                  
+
                   // 지도 교수 삭제
                   if (deleteAdvisorIds.length !== 0) {
                     // review 삭제 (hard delete)
@@ -543,8 +542,8 @@ export class StudentsService {
                       where: {
                         reviewerId: { in: deleteAdvisorIds },
                         thesisInfo: { processId: process.id },
-                      }
-                    })
+                      },
+                    });
 
                     await tx.reviewer.deleteMany({
                       where: {
@@ -633,8 +632,8 @@ export class StudentsService {
                       where: {
                         reviewerId: { in: deleteCommitteeIds },
                         thesisInfo: { processId: process.id },
-                      }
-                    })
+                      },
+                    });
                     await tx.reviewer.deleteMany({
                       where: {
                         reviewerId: { in: deleteCommitteeIds },
