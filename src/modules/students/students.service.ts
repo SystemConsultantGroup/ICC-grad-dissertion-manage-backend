@@ -25,7 +25,6 @@ import { validate } from "class-validator";
 import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
 import { Readable } from "stream";
 import { UpdateSystemDto } from "./dtos/update-system.dto";
-import { file } from "jszip";
 
 @Injectable()
 export class StudentsService {

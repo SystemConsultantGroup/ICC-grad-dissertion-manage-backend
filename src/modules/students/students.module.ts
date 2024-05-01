@@ -8,5 +8,6 @@ import { FilesModule } from "../files/files.module";
   controllers: [StudentsController],
   providers: [StudentsService],
   imports: [AuthModule, FilesModule],
+  exports: [StudentsService],
 })
 export class StudentsModule {}

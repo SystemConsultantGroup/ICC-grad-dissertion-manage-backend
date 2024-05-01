@@ -63,7 +63,7 @@ export class DepartmentsController {
   @Delete(":id")
   @ApiOperation({
     summary: "학과 삭제",
-    description: "학과 삭제",
+    description: "학과 삭제, 해당 학과 소속 학생들은 Cascade로 삭제됩니다.",
   })
   @UseUserTypeGuard([UserType.ADMIN])
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
