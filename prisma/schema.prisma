@@ -120,7 +120,7 @@ model Review {
   thesisInfoId       Int?
   fileId             String?     @unique
   file               File?       @relation(fields: [fileId], references: [uuid])
-  reviewer           User?       @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewer           User?       @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
   thesisInfo         ThesisInfo? @relation(fields: [thesisInfoId], references: [id], onDelete: Cascade)
 
   @@index([reviewerId], map: "review_reviewerId_fkey")
