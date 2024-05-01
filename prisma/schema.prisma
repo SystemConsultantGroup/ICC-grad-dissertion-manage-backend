@@ -53,9 +53,9 @@ model Process {
   studentId      Int?         @unique
   headReviewerId Int?
   phaseId        Int?
-  headReviewer   User?        @relation("headReviewer", fields: [headReviewerId], references: [id])
+  headReviewer   User?        @relation("headReviewer", fields: [headReviewerId], references: [id], onDelete: SetNull)
   phase          Phase?       @relation(fields: [phaseId], references: [id])
-  student        User?        @relation("student", fields: [studentId], references: [id])
+  student        User?        @relation("student", fields: [studentId], references: [id], onDelete: Cascade)
   reviewers      Reviewer[]
   thesisInfos    ThesisInfo[]
 
@@ -87,7 +87,7 @@ model ThesisInfo {
   processId   Int?
   reviews     Review[]
   thesisFiles ThesisFile[]
-  process     Process?     @relation(fields: [processId], references: [id])
+  process     Process?     @relation(fields: [processId], references: [id], onDelete: Cascade)
 
   @@index([processId], map: "thesis_info_processId_fkey")
   @@map("thesis_info")
@@ -99,8 +99,8 @@ model Reviewer {
   reviewerId Int?
   processId  Int?
   role       Role
-  process    Process? @relation(fields: [processId], references: [id])
-  reviewer   User?    @relation(fields: [reviewerId], references: [id])
+  process    Process? @relation(fields: [processId], references: [id], onDelete: Cascade)
+  reviewer   User?    @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
 
   @@index([processId], map: "reviewer_processId_fkey")
   @@index([reviewerId], map: "reviewer_reviewerId_fkey")
@@ -120,8 +120,8 @@ model Review {
   thesisInfoId       Int?
   fileId             String?     @unique
   file               File?       @relation(fields: [fileId], references: [uuid])
-  reviewer           User?       @relation(fields: [reviewerId], references: [id])
-  thesisInfo         ThesisInfo? @relation(fields: [thesisInfoId], references: [id])
+  reviewer           User?       @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  thesisInfo         ThesisInfo? @relation(fields: [thesisInfoId], references: [id], onDelete: Cascade)
 
   @@index([reviewerId], map: "review_reviewerId_fkey")
   @@index([thesisInfoId], map: "review_thesisInfoId_fkey")
@@ -151,7 +151,7 @@ model ThesisFile {
   thesisInfoId Int?
   fileId       String?        @unique
   file         File?          @relation(fields: [fileId], references: [uuid])
-  ThesisInfo   ThesisInfo?    @relation(fields: [thesisInfoId], references: [id])
+  ThesisInfo   ThesisInfo?    @relation(fields: [thesisInfoId], references: [id], onDelete: Cascade)
 
   @@index([thesisInfoId], map: "thesis_file_thesisInfoId_fkey")
   @@map("thesis_file")
@@ -167,7 +167,7 @@ model Achievements {
   authorType      AuthorType
   authorNumbers   Int
   userId          Int?
-  User            User?       @relation(fields: [userId], references: [id])
+  User            User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "achievements_userId_fkey")
   @@map("achievements")
