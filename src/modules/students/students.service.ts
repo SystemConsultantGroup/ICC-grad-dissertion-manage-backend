@@ -25,6 +25,7 @@ import { validate } from "class-validator";
 import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
 import { Readable } from "stream";
 import { UpdateSystemDto } from "./dtos/update-system.dto";
+import { file } from "jszip";
 
 @Injectable()
 export class StudentsService {
@@ -2040,18 +2041,31 @@ export class StudentsService {
   }
 
   async deleteStudentsList() {
+    // 논문 파일, 서명 파일 가져오기
+    const files = await this.prismaService.file.findMany({
+      where: {},
+      include: { review: true, thesisFile: true, professor: true },
+    });
+    const fileUUIDs = files.filter((file) => file.thesisFile !== null || file.review !== null).map((file) => file.uuid); // 모든 논문 파일과 리뷰 파일
+    // minIO, file 테이블에서 삭제 (FileService 이용)
+    for (const uuid of fileUUIDs) {
+      try {
+        await this.fileService.deleteFile(uuid);
+      } catch (error) {
+        console.log(error);
+        throw new InternalServerErrorException("파일 삭제 오류 발생");
+      }
+    }
+
+    // 학생 데이터 모두 삭제 (Hard delete)
+    // cascade로 삭제되는 연관된 데이터들 : Achivements, Process, Reviewers, ThesisInfos, Reviews, ThesisFiles
     try {
-      return await this.prismaService.user.updateMany({
-        where: {
-          type: UserType.STUDENT,
-          deletedAt: null,
-        },
-        data: {
-          deletedAt: DateUtil.getCurrentTime().fullDateTime,
-        },
+      await this.prismaService.user.deleteMany({
+        where: { type: UserType.STUDENT },
       });
-    } catch (e) {
-      throw new InternalServerErrorException("학생 목록 삭제에 실패했습니다.");
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException("학생 삭제 오류 발생");
     }
   }
 
@@ -2088,7 +2102,10 @@ export class StudentsService {
     // cascade로 삭제되는 연관된 데이터들 : Achivements, Process, Reviewers, ThesisInfos, Reviews, ThesisFiles
     try {
       await this.prismaService.user.delete({
-        where: { id: studentId },
+        where: {
+          id: studentId,
+          type: UserType.STUDENT,
+        },
       });
     } catch (error) {
       console.log(error);
