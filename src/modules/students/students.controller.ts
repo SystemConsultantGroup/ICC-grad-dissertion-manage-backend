@@ -395,6 +395,7 @@ export class StudentsController {
     return new CommonResponseDto(reviewersDto);
   }
 
+  // 삭제
   @Delete("")
   @ApiOperation({
     summary: "학생 목록 삭제",
@@ -406,6 +407,19 @@ export class StudentsController {
   async deleteStudentsList() {
     await this.studentsService.deleteStudentsList();
 
+    return new CommonResponseDto();
+  }
+
+  @Delete("/:id")
+  @ApiOperation({
+    summary: "학생 삭제 API",
+    description: "아이디에 해당하는 학생을 DB에서 삭제하고, 관련 데이터와 파일도 모두 삭제한다.",
+  })
+  @UseUserTypeGuard([UserType.ADMIN])
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
+  async deleteStudent(@Param("id", PositiveIntPipe) studentId: number) {
+    await this.studentsService.deleteStudent(studentId);
     return new CommonResponseDto();
   }
 }
