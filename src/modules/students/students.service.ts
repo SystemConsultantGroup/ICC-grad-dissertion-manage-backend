@@ -2041,20 +2041,6 @@ export class StudentsService {
 
   async deleteStudentsList() {
     // 논문 파일, 서명 파일 가져오기
-    const files = await this.prismaService.file.findMany({
-      where: {},
-      include: { review: true, thesisFile: true, professor: true },
-    });
-    const fileUUIDs = files.filter((file) => file.thesisFile !== null || file.review !== null).map((file) => file.uuid); // 모든 논문 파일과 리뷰 파일
-    // minIO, file 테이블에서 삭제 (FileService 이용)
-    for (const uuid of fileUUIDs) {
-      try {
-        await this.fileService.deleteFile(uuid);
-      } catch (error) {
-        console.log(error);
-        throw new InternalServerErrorException("파일 삭제 오류 발생");
-      }
-    }
 
     // 학생 데이터 모두 삭제 (Hard delete)
     // cascade로 삭제되는 연관된 데이터들 : Achivements, Process, Reviewers, ThesisInfos, Reviews, ThesisFiles
@@ -2076,27 +2062,11 @@ export class StudentsService {
         type: UserType.STUDENT,
         deletedAt: null,
       },
-      include: { studentProcess: { include: { thesisInfos: { include: { thesisFiles: true, reviews: true } } } } },
     });
     if (!student) {
       throw new BadRequestException("해당하는 학생을 찾을 수 없습니다.");
     }
 
-    // 파일 데이터 확인 -> 미리 삭제 (Cascade로 삭제 안됨)
-    const thesisFiles = student.studentProcess.thesisInfos.flatMap((thesisInfo) => thesisInfo.thesisFiles);
-    const reviews = student.studentProcess.thesisInfos.flatMap((thesisInfo) => thesisInfo.reviews);
-    const thesisFileUUIDs = thesisFiles.map((thesisFile) => thesisFile.fileId).filter((uuid) => uuid !== null); // 학생 논문, 논문 발표, 수정 지시사항 관련 파일 uuid
-    const reviewFileUUIDs = reviews.map((review) => review.fileId).filter((uuid) => uuid !== null); // 교수 논문 심사 관련 파일 uuid
-    const fileUUIDs = [...thesisFileUUIDs, ...reviewFileUUIDs]; // 학생과 관련 있는 모든 파일 uuid
-    // minIO, file 테이블에서 삭제 (FileService 이용)
-    for (const uuid of fileUUIDs) {
-      try {
-        await this.fileService.deleteFile(uuid);
-      } catch (error) {
-        console.log(error);
-        throw new InternalServerErrorException("파일 삭제 오류 발생");
-      }
-    }
     // 학생 데이터 모두 삭제 (Hard delete)
     // cascade로 삭제되는 연관된 데이터들 : Achivements, Process, Reviewers, ThesisInfos, Reviews, ThesisFiles
     try {
