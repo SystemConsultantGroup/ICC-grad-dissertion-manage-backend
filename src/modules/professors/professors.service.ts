@@ -233,7 +233,7 @@ export class ProfessorsService {
             const existingEmail = await this.prismaService.user.findUnique({
               where: { email },
             });
-            if (existingEmail.loginId !== loginId) {
+            if (existingEmail && existingEmail.loginId !== loginId) {
               throw new BadRequestException(`${index + 2}번째 줄의 이메일이 이미 존재합니다.`);
             }
             const regex_email = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -271,8 +271,9 @@ export class ProfessorsService {
       );
       return result;
     } catch (error) {
+      console.log(error);
       if (error.status === 400) throw new BadRequestException(error.message);
-      else throw new InternalServerErrorException("엑셀 파일 업로드에 실패했습니다.");
+      else throw new InternalServerErrorException(error);
     }
   }
 
