@@ -78,10 +78,12 @@ export class TaskService {
     switch (phase.id) {
       // 1 - [예심 논문 업로드 단계]
       case 1:
+        this.addCronJob(phase.title + `-end`, phase.end, this._01);
         break;
       // 2 - [예심 논문 심사 단계]
       case 2:
         this.addCronJob(phase.title, phase.start, this._02);
+        this.addCronJob(phase.title + `-end`, phase.end, this._02_end);
         break;
       // 3 - [예심 논문 최종 심사 단계]
       case 3:
@@ -115,7 +117,41 @@ export class TaskService {
         break;
     }
   }
-
+  _01 = async () => {
+    console.log(
+      "[예심 논문 업로드]가 마감될 경우 예심 논문 심사가 시작됐다면 학생들을 [예심 논문 심사] 단계로 업데이트 합니다"
+    );
+    const phase_1 = await this.prismaService.phase.findFirst({
+      where: { id: 1 },
+    });
+    const phase_2 = await this.prismaService.phase.findFirst({
+      where: {
+        id: 2,
+      },
+    });
+    if (phase_1.end.getTime() - phase_2.start.getTime() >= 0) {
+      await this.prismaService.$transaction(async (tx) => {
+        await tx.process.updateMany({
+          where: {
+            phaseId: 1,
+            thesisInfos: {
+              some: {
+                stage: { equals: Stage.PRELIMINARY },
+                thesisFiles: {
+                  every: {
+                    fileId: { not: null },
+                  }, //논문을 제출한 학생만 단계 업데이트
+                },
+              },
+            },
+          },
+          data: {
+            phaseId: 2,
+          },
+        });
+      });
+    }
+  };
   _02 = async () => {
     console.log("[예심 논문 업로드] 단계인 학생을 [예심 논문 심사] 단계로 업데이트합니다.");
     await this.prismaService.$transaction(async (tx) => {
@@ -139,8 +175,29 @@ export class TaskService {
       });
     });
   };
+  _02_end = async () => {
+    const phase_2 = await this.prismaService.phase.findFirst({
+      where: { id: 2 },
+    });
+    const phase_3 = await this.prismaService.phase.findFirst({
+      where: {
+        id: 3,
+      },
+    });
+    if (phase_2.end.getTime() - phase_3.start.getTime() >= 0) {
+      await this.prismaService.$transaction(async (tx) => {
+        await tx.process.updateMany({
+          where: {
+            phaseId: 2,
+          },
+          data: {
+            phaseId: 3,
+          },
+        });
+      });
+    }
+  };
   _03 = async () => {
-    //단계 업데이트에 추가적인 로직이 필요할지 고민입니다.
     console.log("[예심 논문 심사]] 단계인 학생을 [예심 논문 최종 심사] 단계로 업데이트합니다.");
     await this.prismaService.$transaction(async (tx) => {
       await tx.process.updateMany({
