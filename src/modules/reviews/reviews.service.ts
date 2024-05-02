@@ -761,7 +761,11 @@ export class ReviewsService {
             }
           }
         }
-        const fileUUID = updateReviewDto.fileUUID ? updateReviewDto.fileUUID : file.uuid;
+        let fileUUID: string;
+        if (file) {
+          fileUUID = updateReviewDto.fileUUID ? updateReviewDto.fileUUID : file.uuid;
+        }
+
         return await tx.review.update({
           where: {
             id,
