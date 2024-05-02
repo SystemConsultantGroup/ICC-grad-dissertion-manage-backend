@@ -660,7 +660,7 @@ export class ReviewsService {
   async updateReview(id: number, updateReviewDto: UpdateReviewReqDto, user: User) {
     const userId = user.id;
     const userType = user.type;
-    const fileUUID = updateReviewDto.fileUUID;
+    let fileUUID = updateReviewDto.fileUUID;
     const foundReview = await this.prismaService.review.findUnique({
       where: {
         id,
@@ -691,13 +691,8 @@ export class ReviewsService {
       },
     });
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
-    if (userType == UserType.PROFESSOR) {
-      if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
-      if (
-        (foundReview.contentStatus == Status.PASS || foundReview.contentStatus == Status.FAIL) &&
-        (foundReview.presentationStatus == Status.PASS || foundReview.presentationStatus == Status.FAIL)
-      )
-        throw new BadRequestException("수정 불가능한 논문심사입니다.");
+    if (userType == UserType.PROFESSOR && foundReview.reviewerId != userId) {
+      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     }
     if (fileUUID) {
       const foundFile = await this.prismaService.file.findUnique({
@@ -760,9 +755,9 @@ export class ReviewsService {
             }
           }
         }
-        let fileUUID: string;
+
         if (file) {
-          fileUUID = updateReviewDto.fileUUID ? updateReviewDto.fileUUID : file.uuid;
+          fileUUID = file.uuid;
         }
 
         return await tx.review.update({
