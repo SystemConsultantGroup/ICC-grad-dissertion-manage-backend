@@ -271,9 +271,8 @@ export class ProfessorsService {
       );
       return result;
     } catch (error) {
-      console.log(error);
       if (error.status === 400) throw new BadRequestException(error.message);
-      else throw new InternalServerErrorException(error);
+      else throw new InternalServerErrorException("엑셀 파일 업로드에 실패했습니다.");
     }
   }
 
