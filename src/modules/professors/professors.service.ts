@@ -220,6 +220,17 @@ export class ProfessorsService {
         professors.map(async (professor, index) => {
           const { loginId, name, password, email, phone, departmentName } = professor;
 
+          // 등록 / 수정 모두 loginId 필수
+          if (!loginId) throw new BadRequestException(`${index + 2}번째 줄의 아이디를 입력해주세요.`);
+
+          const existingUser = await this.prismaService.user.findUnique({
+            where: { loginId },
+          });
+
+          // 등록 유저인 경우 비밀번호 필수
+          if (!existingUser && !password)
+            throw new BadRequestException(`${index + 2}번째 줄의 비밀번호를 입력해주세요.`);
+
           let dept;
           if (departmentName) {
             dept = await this.prismaService.department.findFirst({
