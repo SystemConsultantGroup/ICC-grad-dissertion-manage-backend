@@ -1,4 +1,3 @@
-import { FilesService } from "./../files/files.service";
 import { ReviewerRoleQuery, UpdateReviewerQueryDto } from "./dtos/update-reviewer-query-dto";
 import { ThesisInfoQueryDto, ThesisQueryType } from "./dtos/thesis-info-query.dto";
 import {
@@ -30,8 +29,7 @@ import { UpdateSystemDto } from "./dtos/update-system.dto";
 export class StudentsService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly authService: AuthService,
-    private readonly fileService: FilesService
+    private readonly authService: AuthService
   ) {}
 
   // 학생 생성 API
