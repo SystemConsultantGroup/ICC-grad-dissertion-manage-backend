@@ -660,7 +660,7 @@ export class ReviewsService {
   async updateReview(id: number, updateReviewDto: UpdateReviewReqDto, user: User) {
     const userId = user.id;
     const userType = user.type;
-    const fileUUID = updateReviewDto.fileUUID;
+    let fileUUID = updateReviewDto.fileUUID;
     const foundReview = await this.prismaService.review.findUnique({
       where: {
         id,
@@ -691,13 +691,8 @@ export class ReviewsService {
       },
     });
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
-    if (userType == UserType.PROFESSOR) {
-      if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
-      if (
-        (foundReview.contentStatus == Status.PASS || foundReview.contentStatus == Status.FAIL) &&
-        (foundReview.presentationStatus == Status.PASS || foundReview.presentationStatus == Status.FAIL)
-      )
-        throw new BadRequestException("수정 불가능한 논문심사입니다.");
+    if (userType == UserType.PROFESSOR && foundReview.reviewerId != userId) {
+      throw new BadRequestException("본인의 논문 심사가 아닙니다.");
     }
     if (fileUUID) {
       const foundFile = await this.prismaService.file.findUnique({
@@ -707,6 +702,8 @@ export class ReviewsService {
       });
       if (!foundFile) throw new NotFoundException("존재하지 않는 심사파일입니다.");
     }
+    const isMain = foundReview.thesisInfo.stage == Stage.MAIN ? true : false;
+
     try {
       const review = await this.prismaService.$transaction(async (tx) => {
         let file;
@@ -735,7 +732,8 @@ export class ReviewsService {
                 "$심사위원:성명": foundReview.reviewer.name,
                 $서명: foundReview.reviewer.signId,
               };
-            }
+              file = await this.buildReportPdf(tx, foundReview.id, replacer, isMain);
+            } //내용심사 & 구두심사 중 하나라도 보류중인 경우 파일생성없이 comment와 상태만 업데이트
           } else if (foundReview.thesisInfo.stage == Stage.PRELIMINARY) {
             // 예심 (=내용 심사 only)
             if (updateReviewDto.contentStatus == Status.PASS || updateReviewDto.contentStatus == Status.FAIL) {
@@ -753,12 +751,15 @@ export class ReviewsService {
                 "$심사위원:성명": foundReview.reviewer.name,
                 $서명: foundReview.reviewer.signId,
               };
+              file = await this.buildReportPdf(tx, foundReview.id, replacer, isMain);
             }
           }
-          const isMain = foundReview.thesisInfo.stage == Stage.MAIN ? true : false;
-          file = await this.buildReportPdf(tx, foundReview.id, replacer, isMain);
         }
-        const fileUUID = updateReviewDto.fileUUID ? updateReviewDto.fileUUID : file.uuid;
+
+        if (file) {
+          fileUUID = file.uuid;
+        }
+
         return await tx.review.update({
           where: {
             id,
