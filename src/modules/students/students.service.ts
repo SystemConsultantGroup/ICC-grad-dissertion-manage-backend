@@ -445,38 +445,35 @@ export class StudentsService {
                 const currentHeadReviewer = currentReviewers.filter(
                   (reviewer) => reviewer.role === Role.COMMITTEE_CHAIR
                 )[0];
-                if (headReviewerId && headReviewerId !== currentHeadReviewer.id) {
+                if (headReviewerId && headReviewerId !== currentHeadReviewer.reviewerId) {
                   // 심사위원장 교체
-                  // 기존 심사위원장의 review 삭제 (soft delete)
-                  await tx.review.updateMany({
+                  // 기존 심사위원장 리뷰 삭제 (hard delete)
+                  await tx.review.deleteMany({
                     where: {
                       reviewerId: currentHeadReviewer.reviewerId,
                       thesisInfo: {
                         processId: process.id,
+                        OR: [
+                          { stage: foundStudent.studentProcess.currentPhase }, // 본심 단계에서 교수 정보 수정할 때 예심 단계의 review 삭제 방지
+                          { stage: Stage.REVISION },
+                        ],
                       },
                     },
-                    data: {
-                      thesisInfoId: null,
-                      reviewerId: null,
-                    },
                   });
-
                   // process 수정
                   await tx.process.update({
                     where: { id: process.id },
                     data: { headReviewerId },
                   });
-
                   // reviewer 수정
                   await tx.reviewer.update({
                     where: { id: currentHeadReviewer.id },
                     data: { reviewerId: headReviewerId },
                   });
-
                   // review 생성
                   // 존재하는 논문 정보에 대해 review data 미리 정리
                   const reviewData = [];
-                  if (preThesisInfo) {
+                  if (process.currentPhase === Stage.PRELIMINARY) {
                     reviewData.push(
                       // 예심 심사
                       {
@@ -496,7 +493,7 @@ export class StudentsService {
                       }
                     );
                   }
-                  if (mainThesisInfo) {
+                  if (process.currentPhase === Stage.MAIN) {
                     reviewData.push(
                       // 본심 심사
                       {
@@ -515,54 +512,59 @@ export class StudentsService {
                         isFinal: true,
                       }
                     );
-                  }
-                  if (revisionThesisInfo) {
-                    reviewData.push(
-                      // 수정지시사항 반영 확인
-                      {
-                        thesisInfoId: revisionThesisInfo.id,
-                        reviewerId: headReviewerId,
-                        contentStatus: ReviewStatus.UNEXAMINED,
-                        presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
-                        isFinal: false,
-                      }
-                    );
+                    if (revisionThesisInfo) {
+                      // 수정 지시사항 정보 까지 있다면 같이 추가
+                      reviewData.push(
+                        // 수정지시사항 반영 확인
+                        {
+                          thesisInfoId: revisionThesisInfo.id,
+                          reviewerId: headReviewerId,
+                          contentStatus: ReviewStatus.UNEXAMINED,
+                          presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
+                          isFinal: false,
+                        }
+                      );
+                    }
                   }
                   await tx.review.createMany({
                     data: reviewData,
                   });
                 }
+
                 // 지도 교수를 변경하는지 확인
                 if (advisorIds.length !== 0) {
                   const currentAdvisorIds = currentReviewers
                     .filter((reviewer) => reviewer.role === Role.ADVISOR)
-                    .map((advisor) => advisor.id);
+                    .map((advisor) => advisor.reviewerId);
+                  const deleteAdvisorIds = currentAdvisorIds.filter((id) => !advisorIds.includes(id)); // 현재 지도교수 중 삭제될 지도교수
+                  const newAdvisorIds = advisorIds.filter((id) => !currentAdvisorIds.includes(id)); // 새롭게 추가될 지도교수
 
                   // 지도 교수 삭제
-                  const deleteAdvisorIds = currentAdvisorIds.filter((id) => !advisorIds.includes(id)); // 현재 지도교수 중 삭제될 지도교수
-                  if (deleteAdvisorIds) {
-                    // review 삭제 (soft delete)
-                    await tx.review.updateMany({
+                  if (deleteAdvisorIds.length !== 0) {
+                    // review 삭제 (hard delete)
+                    await tx.review.deleteMany({
                       where: {
                         reviewerId: { in: deleteAdvisorIds },
-                        thesisInfo: { processId: process.id },
-                      },
-                      data: {
-                        thesisInfoId: null,
-                        reviewerId: null,
+                        thesisInfo: {
+                          processId: process.id,
+                          OR: [
+                            { stage: foundStudent.studentProcess.currentPhase }, // 본심 단계에서 교수 정보 수정할 때 예심 단계의 review 삭제 방지
+                            { stage: Stage.REVISION },
+                          ],
+                        },
                       },
                     });
+                    // reviewer(지도 관계) 삭제
                     await tx.reviewer.deleteMany({
                       where: {
-                        id: { in: deleteAdvisorIds },
+                        reviewerId: { in: deleteAdvisorIds },
                         processId: process.id,
                       },
                     });
                   }
 
                   // 지도 교수 추가
-                  const newAdvisorIds = advisorIds.filter((id) => !currentAdvisorIds.includes(id)); // 새롭게 추가될 지도교수
-                  if (newAdvisorIds) {
+                  if (newAdvisorIds.length !== 0) {
                     // reviewer 생성
                     await tx.reviewer.createMany({
                       data: newAdvisorIds.map((id) => {
@@ -576,7 +578,7 @@ export class StudentsService {
                     // review 생성
                     // 존재하는 논문 정보에 대해 review data 미리 정리
                     const reviewData = [];
-                    if (preThesisInfo) {
+                    if (process.currentPhase === Stage.PRELIMINARY) {
                       reviewData.push(
                         ...newAdvisorIds.map((id) => {
                           return {
@@ -589,7 +591,7 @@ export class StudentsService {
                         })
                       );
                     }
-                    if (mainThesisInfo) {
+                    if (process.currentPhase === Stage.MAIN) {
                       reviewData.push(
                         ...newAdvisorIds.map((id) => {
                           return {
@@ -601,19 +603,20 @@ export class StudentsService {
                           };
                         })
                       );
-                    }
-                    if (revisionThesisInfo) {
-                      reviewData.push(
-                        ...newAdvisorIds.map((id) => {
-                          return {
-                            thesisInfoId: revisionThesisInfo.id,
-                            reviewerId: id,
-                            contentStatus: ReviewStatus.UNEXAMINED,
-                            presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
-                            isFinal: false,
-                          };
-                        })
-                      );
+                      if (revisionThesisInfo) {
+                        // 수정지시사항 정보도 있으면 같이 추가
+                        reviewData.push(
+                          ...newAdvisorIds.map((id) => {
+                            return {
+                              thesisInfoId: revisionThesisInfo.id,
+                              reviewerId: id,
+                              contentStatus: ReviewStatus.UNEXAMINED,
+                              presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
+                              isFinal: false,
+                            };
+                          })
+                        );
+                      }
                     }
                     // review 생성
                     await tx.review.createMany({
@@ -621,37 +624,41 @@ export class StudentsService {
                     });
                   }
                 }
-                // 심사위원이 변경됐는지 확인
+
+                // 심사위원을 변경하는지 확인
                 if (committeeIds.length !== 0) {
                   const currentCommitteeIds = currentReviewers
                     .filter((reviewer) => reviewer.role === Role.COMMITTEE_MEMBER)
-                    .map((committee) => committee.id);
+                    .map((committee) => committee.reviewerId);
                   const deleteCommitteeIds = currentCommitteeIds.filter((id) => !committeeIds.includes(id)); // 현재 심사위원 중 삭제될 심사위원
                   const newCommitteeIds = committeeIds.filter((id) => !currentCommitteeIds.includes(id)); // 새롭게 추가될 심사위원
 
                   // 심사위원 삭제
-                  if (deleteCommitteeIds) {
-                    // review 삭제 (soft delete)
-                    await tx.review.updateMany({
+                  if (deleteCommitteeIds.length !== 0) {
+                    // review 삭제 (hard delete)
+                    await tx.review.deleteMany({
                       where: {
                         reviewerId: { in: deleteCommitteeIds },
-                        thesisInfo: { processId: process.id },
-                      },
-                      data: {
-                        thesisInfoId: null,
-                        reviewerId: null,
+                        thesisInfo: {
+                          processId: process.id,
+                          OR: [
+                            { stage: foundStudent.studentProcess.currentPhase }, // 본심 단계에서 교수 정보 수정할 때 예심 단계의 review 삭제 방지
+                            { stage: Stage.REVISION },
+                          ],
+                        },
                       },
                     });
+                    // reviewer(지도 관계) 삭제
                     await tx.reviewer.deleteMany({
                       where: {
-                        id: { in: deleteCommitteeIds },
+                        reviewerId: { in: deleteCommitteeIds },
                         processId: process.id,
                       },
                     });
                   }
 
                   // 심사위원 추가
-                  if (newCommitteeIds) {
+                  if (newCommitteeIds.length !== 0) {
                     // reviewer 생성
                     await tx.reviewer.createMany({
                       data: newCommitteeIds.map((id) => {
@@ -665,7 +672,7 @@ export class StudentsService {
                     // review 생성
                     // 존재하는 논문 정보에 대해 review data 미리 정리
                     const reviewData = [];
-                    if (preThesisInfo) {
+                    if (process.currentPhase === Stage.PRELIMINARY) {
                       reviewData.push(
                         ...newCommitteeIds.map((id) => {
                           return {
@@ -678,7 +685,7 @@ export class StudentsService {
                         })
                       );
                     }
-                    if (mainThesisInfo) {
+                    if (process.currentPhase === Stage.MAIN) {
                       reviewData.push(
                         ...newCommitteeIds.map((id) => {
                           return {
@@ -690,19 +697,20 @@ export class StudentsService {
                           };
                         })
                       );
-                    }
-                    if (revisionThesisInfo) {
-                      reviewData.push(
-                        ...newCommitteeIds.map((id) => {
-                          return {
-                            thesisInfoId: revisionThesisInfo.id,
-                            reviewerId: id,
-                            contentStatus: ReviewStatus.UNEXAMINED,
-                            presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
-                            isFinal: false,
-                          };
-                        })
-                      );
+                      if (revisionThesisInfo) {
+                        // 수정지시사항 정보 있으면 같이 추가
+                        reviewData.push(
+                          ...newCommitteeIds.map((id) => {
+                            return {
+                              thesisInfoId: revisionThesisInfo.id,
+                              reviewerId: id,
+                              contentStatus: ReviewStatus.UNEXAMINED,
+                              presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
+                              isFinal: false,
+                            };
+                          })
+                        );
+                      }
                     }
                     // review 생성
                     await tx.review.createMany({
@@ -1741,7 +1749,7 @@ export class StudentsService {
         const revisionThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.REVISION)[0];
         // 존재하는 논문 정보에 대해 review data 미리 정리
         const reviewData = [];
-        if (preThesisInfo) {
+        if (foundStudent.studentProcess.currentPhase === Stage.PRELIMINARY) {
           reviewData.push({
             thesisInfoId: preThesisInfo.id,
             reviewerId,
@@ -1750,7 +1758,7 @@ export class StudentsService {
             isFinal: false,
           });
         }
-        if (mainThesisInfo) {
+        if (foundStudent.studentProcess.currentPhase === Stage.MAIN) {
           reviewData.push({
             thesisInfoId: mainThesisInfo.id,
             reviewerId,
@@ -1758,15 +1766,16 @@ export class StudentsService {
             presentationStatus: ReviewStatus.UNEXAMINED,
             isFinal: false,
           });
-        }
-        if (revisionThesisInfo) {
-          reviewData.push({
-            thesisInfoId: revisionThesisInfo.id,
-            reviewerId,
-            contentStatus: ReviewStatus.UNEXAMINED,
-            presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
-            isFinal: false,
-          });
+          if (revisionThesisInfo) {
+            // 수정 지시 사항 단계가 있는 경우
+            reviewData.push({
+              thesisInfoId: revisionThesisInfo.id,
+              reviewerId,
+              contentStatus: ReviewStatus.UNEXAMINED,
+              presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
+              isFinal: false,
+            });
+          }
         }
         // review 생성
         await tx.review.createMany({
@@ -1838,20 +1847,20 @@ export class StudentsService {
     if (reviewerList.length < 2)
       throw new BadRequestException(`${foundReviewer.role}이 2명일 때만 배정 취소가 가능합니다.`);
 
-    // 배정 취소
+    // 배정 취소 (review, reviewer 삭제)
     try {
       await this.prismaService.$transaction(async (tx) => {
-        // review 삭제 (soft delete)
-        await tx.review.updateMany({
+        // review 삭제 (hard delete)
+        await tx.review.deleteMany({
           where: {
             reviewerId,
             thesisInfo: {
               processId: process.id,
+              OR: [
+                { stage: foundStudent.studentProcess.currentPhase }, // 본심 단계에서 교수 정보 수정할 때 예심 단계의 review 삭제 방지
+                { stage: Stage.REVISION },
+              ],
             },
-          },
-          data: {
-            thesisInfoId: null,
-            reviewerId: null,
           },
         });
         await tx.reviewer.delete({
@@ -1925,17 +1934,17 @@ export class StudentsService {
     // 심사위원장 교체
     try {
       await this.prismaService.$transaction(async (tx) => {
-        // 기존 심사위원장의 review 삭제 (soft delete)
-        await tx.review.updateMany({
+        // 기존 심사위원장의 review 삭제 (hard delete)
+        await tx.review.deleteMany({
           where: {
             reviewerId: currentHeadReviewer.reviewerId,
             thesisInfo: {
               processId: process.id,
+              OR: [
+                { stage: foundStudent.studentProcess.currentPhase }, // 본심 단계에서 교수 정보 수정할 때 예심 단계의 review 삭제 방지
+                { stage: Stage.REVISION },
+              ],
             },
-          },
-          data: {
-            thesisInfoId: null,
-            reviewerId: null,
           },
         });
 
@@ -1958,7 +1967,7 @@ export class StudentsService {
         const revisionThesisInfo = process.thesisInfos.filter((thesisInfo) => thesisInfo.stage === Stage.REVISION)[0];
         // 존재하는 논문 정보에 대해 review data 미리 정리
         const reviewData = [];
-        if (preThesisInfo) {
+        if (foundStudent.studentProcess.currentPhase === Stage.PRELIMINARY) {
           reviewData.push(
             // 예심 심사
             {
@@ -1978,7 +1987,7 @@ export class StudentsService {
             }
           );
         }
-        if (mainThesisInfo) {
+        if (foundStudent.studentProcess.currentPhase === Stage.MAIN) {
           reviewData.push(
             // 본심 심사
             {
@@ -1997,19 +2006,21 @@ export class StudentsService {
               isFinal: true,
             }
           );
+          if (revisionThesisInfo) {
+            // 수정 지시사항 정보 까지 있다면
+            reviewData.push(
+              // 수정지시사항 반영 확인
+              {
+                thesisInfoId: revisionThesisInfo.id,
+                reviewerId: headReviewerId,
+                contentStatus: ReviewStatus.UNEXAMINED,
+                presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
+                isFinal: false,
+              }
+            );
+          }
         }
-        if (revisionThesisInfo) {
-          reviewData.push(
-            // 수정지시사항 반영 확인
-            {
-              thesisInfoId: revisionThesisInfo.id,
-              reviewerId: headReviewerId,
-              contentStatus: ReviewStatus.UNEXAMINED,
-              presentationStatus: ReviewStatus.PASS, // 수정지시사항 단계 구두 심사 없음
-              isFinal: false,
-            }
-          );
-        }
+
         await tx.review.createMany({
           data: reviewData,
         });
@@ -2038,18 +2049,45 @@ export class StudentsService {
   }
 
   async deleteStudentsList() {
+    // 논문 파일, 서명 파일 가져오기
+
+    // 학생 데이터 모두 삭제 (Hard delete)
+    // cascade로 삭제되는 연관된 데이터들 : Achivements, Process, Reviewers, ThesisInfos, Reviews, ThesisFiles
     try {
-      return await this.prismaService.user.updateMany({
+      await this.prismaService.user.deleteMany({
+        where: { type: UserType.STUDENT },
+      });
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException("학생 삭제 오류 발생");
+    }
+  }
+
+  async deleteStudent(studentId: number) {
+    // 학생 아이디 확인
+    const student = await this.prismaService.user.findUnique({
+      where: {
+        id: studentId,
+        type: UserType.STUDENT,
+        deletedAt: null,
+      },
+    });
+    if (!student) {
+      throw new BadRequestException("해당하는 학생을 찾을 수 없습니다.");
+    }
+
+    // 학생 데이터 모두 삭제 (Hard delete)
+    // cascade로 삭제되는 연관된 데이터들 : Achivements, Process, Reviewers, ThesisInfos, Reviews, ThesisFiles
+    try {
+      await this.prismaService.user.delete({
         where: {
+          id: studentId,
           type: UserType.STUDENT,
-          deletedAt: null,
-        },
-        data: {
-          deletedAt: DateUtil.getCurrentTime().fullDateTime,
         },
       });
-    } catch (e) {
-      throw new InternalServerErrorException("학생 목록 삭제에 실패했습니다.");
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException("학생 삭제 오류 발생");
     }
   }
 }

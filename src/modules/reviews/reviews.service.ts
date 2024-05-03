@@ -1096,6 +1096,7 @@ export class ReviewsService {
             ) {
               // 심사 완료일 경우에만 파일 업데이트임
               replacer = {
+                $학과: foundReview.thesisInfo.process.student.department.name,
                 $학번: foundReview.thesisInfo.process.student.loginId,
                 $이름: foundReview.thesisInfo.process.student.name,
                 $논문제목: foundReview.thesisInfo.title,
@@ -1149,6 +1150,7 @@ export class ReviewsService {
             ) {
               // 심사 완료일 경우에만 파일 업데이트임
               replacer = {
+                $학과: foundReview.thesisInfo.process.student.department.name,
                 $학번: foundReview.thesisInfo.process.student.loginId,
                 $이름: foundReview.thesisInfo.process.student.name,
                 $논문제목: foundReview.thesisInfo.title,
