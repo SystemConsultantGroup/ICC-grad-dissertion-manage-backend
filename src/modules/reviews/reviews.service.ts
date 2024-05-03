@@ -257,6 +257,8 @@ export class ReviewsService {
             formatHtml = formatHtml.replaceAll("$row", "");
           }
 
+          for (let i = 0; i < 2; i++) formatHtml = formatHtml.replaceAll("$row", "");
+
           const key = v1();
           const createdAt = new Date();
           await convertHTMLToPDF(formatHtml, async (pdf) => {
@@ -1113,13 +1115,15 @@ export class ReviewsService {
                 for (const reviewer of foundReview.thesisInfo.process.reviewers) {
                   if (singleReview.reviewerId == reviewer.reviewerId) {
                     if (reviewer.role == Role.COMMITTEE_CHAIR) {
-                      replacer["$심사위원장"].push({
-                        $성명: singleReview.reviewer.name,
-                        "$내용:합격": singleReview.contentStatus ? "O" : "",
-                        "$내용:불합격": singleReview.contentStatus ? "" : "O",
-                        "$구두:합격": singleReview.presentationStatus ? "O" : "",
-                        "$구두:불합격": singleReview.presentationStatus ? "" : "O",
-                      });
+                      if (singleReview.isFinal) {
+                        replacer["$심사위원장"].push({
+                          $성명: singleReview.reviewer.name,
+                          "$내용:합격": singleReview.contentStatus ? "O" : "",
+                          "$내용:불합격": singleReview.contentStatus ? "" : "O",
+                          "$구두:합격": singleReview.presentationStatus ? "O" : "",
+                          "$구두:불합격": singleReview.presentationStatus ? "" : "O",
+                        });
+                      }
                     } else if (reviewer.role == Role.COMMITTEE_MEMBER) {
                       replacer["$심사위원"].push({
                         $성명: singleReview.reviewer.name,
@@ -1167,11 +1171,13 @@ export class ReviewsService {
                 for (const reviewer of foundReview.thesisInfo.process.reviewers) {
                   if (singleReview.reviewerId == reviewer.reviewerId) {
                     if (reviewer.role == Role.COMMITTEE_CHAIR) {
-                      replacer["$심사위원장"].push({
-                        $성명: singleReview.reviewer.name,
-                        $합격: singleReview.contentStatus ? "O" : "",
-                        $불합격: singleReview.contentStatus ? "" : "O",
-                      });
+                      if (singleReview.isFinal) {
+                        replacer["$심사위원장"].push({
+                          $성명: singleReview.reviewer.name,
+                          $합격: singleReview.contentStatus ? "O" : "",
+                          $불합격: singleReview.contentStatus ? "" : "O",
+                        });
+                      }
                     } else if (reviewer.role == Role.COMMITTEE_MEMBER) {
                       replacer["$심사위원"].push({
                         $성명: singleReview.reviewer.name,
