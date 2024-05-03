@@ -2038,18 +2038,45 @@ export class StudentsService {
   }
 
   async deleteStudentsList() {
+    // 논문 파일, 서명 파일 가져오기
+
+    // 학생 데이터 모두 삭제 (Hard delete)
+    // cascade로 삭제되는 연관된 데이터들 : Achivements, Process, Reviewers, ThesisInfos, Reviews, ThesisFiles
     try {
-      return await this.prismaService.user.updateMany({
+      await this.prismaService.user.deleteMany({
+        where: { type: UserType.STUDENT },
+      });
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException("학생 삭제 오류 발생");
+    }
+  }
+
+  async deleteStudent(studentId: number) {
+    // 학생 아이디 확인
+    const student = await this.prismaService.user.findUnique({
+      where: {
+        id: studentId,
+        type: UserType.STUDENT,
+        deletedAt: null,
+      },
+    });
+    if (!student) {
+      throw new BadRequestException("해당하는 학생을 찾을 수 없습니다.");
+    }
+
+    // 학생 데이터 모두 삭제 (Hard delete)
+    // cascade로 삭제되는 연관된 데이터들 : Achivements, Process, Reviewers, ThesisInfos, Reviews, ThesisFiles
+    try {
+      await this.prismaService.user.delete({
         where: {
+          id: studentId,
           type: UserType.STUDENT,
-          deletedAt: null,
-        },
-        data: {
-          deletedAt: DateUtil.getCurrentTime().fullDateTime,
         },
       });
-    } catch (e) {
-      throw new InternalServerErrorException("학생 목록 삭제에 실패했습니다.");
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException("학생 삭제 오류 발생");
     }
   }
 }
