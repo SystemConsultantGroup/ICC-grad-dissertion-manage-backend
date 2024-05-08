@@ -433,10 +433,12 @@ export class StudentsService {
                     where: { id: mainThesisInfo.id },
                     data: { title: thesisTitle },
                   });
-                  await tx.thesisInfo.update({
-                    where: { id: revisionThesisInfo.id },
-                    data: { title: thesisTitle },
-                  });
+                  if (revisionThesisInfo) {
+                    await tx.thesisInfo.update({
+                      where: { id: revisionThesisInfo.id },
+                      data: { title: thesisTitle },
+                    });
+                  }
                 }
 
                 // 지도 정보 수정 (reviewer, review)
@@ -1606,7 +1608,6 @@ export class StudentsService {
             // 수정지시사항 논문 정보 업데이트 : 수정 지시시항 포함 학과만!!
             await tx.thesisInfo.update({
               where: { id: revisionThesisInfo.id },
-              // where: { id: revisionThesisInfo.id },
               data: {
                 title,
                 abstract,
