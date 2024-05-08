@@ -1601,9 +1601,10 @@ export class StudentsService {
               },
             },
           }),
-          // 수정지시사항 논문 정보 업데이트
+
+          // 수정지시사항 논문 정보 업데이트 : 수정 지시시항 포함 학과만!!
           this.prismaService.thesisInfo.update({
-            where: { id: revisionThesisInfo.id },
+            where: { id: revisionThesisInfo ? revisionThesisInfo.id : undefined },
             data: {
               title,
               abstract,
