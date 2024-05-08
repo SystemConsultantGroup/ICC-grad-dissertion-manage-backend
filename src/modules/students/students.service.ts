@@ -1572,9 +1572,9 @@ export class StudentsService {
           (thesisFile) => thesisFile.type === ThesisFileType.PRESENTATION
         )[0];
 
-        const [thesisInfo] = await this.prismaService.$transaction([
+        const thesisInfo = await this.prismaService.$transaction(async (tx) => {
           // 본심 논문 정보 업데이트
-          this.prismaService.thesisInfo.update({
+          const thesisData = await tx.thesisInfo.update({
             where: { id: mainThesisInfo.id },
             data: {
               title,
@@ -1600,18 +1600,22 @@ export class StudentsService {
                 include: { file: true },
               },
             },
-          }),
+          });
 
-          // 수정지시사항 논문 정보 업데이트 : 수정 지시시항 포함 학과만!!
-          this.prismaService.thesisInfo.update({
-            where: { id: revisionThesisInfo ? revisionThesisInfo.id : undefined },
-            data: {
-              title,
-              abstract,
-            },
-          }),
-        ]);
+          if (revisionThesisInfo) {
+            // 수정지시사항 논문 정보 업데이트 : 수정 지시시항 포함 학과만!!
+            await tx.thesisInfo.update({
+              where: { id: revisionThesisInfo.id },
+              // where: { id: revisionThesisInfo.id },
+              data: {
+                title,
+                abstract,
+              },
+            });
+          }
 
+          return thesisData;
+        });
         return thesisInfo;
       } // 수정 지시사항 반영 단계일 경우
       else if (currentStage === Stage.REVISION) {
