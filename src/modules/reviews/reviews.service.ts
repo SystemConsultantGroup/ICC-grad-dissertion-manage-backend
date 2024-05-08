@@ -1082,10 +1082,13 @@ export class ReviewsService {
         thesisInfoId: foundReview.thesisInfoId,
       },
     });
-    const submitted = otherReviews.filter((review) => {
-      return review.contentStatus == Status.FAIL || review.contentStatus == Status.PASS;
+    const notSubmitted = otherReviews.filter((review) => {
+      if (review.contentStatus == Status.FAIL || review.contentStatus == Status.PASS) {
+        return false;
+      }
+      return true;
     });
-    if (submitted.length != 0) throw new BadRequestException("심사가 완료되지 않았습니다.");
+    if (notSubmitted.length != 0) throw new BadRequestException("심사가 완료되지 않았습니다.");
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
     if (userType == UserType.PROFESSOR) {
       if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
