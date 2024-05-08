@@ -109,7 +109,7 @@ export class ThesesService {
           }),
           // 수정지시사항 논문 정보 업데이트
           this.prismaService.thesisInfo.update({
-            where: { id: revisionThesisInfo.id },
+            where: { id: revisionThesisInfo ? revisionThesisInfo.id : undefined },
             data: {
               title,
               abstract,
