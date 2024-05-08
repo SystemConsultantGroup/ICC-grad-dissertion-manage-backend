@@ -679,6 +679,7 @@ export class ReviewsService {
         reviewer: true,
         thesisInfo: {
           include: {
+            thesisFiles: true,
             process: {
               include: {
                 student: {
@@ -692,6 +693,12 @@ export class ReviewsService {
         },
       },
     });
+    const submitted = foundReview.thesisInfo.thesisFiles.filter((file) => {
+      return file.fileId == null;
+    });
+    if (submitted.length != 0) {
+      throw new BadRequestException("논문 제출이 완료되지 않은 학생은 심사할 수 없습니다.");
+    }
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
     if (userType == UserType.PROFESSOR && foundReview.reviewerId != userId) {
       throw new BadRequestException("본인의 논문 심사가 아닙니다.");
@@ -1070,6 +1077,15 @@ export class ReviewsService {
         },
       },
     });
+    const otherReviews = await this.prismaService.review.findMany({
+      where: {
+        thesisInfoId: foundReview.thesisInfoId,
+      },
+    });
+    const submitted = otherReviews.filter((review) => {
+      return review.contentStatus == Status.FAIL || review.contentStatus == Status.PASS;
+    });
+    if (submitted.length != 0) throw new BadRequestException("심사가 완료되지 않았습니다.");
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
     if (userType == UserType.PROFESSOR) {
       if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
