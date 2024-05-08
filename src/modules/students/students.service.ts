@@ -1723,15 +1723,6 @@ export class StudentsService {
     });
     if (foundReviewer) throw new BadRequestException("이미 해당 학생에 배정된 교수입니다.");
 
-    // 인원수 초과 확인
-    const currentReviewers = await this.prismaService.reviewer.findMany({
-      where: {
-        processId: process.id,
-        role,
-      },
-    });
-    if (currentReviewers.length === 2) throw new BadRequestException(`${role}가 이미 2명이므로 추가할 수 없습니다.`);
-
     try {
       await this.prismaService.$transaction(async (tx) => {
         // reviewer 생성
@@ -1836,16 +1827,6 @@ export class StudentsService {
 
     // 심사위원장인지 확인
     if (process.headReviewerId === reviewerId) throw new BadRequestException("심사위원장은 배정 취소할 수 없습니다.");
-
-    // 해당 역할의 교수가 2명인지 확인
-    const reviewerList = await this.prismaService.reviewer.findMany({
-      where: {
-        processId: process.id,
-        role: foundReviewer.role,
-      },
-    });
-    if (reviewerList.length < 2)
-      throw new BadRequestException(`${foundReviewer.role}이 2명일 때만 배정 취소가 가능합니다.`);
 
     // 배정 취소 (review, reviewer 삭제)
     try {
