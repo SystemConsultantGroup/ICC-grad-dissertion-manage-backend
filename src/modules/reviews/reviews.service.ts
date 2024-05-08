@@ -697,7 +697,7 @@ export class ReviewsService {
       return file.fileId == null;
     });
     if (submitted.length != 0) {
-      throw new BadRequestException("논문 제출이 완료되지 않은 학생은 심사할 수 없습니다.");
+      throw new BadRequestException("미제출파일이 있는 학생은 심사할 수 없습니다.");
     }
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
     if (userType == UserType.PROFESSOR && foundReview.reviewerId != userId) {
@@ -1080,6 +1080,7 @@ export class ReviewsService {
     const otherReviews = await this.prismaService.review.findMany({
       where: {
         thesisInfoId: foundReview.thesisInfoId,
+        isFinal: true,
       },
     });
     const notSubmitted = otherReviews.filter((review) => {
