@@ -1028,7 +1028,7 @@ export class StudentsService {
         return students;
       },
       {
-        timeout: 10000,
+        timeout: 40000,
       }
     );
   }
