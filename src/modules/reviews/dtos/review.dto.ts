@@ -71,6 +71,7 @@ export class OtherReviewDto {
     this.name = otherReview.reviewer.name;
     this.presentationResult = otherReview.presentationStatus;
     this.contentResult = otherReview.contentStatus;
+    this.comment = otherReview.comment;
     if (otherReview.file) this.file = otherReview.file;
     else this.file = null;
   }
@@ -83,6 +84,9 @@ export class OtherReviewDto {
 
   @ApiProperty({ description: "구두 심사결과", enum: Summary })
   contentResult: Summary;
+
+  @ApiProperty({ description: "심사 의견" })
+  comment: string;
 
   @ApiProperty({ description: "심사 의견 파일" })
   file: File;
