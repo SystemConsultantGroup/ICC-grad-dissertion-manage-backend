@@ -1525,7 +1525,7 @@ export class ReviewsService {
         },
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
-        summary: { in: [Summary.PENDING, Summary.UNEXAMINED] },
+        // summary: { in: [Summary.PENDING, Summary.UNEXAMINED] },
       },
       include: {
         process: {
