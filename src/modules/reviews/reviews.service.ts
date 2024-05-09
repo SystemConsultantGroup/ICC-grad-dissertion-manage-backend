@@ -1080,7 +1080,7 @@ export class ReviewsService {
     const otherReviews = await this.prismaService.review.findMany({
       where: {
         thesisInfoId: foundReview.thesisInfoId,
-        isFinal: true,
+        isFinal: false,
       },
     });
     const notSubmitted = otherReviews.filter((review) => {
