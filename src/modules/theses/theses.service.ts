@@ -36,22 +36,27 @@ export class ThesesService {
           (thesisFile) => thesisFile.type === ThesisFileType.PRESENTATION
         )[0];
 
+        const fileUpdateData = [];
+        if (thesisFileUUID) {
+          fileUpdateData.push({
+            where: { id: preThesisFile.id },
+            data: { fileId: thesisFileUUID },
+          });
+        }
+        if (presentationFileUUID) {
+          fileUpdateData.push({
+            where: { id: prePPTFile.id },
+            data: { fileId: presentationFileUUID },
+          });
+        }
+
         return await this.prismaService.thesisInfo.update({
           where: { id },
           data: {
             title,
             abstract,
             thesisFiles: {
-              update: [
-                {
-                  where: { id: preThesisFile.id },
-                  data: { fileId: thesisFileUUID },
-                },
-                {
-                  where: { id: prePPTFile.id },
-                  data: { fileId: presentationFileUUID },
-                },
-              ],
+              update: fileUpdateData,
             },
           },
           include: {
@@ -78,6 +83,20 @@ export class ThesesService {
           (thesisInfo) => thesisInfo.stage === Stage.REVISION
         )[0];
 
+        const fileUpdateData = [];
+        if (thesisFileUUID) {
+          fileUpdateData.push({
+            where: { id: mainThesisFile.id },
+            data: { fileId: thesisFileUUID },
+          });
+        }
+        if (presentationFileUUID) {
+          fileUpdateData.push({
+            where: { id: mainPPTFile.id },
+            data: { fileId: presentationFileUUID },
+          });
+        }
+
         const thesisInfo = await this.prismaService.$transaction(async (tx) => {
           // 본심 논문 정보 업데이트
           const thesisData = tx.thesisInfo.update({
@@ -86,16 +105,7 @@ export class ThesesService {
               title,
               abstract,
               thesisFiles: {
-                update: [
-                  {
-                    where: { id: mainThesisFile.id },
-                    data: { fileId: thesisFileUUID },
-                  },
-                  {
-                    where: { id: mainPPTFile.id },
-                    data: { fileId: presentationFileUUID },
-                  },
-                ],
+                update: fileUpdateData,
               },
             },
             include: {
@@ -139,6 +149,20 @@ export class ThesesService {
           (thesisInfo) => thesisInfo.stage === Stage.MAIN
         )[0];
 
+        const fileUpdateData = [];
+        if (thesisFileUUID) {
+          fileUpdateData.push({
+            where: { id: revisionThesisFile.id },
+            data: { fileId: thesisFileUUID },
+          });
+        }
+        if (revisionReportFileUUID) {
+          fileUpdateData.push({
+            where: { id: revisionReportFile.id },
+            data: { fileId: presentationFileUUID },
+          });
+        }
+
         const [thesisInfo] = await this.prismaService.$transaction([
           // 수정지시사항 논문 정보 업데이트
           this.prismaService.thesisInfo.update({
@@ -147,16 +171,7 @@ export class ThesesService {
               title,
               abstract,
               thesisFiles: {
-                update: [
-                  {
-                    where: { id: revisionThesisFile.id },
-                    data: { fileId: thesisFileUUID },
-                  },
-                  {
-                    where: { id: revisionReportFile.id },
-                    data: { fileId: revisionReportFileUUID },
-                  },
-                ],
+                update: fileUpdateData,
               },
             },
             include: {
