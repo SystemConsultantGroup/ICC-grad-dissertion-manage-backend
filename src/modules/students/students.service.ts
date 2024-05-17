@@ -1592,7 +1592,7 @@ export class StudentsService {
             data: { fileId: presentationFileUUID },
           });
         }
-
+        
         const thesisInfo = await this.prismaService.$transaction(async (tx) => {
           // 본심 논문 정보 업데이트
           const thesisData = await tx.thesisInfo.update({
