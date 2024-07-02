@@ -94,7 +94,7 @@ export class AchievementsController {
     description: "논문실적 수정 성공",
     type: CommonResponseDto,
   })
-  @UseUserTypeGuard([UserType.STUDENT])
+  @UseUserTypeGuard([UserType.STUDENT, UserType.ADMIN])
   @Put(":id")
   async updateAchievement(
     @Param("id", PositiveIntPipe) id: number,
