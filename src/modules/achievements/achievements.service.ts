@@ -44,7 +44,8 @@ export class AchievementsService {
       },
     });
     if (!foundUser) throw new BadRequestException("해당 논문실적은 존재하지 않습니다.");
-    if (foundUser.userId != user.id) throw new BadRequestException("다른 학생의 논문실적은 수정할수 없습니다.");
+    if (user.type === UserType.STUDENT && foundUser.userId != user.id)
+      throw new BadRequestException("다른 학생의 논문실적은 수정할수 없습니다.");
     const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
       updateAchievementDto;
     try {
