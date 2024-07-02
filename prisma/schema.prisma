@@ -160,8 +160,8 @@ model ThesisFile {
 model Achievements {
   id              Int         @id @default(autoincrement())
   performance     Performance
-  journalName     String      @db.VarChar(100)
-  paperTitle      String      @db.VarChar(100)
+  journalName     String      @db.VarChar(255)
+  paperTitle      String      @db.VarChar(255)
   ISSN            String?     @db.VarChar(15)
   publicationDate DateTime    @db.Date
   authorType      AuthorType
