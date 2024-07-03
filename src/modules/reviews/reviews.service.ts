@@ -1553,7 +1553,7 @@ export class ReviewsService {
         },
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
-        // summary: { in: [Summary.PENDING, Summary.UNEXAMINED] },
+        // summary: { in: [Summary.PENDING, Summary.UNEXAMINED] }, 행정실 요구 사항에 따라 수정
       },
       include: {
         process: {
@@ -1584,16 +1584,16 @@ export class ReviewsService {
     });
     const totalCount = await this.prismaService.thesisInfo.count({
       where: {
-        ...(searchQuery.author && { process: { student: { name: { contains: searchQuery.author } } } }),
         process: {
           student: {
             deletedAt: null,
+            ...(searchQuery.author && { name: { contains: searchQuery.author } }),
             ...(searchQuery.department && { department: { id: searchQuery.department } }),
           },
         },
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
-        summary: { in: [Summary.PENDING, Summary.UNEXAMINED] },
+        // summary: { in: [Summary.PENDING, Summary.UNEXAMINED] }, 행정실 요구 사항에 따라 수정
       },
     });
     return {
@@ -1613,7 +1613,7 @@ export class ReviewsService {
         },
         ...(searchQuery.stage && { stage: searchQuery.stage }),
         ...(searchQuery.title && { title: { contains: searchQuery.title } }),
-        summary: { in: [Summary.PENDING, Summary.UNEXAMINED] },
+        // summary: { in: [Summary.PENDING, Summary.UNEXAMINED] }, 행정실 요구 사항에 따라 수정
       },
       include: {
         process: {
@@ -1638,27 +1638,29 @@ export class ReviewsService {
         },
       },
     });
+  
     const records = results.map((result) => {
       const record = {};
+      record["학번"] = result.process.student.loginId;
       record["저자"] = result.process.student.name;
       record["학과"] = result.process.student.department.name;
       if (result.stage == Stage.MAIN) record["구분"] = "본심";
       else if (result.stage == Stage.PRELIMINARY) record["구분"] = "예심";
       else if (result.stage == Stage.REVISION) record["구분"] = "수정";
       record["논문 제목"] = result.title;
-      record["심사 현황"] = "";
-      result.reviews.forEach((review) => {
-        record["심사 현황"] += review.reviewer.name;
+      result.reviews.forEach((review, idx) => {
+        record[`심사 현황${idx + 1}`] = "";
+        record[`심사 현황${idx + 1}`] += review.reviewer.name;
         result.process.reviewers.forEach((reviewer) => {
           if (reviewer.reviewerId == review.reviewer.id && reviewer.processId == result.processId) {
             if (reviewer.role == Role.ADVISOR) {
-              record["심사 현황"] += "(지도교수)/";
+              record[`심사 현황${idx + 1}`] += "(지도교수)/";
               return;
             } else if (reviewer.role == Role.COMMITTEE_CHAIR) {
-              record["심사 현황"] += "(심사위원장)/";
+              record[`심사 현황${idx + 1}`] += "(심사위원장)/";
               return;
             } else if (reviewer.role == Role.COMMITTEE_MEMBER) {
-              record["심사 현황"] += "(심사위원)/";
+              record[`심사 현황${idx + 1}`] += "(심사위원)/";
               return;
             }
           }
@@ -1669,15 +1671,15 @@ export class ReviewsService {
               review.presentationStatus == Status.PASS) ||
             review.presentationStatus == Status.FAIL
           )
-            record["심사 현황"] += "진행완료  ";
-          else record["심사 현황"] += "진행중  ";
+            record[`심사 현황${idx + 1}`] += "진행완료  ";
+          else record[`심사 현황${idx + 1}`] += "진행중  ";
         } else if (review.isFinal) {
           if (review.contentStatus == Status.PASS || review.contentStatus == Status.FAIL)
-            record["심사 현황"] += "(최종심사)진행완료  ";
-          else record["심사 현황"] += "(최종심사)진행중  ";
+            record[`심사 현황${idx + 1}`] += "(최종심사)진행완료  ";
+          else record[`심사 현황${idx + 1}`] += "(최종심사)진행중  ";
         } else if (result.stage == Stage.REVISION) {
-          if (review.contentStatus == Status.PASS) record["심사 현황"] += "진행완료  ";
-          else record["심사 현황"] += "진행중 ";
+          if (review.contentStatus == Status.PASS) record[`심사 현황${idx + 1}`] += "진행완료  ";
+          else record[`심사 현황${idx + 1}`] += "진행중 ";
         }
       });
       return record;
