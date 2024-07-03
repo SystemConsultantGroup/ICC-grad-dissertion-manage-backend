@@ -9,6 +9,7 @@ export class GetReviewFinalResDto {
     this.id = review.id;
     this.student = review.thesisInfo.process.student.name;
     this.department = review.thesisInfo.process.student.department.name;
+    this.title = review.thesisInfo.title;
     this.abstract = review.thesisInfo.abstract;
     this.thesisFiles = review.thesisInfo.thesisFiles;
     this.status = review.contentStatus;
