@@ -10,6 +10,7 @@ import {
   ThesisFile,
   Reviewer,
   Summary,
+  Role,
 } from "@prisma/client";
 import { ThesisInfoDto } from "./thesis-info.dto";
 import { FileDto } from "src/modules/files/dtos/file.dto";
@@ -29,6 +30,10 @@ export class ReviewDto {
   ) {
     this.id = review.id;
     this.thesisInfo = new ThesisInfoDto(review.thesisInfo);
+    if (review.reviewer && review.thesisInfo)
+      this.reviewerRole = review.thesisInfo.process.reviewers.filter((reviewer) => {
+        if (reviewer.reviewerId === review.reviewer.id) return reviewer;
+      })[0].role;
     if (review.reviewer) this.reviewer = new UserDto(review.reviewer);
     if (review.file) this.file = new FileDto(review.file);
     this.contentStatus = review.contentStatus;
@@ -43,6 +48,8 @@ export class ReviewDto {
   id: number;
   @ApiProperty({ description: "논문정보", type: () => ThesisInfoDto })
   thesisInfo?: ThesisInfoDto;
+  @ApiProperty({ description: "내 심사위원 타입", type: () => ThesisInfoDto })
+  reviewerRole?: Role;
   @ApiProperty({ description: "심사위원", type: () => UserDto })
   reviewer?: UserDto;
   @ApiProperty({ description: "심사정보 파일", type: FileDto })

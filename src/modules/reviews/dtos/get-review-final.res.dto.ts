@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Stage, Status } from "@prisma/client";
+import { Role, Stage, Status } from "@prisma/client";
 import { FileDto } from "src/modules/files/dtos/file.dto";
 import { ReviewDto } from "./review.dto";
 import { ThesisFileDto } from "./thesis-file.dto";
@@ -9,6 +9,7 @@ export class GetReviewFinalResDto {
     this.id = review.id;
     this.student = review.thesisInfo.process.student.name;
     this.department = review.thesisInfo.process.student.department.name;
+    this.reviewerRole = review.reviewerRole;
     this.abstract = review.thesisInfo.abstract;
     this.thesisFiles = review.thesisInfo.thesisFiles;
     this.status = review.contentStatus;
@@ -23,6 +24,8 @@ export class GetReviewFinalResDto {
   title: string;
   @ApiProperty({ description: "논문 저자 (학생)" })
   student: string;
+  @ApiProperty({ description: "내 심사위원 타입" })
+  reviewerRole: Role;
   @ApiProperty({ description: "학과/전공" })
   department: string;
   @ApiProperty({ description: "논문 초록" })
