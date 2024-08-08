@@ -1281,6 +1281,7 @@ export class ReviewsService {
       });
       return new ReviewDto(review);
     } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException("최종 심사정보 수정 오류");
     }
   }
@@ -1638,7 +1639,7 @@ export class ReviewsService {
         },
       },
     });
-  
+
     const records = results.map((result) => {
       const record = {};
       record["학번"] = result.process.student.loginId;
