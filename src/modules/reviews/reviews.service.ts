@@ -64,7 +64,7 @@ export class ReviewsService {
     return fileName;
   }
 
-  async buildResultPdf(tx, reviewId, replacer, isMain) {
+  async buildResultPdf(reviewId, replacer, isMain) {
     const fileName = (isMain ? "" : "예비") + "심사결과보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     try {
@@ -282,7 +282,7 @@ export class ReviewsService {
           });
 
           return resolve(
-            await tx.file.create({
+            await this.prismaService.file.create({
               data: {
                 name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
                 mimeType: "application/pdf",
@@ -299,7 +299,7 @@ export class ReviewsService {
     }
   }
 
-  async buildReportPdf(tx, reviewId, replacer, isMain) {
+  async buildReportPdf(reviewId, replacer, isMain) {
     const fileName = (isMain ? "" : "예비") + "심사보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     try {
@@ -336,7 +336,7 @@ export class ReviewsService {
           });
 
           return resolve(
-            await tx.file.create({
+            await this.prismaService.file.create({
               data: {
                 name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
                 mimeType: "application/pdf",
@@ -721,58 +721,58 @@ export class ReviewsService {
     }
     const isMain = foundReview.thesisInfo.stage == Stage.MAIN ? true : false;
 
+    let file;
+    if (!updateReviewDto.fileUUID) {
+      // 파일 업로드 없음 = 보고서를 자동으로 채워서 만들어야 됨
+      let replacer;
+      if (foundReview.thesisInfo.stage == Stage.MAIN) {
+        // 본심 (=내용 심사 & 구두 심사)
+        if (
+          (updateReviewDto.contentStatus == Status.PASS || updateReviewDto.contentStatus == Status.FAIL) &&
+          (updateReviewDto.presentationStatus == Status.PASS || updateReviewDto.presentationStatus == Status.FAIL)
+        ) {
+          // 심사 완료일 경우에만 파일 업데이트임
+          replacer = {
+            $학과: foundReview.thesisInfo.process.student.department.name,
+            $학번: foundReview.thesisInfo.process.student.loginId,
+            $이름: foundReview.thesisInfo.process.student.name,
+            "$내용:합격": updateReviewDto.contentStatus == Status.PASS ? "O" : "",
+            "$내용:불합격": updateReviewDto.contentStatus == Status.FAIL ? "O" : "",
+            "$구두:합격": updateReviewDto.presentationStatus == Status.PASS ? "O" : "",
+            "$구두:불합격": updateReviewDto.presentationStatus == Status.FAIL ? "O" : "",
+            $심사의견: updateReviewDto.comment.replace(/\n/g, "<br>\n"),
+            $year: getCurrentTime().year.toString(),
+            $month: getCurrentTime().month.toString().padStart(2, "0"),
+            $day: getCurrentTime().date.toString().padStart(2, "0"),
+            "$심사위원:성명": foundReview.reviewer.name,
+            $서명: foundReview.reviewer.signId,
+          };
+          file = await this.buildReportPdf(foundReview.id, replacer, isMain);
+        } //내용심사 & 구두심사 중 하나라도 보류중인 경우 파일생성없이 comment와 상태만 업데이트
+      } else if (foundReview.thesisInfo.stage == Stage.PRELIMINARY) {
+        // 예심 (=내용 심사 only)
+        if (updateReviewDto.contentStatus == Status.PASS || updateReviewDto.contentStatus == Status.FAIL) {
+          // 심사 완료일 경우에만 파일 업데이트임
+          replacer = {
+            $학과: foundReview.thesisInfo.process.student.department.name,
+            $학번: foundReview.thesisInfo.process.student.loginId,
+            $이름: foundReview.thesisInfo.process.student.name,
+            $합격: updateReviewDto.contentStatus == Status.PASS ? "O" : "",
+            $불합격: updateReviewDto.contentStatus == Status.FAIL ? "O" : "",
+            $심사의견: updateReviewDto.comment.replace(/\n/g, "<br>\n"),
+            $year: getCurrentTime().year.toString(),
+            $month: getCurrentTime().month.toString().padStart(2, "0"),
+            $day: getCurrentTime().date.toString().padStart(2, "0"),
+            "$심사위원:성명": foundReview.reviewer.name,
+            $서명: foundReview.reviewer.signId,
+          };
+          file = await this.buildReportPdf(foundReview.id, replacer, isMain);
+        }
+      }
+    }
+
     try {
       const review = await this.prismaService.$transaction(async (tx) => {
-        let file;
-        if (!updateReviewDto.fileUUID) {
-          // 파일 업로드 없음 = 보고서를 자동으로 채워서 만들어야 됨
-          let replacer;
-          if (foundReview.thesisInfo.stage == Stage.MAIN) {
-            // 본심 (=내용 심사 & 구두 심사)
-            if (
-              (updateReviewDto.contentStatus == Status.PASS || updateReviewDto.contentStatus == Status.FAIL) &&
-              (updateReviewDto.presentationStatus == Status.PASS || updateReviewDto.presentationStatus == Status.FAIL)
-            ) {
-              // 심사 완료일 경우에만 파일 업데이트임
-              replacer = {
-                $학과: foundReview.thesisInfo.process.student.department.name,
-                $학번: foundReview.thesisInfo.process.student.loginId,
-                $이름: foundReview.thesisInfo.process.student.name,
-                "$내용:합격": updateReviewDto.contentStatus == Status.PASS ? "O" : "",
-                "$내용:불합격": updateReviewDto.contentStatus == Status.FAIL ? "O" : "",
-                "$구두:합격": updateReviewDto.presentationStatus == Status.PASS ? "O" : "",
-                "$구두:불합격": updateReviewDto.presentationStatus == Status.FAIL ? "O" : "",
-                $심사의견: updateReviewDto.comment.replace(/\n/g, "<br>\n"),
-                $year: getCurrentTime().year.toString(),
-                $month: getCurrentTime().month.toString().padStart(2, "0"),
-                $day: getCurrentTime().date.toString().padStart(2, "0"),
-                "$심사위원:성명": foundReview.reviewer.name,
-                $서명: foundReview.reviewer.signId,
-              };
-              file = await this.buildReportPdf(tx, foundReview.id, replacer, isMain);
-            } //내용심사 & 구두심사 중 하나라도 보류중인 경우 파일생성없이 comment와 상태만 업데이트
-          } else if (foundReview.thesisInfo.stage == Stage.PRELIMINARY) {
-            // 예심 (=내용 심사 only)
-            if (updateReviewDto.contentStatus == Status.PASS || updateReviewDto.contentStatus == Status.FAIL) {
-              // 심사 완료일 경우에만 파일 업데이트임
-              replacer = {
-                $학과: foundReview.thesisInfo.process.student.department.name,
-                $학번: foundReview.thesisInfo.process.student.loginId,
-                $이름: foundReview.thesisInfo.process.student.name,
-                $합격: updateReviewDto.contentStatus == Status.PASS ? "O" : "",
-                $불합격: updateReviewDto.contentStatus == Status.FAIL ? "O" : "",
-                $심사의견: updateReviewDto.comment.replace(/\n/g, "<br>\n"),
-                $year: getCurrentTime().year.toString(),
-                $month: getCurrentTime().month.toString().padStart(2, "0"),
-                $day: getCurrentTime().date.toString().padStart(2, "0"),
-                "$심사위원:성명": foundReview.reviewer.name,
-                $서명: foundReview.reviewer.signId,
-              };
-              file = await this.buildReportPdf(tx, foundReview.id, replacer, isMain);
-            }
-          }
-        }
-
         if (file) {
           fileUUID = file.uuid;
         }
@@ -1112,122 +1112,116 @@ export class ReviewsService {
       });
       if (!foundFile) throw new NotFoundException("존재하지 않는 심사파일입니다.");
     }
-    try {
-      const review = await this.prismaService.$transaction(async (tx) => {
-        let file;
-        if (!updateReviewFinalDto.fileUUID) {
-          // 파일 업로드 없음 = 보고서를 자동으로 채워서 만들어야 됨
-          let replacer;
-          if (foundReview.thesisInfo.stage == Stage.MAIN) {
-            // 본심 (=내용 심사 & 구두 심사)
-            if (
-              updateReviewFinalDto.contentStatus == Status.PASS ||
-              updateReviewFinalDto.contentStatus == Status.FAIL
-            ) {
-              // 심사 완료일 경우에만 파일 업데이트임
-              replacer = {
-                $학과: foundReview.thesisInfo.process.student.department.name,
-                $학번: foundReview.thesisInfo.process.student.loginId,
-                $이름: foundReview.thesisInfo.process.student.name,
-                $논문제목: foundReview.thesisInfo.title,
-                $심사위원장: [],
-                $심사위원: [],
-                $지도교수: [],
-                $종합의견: updateReviewFinalDto.comment.replace(/\n/g, "<br>\n"),
-                $year: getCurrentTime().year.toString(),
-                $month: getCurrentTime().month.toString().padStart(2, "0"),
-                $day: getCurrentTime().date.toString().padStart(2, "0"),
-                "$심사위원장:성명": foundReview.reviewer.name,
-                $서명: foundReview.reviewer.signId,
-              };
-              for (const singleReview of foundReview.thesisInfo.reviews) {
-                for (const reviewer of foundReview.thesisInfo.process.reviewers) {
-                  if (singleReview.reviewerId == reviewer.reviewerId) {
-                    if (reviewer.role == Role.COMMITTEE_CHAIR) {
-                      if (singleReview.isFinal) {
-                        replacer["$심사위원장"].push({
-                          $성명: singleReview.reviewer.name,
-                          "$내용:합격": singleReview.contentStatus ? "O" : "",
-                          "$내용:불합격": singleReview.contentStatus ? "" : "O",
-                          "$구두:합격": singleReview.presentationStatus ? "O" : "",
-                          "$구두:불합격": singleReview.presentationStatus ? "" : "O",
-                        });
-                      }
-                    } else if (reviewer.role == Role.COMMITTEE_MEMBER) {
-                      replacer["$심사위원"].push({
-                        $성명: singleReview.reviewer.name,
-                        "$내용:합격": singleReview.contentStatus ? "O" : "",
-                        "$내용:불합격": singleReview.contentStatus ? "" : "O",
-                        "$구두:합격": singleReview.presentationStatus ? "O" : "",
-                        "$구두:불합격": singleReview.presentationStatus ? "" : "O",
-                      });
-                    } else if (reviewer.role == Role.ADVISOR) {
-                      replacer["$지도교수"].push({
-                        $성명: singleReview.reviewer.name,
-                        "$내용:합격": singleReview.contentStatus ? "O" : "",
-                        "$내용:불합격": singleReview.contentStatus ? "" : "O",
-                        "$구두:합격": singleReview.presentationStatus ? "O" : "",
-                        "$구두:불합격": singleReview.presentationStatus ? "" : "O",
-                      });
-                    }
+    let file;
+    if (!updateReviewFinalDto.fileUUID) {
+      // 파일 업로드 없음 = 보고서를 자동으로 채워서 만들어야 됨
+      let replacer;
+      if (foundReview.thesisInfo.stage == Stage.MAIN) {
+        // 본심 (=내용 심사 & 구두 심사)
+        if (updateReviewFinalDto.contentStatus == Status.PASS || updateReviewFinalDto.contentStatus == Status.FAIL) {
+          // 심사 완료일 경우에만 파일 업데이트임
+          replacer = {
+            $학과: foundReview.thesisInfo.process.student.department.name,
+            $학번: foundReview.thesisInfo.process.student.loginId,
+            $이름: foundReview.thesisInfo.process.student.name,
+            $논문제목: foundReview.thesisInfo.title,
+            $심사위원장: [],
+            $심사위원: [],
+            $지도교수: [],
+            $종합의견: updateReviewFinalDto.comment.replace(/\n/g, "<br>\n"),
+            $year: getCurrentTime().year.toString(),
+            $month: getCurrentTime().month.toString().padStart(2, "0"),
+            $day: getCurrentTime().date.toString().padStart(2, "0"),
+            "$심사위원장:성명": foundReview.reviewer.name,
+            $서명: foundReview.reviewer.signId,
+          };
+          for (const singleReview of foundReview.thesisInfo.reviews) {
+            for (const reviewer of foundReview.thesisInfo.process.reviewers) {
+              if (singleReview.reviewerId == reviewer.reviewerId) {
+                if (reviewer.role == Role.COMMITTEE_CHAIR) {
+                  if (singleReview.isFinal) {
+                    replacer["$심사위원장"].push({
+                      $성명: singleReview.reviewer.name,
+                      "$내용:합격": singleReview.contentStatus ? "O" : "",
+                      "$내용:불합격": singleReview.contentStatus ? "" : "O",
+                      "$구두:합격": singleReview.presentationStatus ? "O" : "",
+                      "$구두:불합격": singleReview.presentationStatus ? "" : "O",
+                    });
                   }
-                }
-              }
-            }
-          } else if (foundReview.thesisInfo.stage == Stage.PRELIMINARY) {
-            // 예심 (=내용 심사 only)
-            if (
-              updateReviewFinalDto.contentStatus == Status.PASS ||
-              updateReviewFinalDto.contentStatus == Status.FAIL
-            ) {
-              // 심사 완료일 경우에만 파일 업데이트임
-              replacer = {
-                $학과: foundReview.thesisInfo.process.student.department.name,
-                $학번: foundReview.thesisInfo.process.student.loginId,
-                $이름: foundReview.thesisInfo.process.student.name,
-                $논문제목: foundReview.thesisInfo.title,
-                $심사위원장: [],
-                $심사위원: [],
-                $지도교수: [],
-                $종합의견: updateReviewFinalDto.comment.replace(/\n/g, "<br>\n"),
-                $year: getCurrentTime().year.toString(),
-                $month: getCurrentTime().month.toString().padStart(2, "0"),
-                $day: getCurrentTime().date.toString().padStart(2, "0"),
-                "$심사위원장:성명": foundReview.reviewer.name,
-                $서명: foundReview.reviewer.signId,
-              };
-              for (const singleReview of foundReview.thesisInfo.reviews) {
-                for (const reviewer of foundReview.thesisInfo.process.reviewers) {
-                  if (singleReview.reviewerId == reviewer.reviewerId) {
-                    if (reviewer.role == Role.COMMITTEE_CHAIR) {
-                      if (singleReview.isFinal) {
-                        replacer["$심사위원장"].push({
-                          $성명: singleReview.reviewer.name,
-                          $합격: singleReview.contentStatus ? "O" : "",
-                          $불합격: singleReview.contentStatus ? "" : "O",
-                        });
-                      }
-                    } else if (reviewer.role == Role.COMMITTEE_MEMBER) {
-                      replacer["$심사위원"].push({
-                        $성명: singleReview.reviewer.name,
-                        $합격: singleReview.contentStatus ? "O" : "",
-                        $불합격: singleReview.contentStatus ? "" : "O",
-                      });
-                    } else if (reviewer.role == Role.ADVISOR) {
-                      replacer["$지도교수"].push({
-                        $성명: singleReview.reviewer.name,
-                        $합격: singleReview.contentStatus ? "O" : "",
-                        $불합격: singleReview.contentStatus ? "" : "O",
-                      });
-                    }
-                  }
+                } else if (reviewer.role == Role.COMMITTEE_MEMBER) {
+                  replacer["$심사위원"].push({
+                    $성명: singleReview.reviewer.name,
+                    "$내용:합격": singleReview.contentStatus ? "O" : "",
+                    "$내용:불합격": singleReview.contentStatus ? "" : "O",
+                    "$구두:합격": singleReview.presentationStatus ? "O" : "",
+                    "$구두:불합격": singleReview.presentationStatus ? "" : "O",
+                  });
+                } else if (reviewer.role == Role.ADVISOR) {
+                  replacer["$지도교수"].push({
+                    $성명: singleReview.reviewer.name,
+                    "$내용:합격": singleReview.contentStatus ? "O" : "",
+                    "$내용:불합격": singleReview.contentStatus ? "" : "O",
+                    "$구두:합격": singleReview.presentationStatus ? "O" : "",
+                    "$구두:불합격": singleReview.presentationStatus ? "" : "O",
+                  });
                 }
               }
             }
           }
-          const isMain = foundReview.thesisInfo.stage == Stage.MAIN ? true : false;
-          file = await this.buildResultPdf(tx, foundReview.id, replacer, isMain);
         }
+      } else if (foundReview.thesisInfo.stage == Stage.PRELIMINARY) {
+        // 예심 (=내용 심사 only)
+        if (updateReviewFinalDto.contentStatus == Status.PASS || updateReviewFinalDto.contentStatus == Status.FAIL) {
+          // 심사 완료일 경우에만 파일 업데이트임
+          replacer = {
+            $학과: foundReview.thesisInfo.process.student.department.name,
+            $학번: foundReview.thesisInfo.process.student.loginId,
+            $이름: foundReview.thesisInfo.process.student.name,
+            $논문제목: foundReview.thesisInfo.title,
+            $심사위원장: [],
+            $심사위원: [],
+            $지도교수: [],
+            $종합의견: updateReviewFinalDto.comment.replace(/\n/g, "<br>\n"),
+            $year: getCurrentTime().year.toString(),
+            $month: getCurrentTime().month.toString().padStart(2, "0"),
+            $day: getCurrentTime().date.toString().padStart(2, "0"),
+            "$심사위원장:성명": foundReview.reviewer.name,
+            $서명: foundReview.reviewer.signId,
+          };
+          for (const singleReview of foundReview.thesisInfo.reviews) {
+            for (const reviewer of foundReview.thesisInfo.process.reviewers) {
+              if (singleReview.reviewerId == reviewer.reviewerId) {
+                if (reviewer.role == Role.COMMITTEE_CHAIR) {
+                  if (singleReview.isFinal) {
+                    replacer["$심사위원장"].push({
+                      $성명: singleReview.reviewer.name,
+                      $합격: singleReview.contentStatus ? "O" : "",
+                      $불합격: singleReview.contentStatus ? "" : "O",
+                    });
+                  }
+                } else if (reviewer.role == Role.COMMITTEE_MEMBER) {
+                  replacer["$심사위원"].push({
+                    $성명: singleReview.reviewer.name,
+                    $합격: singleReview.contentStatus ? "O" : "",
+                    $불합격: singleReview.contentStatus ? "" : "O",
+                  });
+                } else if (reviewer.role == Role.ADVISOR) {
+                  replacer["$지도교수"].push({
+                    $성명: singleReview.reviewer.name,
+                    $합격: singleReview.contentStatus ? "O" : "",
+                    $불합격: singleReview.contentStatus ? "" : "O",
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+      const isMain = foundReview.thesisInfo.stage == Stage.MAIN ? true : false;
+      file = await this.buildResultPdf(foundReview.id, replacer, isMain);
+    }
+    try {
+      const review = await this.prismaService.$transaction(async (tx) => {
         const fileUUID = updateReviewFinalDto.fileUUID ? updateReviewFinalDto.fileUUID : file.uuid;
         const review = await tx.review.update({
           where: {
