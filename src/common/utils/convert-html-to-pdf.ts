@@ -17,6 +17,7 @@ export const convertHTMLToPDF = async (html, callback, options = null, puppeteer
   } else {
     browser = await puppeteer.launch({
       executablePath: "/usr/bin/chromium-browser",
+      protocolTimeout: 999_999,
       args: [
         "--no-sandbox",
         "--disable-dev-shm-usage",
