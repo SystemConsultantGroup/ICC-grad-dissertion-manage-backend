@@ -26,13 +26,15 @@ import * as Zip from "jszip";
 import { GetCurrentListResDto } from "./dtos/get-current-list.res.dto";
 import { GetResultResDto } from "./dtos/get-result.res.dto";
 import { readableToBuffer } from "src/common/utils/readable-to-buf";
-import { convertHTMLToPDF } from "src/common/utils/convert-html-to-pdf";
+// import { convertHTMLToPDF } from "src/common/utils/convert-html-to-pdf";
+import { KafkaProducer } from "../../config/kafka/kafka.service";
 
 @Injectable()
 export class ReviewsService {
   constructor(
     private readonly minioClientService: MinioClientService,
-    private readonly prismaService: PrismaService
+    private readonly prismaService: PrismaService,
+    private readonly kafkaProducer: KafkaProducer
   ) {}
 
   buildFilename(base, searchQuery, isRevision = false) {
@@ -68,7 +70,7 @@ export class ReviewsService {
     const fileName = (isMain ? "" : "예비") + "심사결과보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     try {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         readFile(filePath, "utf8", async (err, formatHtml) => {
           if (err) throw new InternalServerErrorException("reading format html file failed: " + filePath);
           const replacerKeys = Object.keys(replacer);
@@ -269,17 +271,20 @@ export class ReviewsService {
 
           const key = v1();
           const createdAt = new Date();
-          await convertHTMLToPDF(formatHtml, async (pdf) => {
-            if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
-            await this.minioClientService.uploadFile(
-              key,
-              pdf,
-              Buffer.byteLength(pdf),
-              createdAt,
-              reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-              "application/pdf"
-            );
+          await this.kafkaProducer.sendMessage("pdf-topic", key, formatHtml, {
+            originalName: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
           });
+          // await convertHTMLToPDF(formatHtml, async (pdf) => {
+          //   if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
+          //   await this.minioClientService.uploadFile(
+          //     key,
+          //     pdf,
+          //     Buffer.byteLength(pdf),
+          //     createdAt,
+          //     reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+          //     "application/pdf"
+          //   );
+          // });
 
           return resolve(
             await this.prismaService.file.create({
@@ -303,7 +308,7 @@ export class ReviewsService {
     const fileName = (isMain ? "" : "예비") + "심사보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     try {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         readFile(filePath, "utf8", async (err, formatHtml) => {
           if (err) throw new InternalServerErrorException("reading format html file failed: " + filePath);
           const replacerKeys = Object.keys(replacer);
@@ -323,17 +328,18 @@ export class ReviewsService {
 
           const key = v1();
           const createdAt = new Date();
-          await convertHTMLToPDF(formatHtml, async (pdf) => {
-            if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
-            await this.minioClientService.uploadFile(
-              key,
-              pdf,
-              Buffer.byteLength(pdf),
-              createdAt,
-              reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-              "application/pdf"
-            );
-          });
+          // await convertHTMLToPDF(formatHtml, async (pdf) => {
+          //   if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
+          //   await this.minioClientService.uploadFile(
+          //     key,
+          //     pdf,
+          //     Buffer.byteLength(pdf),
+          //     createdAt,
+          //     reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+          //     "application/pdf"
+          //   );
+          // });
+          await this.kafkaProducer.sendMessage("pdf-topic", key, formatHtml);
 
           return resolve(
             await this.prismaService.file.create({
