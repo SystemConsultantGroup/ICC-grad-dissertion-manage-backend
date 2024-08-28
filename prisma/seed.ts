@@ -26,6 +26,14 @@ async function main() {
       },
     },
   });
+
+  await prisma.phase.createMany({
+    data: {
+      title: "예심",
+      start: "2023-10-05T14:48:00.000Z",
+      end: "2025-10-05T14:48:00.000Z"
+    }
+  })
   console.log({ admin });
 }
 main()
