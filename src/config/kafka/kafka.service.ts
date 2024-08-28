@@ -9,12 +9,21 @@ export class KafkaProducer implements OnModuleInit, OnModuleDestroy {
   constructor() {
     this.kafka = new Kafka({
       clientId: process.env.CLIENT_ID,
-      brokers: [process.env.KAFKA_CLIENT_BOOTSTRAP_SERVER],
+      brokers: [
+        "kafka-controller-0.kafka-controller-headless.kafka.svc.cluster.local:9092",
+        "kafka-controller-1.kafka-controller-headless.kafka.svc.cluster.local:9092",
+        "kafka-controller-2.kafka-controller-headless.kafka.svc.cluster.local:9092",
+      ],
       logLevel: logLevel.INFO,
       retry: {
         initialRetryTime: 100,
         retries: 10,
         multiplier: 2,
+      },
+      sasl: {
+        mechanism: "scram-sha-256",
+        username: "user1",
+        password: "EXQhgljABW",
       },
     });
     this.producer = this.kafka.producer();
