@@ -271,7 +271,7 @@ export class ReviewsService {
 
           const key = v1();
           const createdAt = new Date();
-          await this.kafkaProducer.sendMessage("pdf-topic", reviewId, formatHtml, {
+          await this.kafkaProducer.sendMessage("pdf-topic-dev", reviewId, formatHtml, {
             originalName: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
             uuid: key,
           });
@@ -339,7 +339,7 @@ export class ReviewsService {
           //     "application/pdf"
           //   );
           // });
-          await this.kafkaProducer.sendMessage("pdf-topic", reviewId, formatHtml, {
+          await this.kafkaProducer.sendMessage("pdf-topic-dev", reviewId, formatHtml, {
             originalName: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
             uuid: key,
           });
