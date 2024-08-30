@@ -11,9 +11,9 @@ export class GetReviewListResDto {
     this.department = review.thesisInfo.process.student.department.name;
     this.stage = review.thesisInfo.stage;
     this.title = review.thesisInfo.title;
-    this.reviewerRole = process.reviewers.filter((reviewer) => {
+    this.reviewerRoles = process.reviewers.filter((reviewer) => {
       if (reviewer.reviewerId === review.reviewer.id) return reviewer;
-    })[0].role;
+    }).map((reviewerRole) => reviewerRole.role);
     if (
       (review.contentStatus == Status.PASS || review.contentStatus == Status.FAIL) &&
       (review.presentationStatus == Status.PASS || review.presentationStatus == Status.FAIL)
