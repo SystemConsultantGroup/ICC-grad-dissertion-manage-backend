@@ -11,11 +11,9 @@ export class GetReviewListResDto {
     this.department = review.thesisInfo.process.student.department.name;
     this.stage = review.thesisInfo.stage;
     this.title = review.thesisInfo.title;
-    this.reviewerRoles = process.reviewers
-      .filter((reviewer) => {
-        if (reviewer.reviewerId === review.reviewer.id) return reviewer;
-      })
-      .map((reviewerRole) => reviewerRole.role);
+    this.reviewerRole = process.reviewers.filter((reviewer) => {
+      if (reviewer.reviewerId === review.reviewer.id) return reviewer;
+    })[0].role;
     if (
       (review.contentStatus == Status.PASS || review.contentStatus == Status.FAIL) &&
       (review.presentationStatus == Status.PASS || review.presentationStatus == Status.FAIL)
@@ -37,7 +35,7 @@ export class GetReviewListResDto {
   @ApiProperty({ description: "논문 제목" })
   title: string;
   @ApiProperty({ description: "심사위원 타입" })
-  reviewerRoles: Role[];
+  reviewerRole: Role;
   @ApiProperty({ description: "심사 현황", enum: SearchStatus })
   status: SearchStatus;
 }
