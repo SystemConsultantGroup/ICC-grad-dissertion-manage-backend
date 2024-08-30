@@ -66,7 +66,7 @@ export class ReviewsService {
     return fileName;
   }
 
-  async buildResultPdf(reviewId, replacer, isMain) {
+  async buildResultPdf(reviewId, replacer, isMain, studentName: string) {
     const fileName = (isMain ? "" : "예비") + "심사결과보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     try {
@@ -271,8 +271,9 @@ export class ReviewsService {
 
           const key = v1();
           const createdAt = new Date();
-          await this.kafkaProducer.sendMessage("pdf-topic", key, formatHtml, {
-            originalName: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+          await this.kafkaProducer.sendMessage("pdf-topic", reviewId, formatHtml, {
+            originalName: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
+            uuid: key,
           });
           // await convertHTMLToPDF(formatHtml, async (pdf) => {
           //   if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
@@ -285,11 +286,10 @@ export class ReviewsService {
           //     "application/pdf"
           //   );
           // });
-
           return resolve(
             await this.prismaService.file.create({
               data: {
-                name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+                name: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
                 mimeType: "application/pdf",
                 uuid: key,
                 createdAt: createdAt,
@@ -304,7 +304,7 @@ export class ReviewsService {
     }
   }
 
-  async buildReportPdf(reviewId, replacer, isMain) {
+  async buildReportPdf(reviewId, replacer, isMain, studentName: string) {
     const fileName = (isMain ? "" : "예비") + "심사보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     try {
@@ -339,12 +339,15 @@ export class ReviewsService {
           //     "application/pdf"
           //   );
           // });
-          await this.kafkaProducer.sendMessage("pdf-topic", key, formatHtml);
+          await this.kafkaProducer.sendMessage("pdf-topic", reviewId, formatHtml, {
+            originalName: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
+            uuid: key,
+          });
 
           return resolve(
             await this.prismaService.file.create({
               data: {
-                name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+                name: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
                 mimeType: "application/pdf",
                 uuid: key,
                 createdAt: createdAt,
@@ -753,7 +756,12 @@ export class ReviewsService {
             "$심사위원:성명": foundReview.reviewer.name,
             $서명: foundReview.reviewer.signId,
           };
-          file = await this.buildReportPdf(foundReview.id, replacer, isMain);
+          file = await this.buildReportPdf(
+            foundReview.id,
+            replacer,
+            isMain,
+            foundReview.thesisInfo.process.student.name
+          );
         } //내용심사 & 구두심사 중 하나라도 보류중인 경우 파일생성없이 comment와 상태만 업데이트
       } else if (foundReview.thesisInfo.stage == Stage.PRELIMINARY) {
         // 예심 (=내용 심사 only)
@@ -772,7 +780,12 @@ export class ReviewsService {
             "$심사위원:성명": foundReview.reviewer.name,
             $서명: foundReview.reviewer.signId,
           };
-          file = await this.buildReportPdf(foundReview.id, replacer, isMain);
+          file = await this.buildReportPdf(
+            foundReview.id,
+            replacer,
+            isMain,
+            foundReview.thesisInfo.process.student.name
+          );
         }
       }
     }
@@ -1224,7 +1237,7 @@ export class ReviewsService {
         }
       }
       const isMain = foundReview.thesisInfo.stage == Stage.MAIN ? true : false;
-      file = await this.buildResultPdf(foundReview.id, replacer, isMain);
+      file = await this.buildResultPdf(foundReview.id, replacer, isMain, foundReview.thesisInfo.process.student.name);
     }
     try {
       const review = await this.prismaService.$transaction(async (tx) => {
