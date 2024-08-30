@@ -339,7 +339,7 @@ export class ReviewsService {
           //     "application/pdf"
           //   );
           // });
-          await this.kafkaProducer.sendMessage("pdf-topic-dev", reviewId, formatHtml, {
+          await this.kafkaProducer.sendMessage("pdf-topic-dev", reviewId.toString(), formatHtml, {
             originalName: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
             uuid: key,
           });
