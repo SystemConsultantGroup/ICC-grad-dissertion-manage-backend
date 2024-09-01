@@ -22,8 +22,8 @@ export class KafkaProducer implements OnModuleInit, OnModuleDestroy {
       },
       sasl: {
         mechanism: "scram-sha-256",
-        username: "user1",
-        password: "EXQhgljABW",
+        username: process.env.SASL_USER,
+        password: process.env.SASL_PASSWORD,
       },
     });
     this.producer = this.kafka.producer();
