@@ -45,7 +45,7 @@ export class KafkaProducer implements OnModuleInit, OnModuleDestroy {
         compression: CompressionTypes.GZIP,
         acks: -1,
       });
-      console.log(`Message sent to topic ${topic}: ${message}`);
+      // console.log(`Message sent to topic ${topic}: ${message}`);
     } catch (error) {
       console.error(`Error sending message to Kafka: ${error.message}`);
     }
