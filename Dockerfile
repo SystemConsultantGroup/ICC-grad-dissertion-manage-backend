@@ -8,7 +8,6 @@ COPY /.husky ./
 COPY nest-cli.json ./
 COPY tsconfig.json ./
 COPY tsconfig.build.json ./
-COPY .env ./
 
 RUN apk update
 RUN apk upgrade
