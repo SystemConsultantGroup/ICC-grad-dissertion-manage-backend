@@ -9,10 +9,6 @@ COPY nest-cli.json ./
 COPY tsconfig.json ./
 COPY tsconfig.build.json ./
 
-RUN apk update
-RUN apk upgrade
-RUN apk add --no-cache udev ttf-freefont chromium
-
 ENV LANG=ko_KR.UTF-8
 ENV LANGUAGE=ko_KR.UTF-
 
