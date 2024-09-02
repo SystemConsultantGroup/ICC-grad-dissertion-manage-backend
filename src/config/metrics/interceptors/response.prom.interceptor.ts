@@ -13,7 +13,7 @@ export class ResponseInterceptor implements NestInterceptor {
       .pipe(defaultIfEmpty(null))
       .pipe(
         map((result) => {
-          if (excludePaths.includes(req.url)) {
+          if (!excludePaths.includes(req.url)) {
             return result;
           }
         })

@@ -25,7 +25,6 @@ async function bootstrap() {
       },
     })
   );
-  app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalInterceptors(new PrometheusInterceptor());
   app.enableCors({
     origin: "*",
