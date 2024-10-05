@@ -10,6 +10,7 @@ export class GetReviewFinalResDto {
     this.student = review.thesisInfo.process.student.name;
     this.department = review.thesisInfo.process.student.department.name;
     this.reviewerRole = review.reviewerRole;
+    this.title = review.thesisInfo.title;
     this.abstract = review.thesisInfo.abstract;
     this.thesisFiles = review.thesisInfo.thesisFiles;
     this.status = review.contentStatus;
