@@ -27,6 +27,7 @@ import { GetCurrentListResDto } from "./dtos/get-current-list.res.dto";
 import { GetResultResDto } from "./dtos/get-result.res.dto";
 import { readableToBuffer } from "src/common/utils/readable-to-buf";
 import { convertHTMLToPDF } from "src/common/utils/convert-html-to-pdf";
+import { ProcessDto } from "./dtos/process.dto";
 
 @Injectable()
 export class ReviewsService {
@@ -502,7 +503,9 @@ export class ReviewsService {
       },
     });
     return {
-      reviews: reviews.map((review) => new GetReviewListResDto(new ReviewDto(review))),
+      reviews: reviews.map(
+        (review) => new GetReviewListResDto(new ReviewDto(review), new ProcessDto(review.thesisInfo.process))
+      ),
       totalCount: totalCount,
     };
   }
@@ -592,7 +595,7 @@ export class ReviewsService {
           },
         },
       })
-    ).map((review) => new GetReviewListResDto(new ReviewDto(review)));
+    ).map((review) => new GetReviewListResDto(new ReviewDto(review), new ProcessDto(review.thesisInfo.process)));
 
     const records = reviews.map((review) => {
       const record = {};
@@ -904,7 +907,9 @@ export class ReviewsService {
       },
     });
     return {
-      reviews: reviews.map((review) => new GetReviewFinalListResDto(new ReviewDto(review))),
+      reviews: reviews.map(
+        (review) => new GetReviewFinalListResDto(new ReviewDto(review), new ProcessDto(review.thesisInfo.process))
+      ),
       totalCount: totalCount,
     };
   }
@@ -956,7 +961,7 @@ export class ReviewsService {
           },
         },
       })
-    ).map((review) => new GetReviewFinalListResDto(new ReviewDto(review)));
+    ).map((review) => new GetReviewFinalListResDto(new ReviewDto(review), new ProcessDto(review.thesisInfo.process)));
     const records = reviews.map((review) => {
       const record = {};
       record["저자"] = review.student;
