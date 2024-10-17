@@ -9,25 +9,27 @@ datasource db {
 
 /// 사용자
 model User {
-  id                  Int            @id @default(autoincrement())
-  loginId             String         @unique @db.VarChar(255)
-  password            String         @db.VarChar(255)
-  name                String         @db.VarChar(255)
-  email               String?        @unique @db.VarChar(255)
-  phone               String?        @db.VarChar(255)
-  type                UserType
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @default(now()) @updatedAt
-  deletedAt           DateTime?
-  deptId              Int?
-  signId              String?        @unique
-  headReviewProcesses Process[]      @relation("headReviewer")
-  studentProcess      Process?       @relation("student")
-  reviews             Review[]
-  reviewers           Reviewer[]
-  department          Department?    @relation(fields: [deptId], references: [id], onDelete: SetNull)
-  signFile            File?          @relation(fields: [signId], references: [uuid])
-  Achievements        Achievements[]
+  id                    Int            @id @default(autoincrement())
+  loginId               String         @unique @db.VarChar(255)
+  password              String         @db.VarChar(255)
+  name                  String         @db.VarChar(255)
+  email                 String?        @unique @db.VarChar(255)
+  phone                 String?        @db.VarChar(255)
+  type                  UserType
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @default(now()) @updatedAt
+  deletedAt             DateTime?
+  deptId                Int?
+  signId                String?        @unique
+  headReviewProcesses   Process[]      @relation("headReviewer")
+  studentProcess        Process?       @relation("student")
+  reviews               Review[]
+  reviewers             Reviewer[]
+  department            Department?    @relation(fields: [deptId], references: [id], onDelete: SetNull)
+  signFile              File?          @relation(fields: [signId], references: [uuid])
+  studentAchivements    Achievements[] @relation("student")
+  profesosr1Achivements Achievements[] @relation("professor1")
+  profesor2Achivements  Achievements[] @relation("professor2")
 
   @@index([deptId], map: "user_deptId_fkey")
   @@map("user")
@@ -167,7 +169,11 @@ model Achievements {
   authorType      AuthorType
   authorNumbers   Int
   userId          Int?
-  User            User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  professorId1    Int?
+  professorId2    Int?
+  User            User?       @relation("student", fields: [userId], references: [id], onDelete: Cascade)
+  Professor1      User?       @relation("professor1", fields: [professorId1], references: [id], onDelete: SetNull)
+  Professor2      User?       @relation("professor2", fields: [professorId2], references: [id], onDelete: SetNull)
 
   @@index([userId], map: "achievements_userId_fkey")
   @@map("achievements")
