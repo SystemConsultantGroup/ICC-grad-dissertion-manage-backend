@@ -177,6 +177,7 @@ enum UserType {
   STUDENT
   PROFESSOR
   ADMIN
+  PHD
 }
 
 enum Stage {
