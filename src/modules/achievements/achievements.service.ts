@@ -15,7 +15,7 @@ export class AchievementsService {
     const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
       createAchievementsDto;
 
-    if (user.type === UserType.STUDENT && userId !== user.id)
+    if ((user.type === UserType.STUDENT || user.type === UserType.PHD) && userId !== user.id)
       throw new UnauthorizedException("본인 논문실적만 등록 가능합니다.");
     const foundUser = await this.prismaService.user.findUnique({
       where: {
@@ -44,7 +44,7 @@ export class AchievementsService {
       },
     });
     if (!foundUser) throw new BadRequestException("해당 논문실적은 존재하지 않습니다.");
-    if (user.type === UserType.STUDENT && foundUser.userId != user.id)
+    if ((user.type === UserType.STUDENT || user.type === UserType.PHD) && foundUser.userId != user.id)
       throw new BadRequestException("다른 학생의 논문실적은 수정할수 없습니다.");
     const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
       updateAchievementDto;
@@ -69,7 +69,7 @@ export class AchievementsService {
   }
 
   async getAchievements(currentUser: User, achievementsQuery: AchievementsSearchQuery) {
-    if (currentUser.type == UserType.STUDENT) {
+    if (currentUser.type === UserType.STUDENT || currentUser.type === UserType.PHD) {
       const studentQuery = {
         where: {
           userId: currentUser.id,
@@ -236,7 +236,7 @@ export class AchievementsService {
       },
     });
     if (!achievement) throw new BadRequestException("해당 id의 논문실적이 존재하지 않습니다.");
-    if (user.type === UserType.STUDENT && achievement.userId !== user.id)
+    if ((user.type === UserType.STUDENT || user.type === UserType.PHD) && achievement.userId !== user.id)
       throw new UnauthorizedException("학생의 경우 본인 논문 실적만 조회가 가능합니다.");
     return achievement;
   }
@@ -248,7 +248,7 @@ export class AchievementsService {
       },
     });
     if (!achievement) throw new BadRequestException("해당 id의 논문실적이 존재하지 않습니다.");
-    if (user.type === UserType.STUDENT && achievement.userId !== user.id)
+    if ((user.type === UserType.STUDENT || user.type === UserType.PHD) && achievement.userId !== user.id)
       throw new UnauthorizedException("학생의 경우 본인 논문 실적만 조회가 가능합니다.");
     try {
       await this.prismaService.achievements.delete({
