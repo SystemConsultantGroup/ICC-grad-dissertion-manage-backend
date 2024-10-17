@@ -1,3 +1,4 @@
+import { CreatePhDDto } from "./dtos/create-phd.dto";
 import { StudentsService } from "./students.service";
 import {
   Body,
@@ -50,11 +51,12 @@ import { ReviewersDto } from "./dtos/reviewers.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ExcelFilter } from "src/common/pipes/excel.filter";
 import { UpdateReviewerQueryDto } from "./dtos/update-reviewer-query-dto";
+import { PhDDto } from "./dtos/phd.dto";
 
 @Controller("students")
 @UseGuards(JwtGuard)
 @ApiTags("학생 API")
-@ApiExtraModels(UserDto, CommonResponseDto, SystemDto, ThesisInfoDto, ReviewersDto)
+@ApiExtraModels(UserDto, CommonResponseDto, SystemDto, ThesisInfoDto, ReviewersDto, PhDDto)
 @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
 @ApiBearerAuth("access-token")
 export class StudentsController {
@@ -79,6 +81,26 @@ export class StudentsController {
   async createStudent(@Body() createStudentDto: CreateStudentDto) {
     const student = await this.studentsService.createStudent(createStudentDto);
     const userDto = new UserDto(student);
+    return new CommonResponseDto(userDto);
+  }
+
+  @Post("/phd")
+  @UseUserTypeGuard([UserType.ADMIN])
+  @ApiOperation({
+    summary: "박사과정 학생 생성 API",
+    description: "박사과정 학생의 기본 회원정보를 받아서 생성한다. 학생의 회원 가입 역할을 한다.",
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiBadRequestResponse({ description: "요청 양식 오류" })
+  @ApiCreatedResponse({
+    description: "박사과정 학생 생성 성공",
+    schema: {
+      allOf: [{ $ref: getSchemaPath(CommonResponseDto) }, { $ref: getSchemaPath(PhDDto) }],
+    },
+  })
+  async createPhD(@Body() createPhdDto: CreatePhDDto) {
+    const phd = await this.studentsService.createPhD(createPhdDto);
+    const userDto = new PhDDto(phd);
     return new CommonResponseDto(userDto);
   }
 

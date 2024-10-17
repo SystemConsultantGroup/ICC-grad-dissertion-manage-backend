@@ -24,6 +24,7 @@ import { validate } from "class-validator";
 import { UpdateThesisInfoDto } from "./dtos/update-thesis-info.dto";
 import { Readable } from "stream";
 import { UpdateSystemDto } from "./dtos/update-system.dto";
+import { CreatePhDDto } from "./dtos/create-phd.dto";
 
 @Injectable()
 export class StudentsService {
@@ -236,6 +237,56 @@ export class StudentsService {
             type: UserType.STUDENT,
           },
           include: { department: true, studentProcess: true },
+        });
+      });
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException("학생 생성 실패");
+    }
+  }
+
+  async createPhD(createPhDDto: CreatePhDDto) {
+    const { loginId, password, name, email, phone, deptId } = createPhDDto;
+
+    // 로그인 아이디, 이메일 존재 여부 확인
+    const foundId = await this.prismaService.user.findUnique({
+      where: {
+        loginId,
+        deletedAt: null,
+      },
+    });
+    if (foundId)
+      throw new BadRequestException("이미 존재하는 아이디입니다. 기존 학생 수정은 학생 수정 페이지를 이용해주세요.");
+    if (email) {
+      const foundEmail = await this.prismaService.user.findUnique({
+        where: {
+          email,
+          deletedAt: null,
+        },
+      });
+      if (foundEmail) throw new BadRequestException("이미 존재하는 이메일입니다.");
+    }
+
+    // deptId 올바른지 확인
+    const foundDept = await this.prismaService.department.findUnique({
+      where: { id: deptId },
+    });
+    if (!foundDept) throw new BadRequestException("해당하는 학과가 없습니다.");
+
+    try {
+      return await this.prismaService.$transaction(async (tx) => {
+        // 사용자(user) 생성
+        return tx.user.create({
+          data: {
+            deptId,
+            loginId,
+            email,
+            password: this.authService.createHash(password),
+            name,
+            phone,
+            type: UserType.PHD,
+          },
+          include: { department: true },
         });
       });
     } catch (error) {
