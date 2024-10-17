@@ -12,7 +12,7 @@ export class AchievementsService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async createAchievement(userId: number, user: User, createAchievementsDto: CreateAchievementsDto) {
-    const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
+    const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers, professorIds } =
       createAchievementsDto;
 
     if ((user.type === UserType.STUDENT || user.type === UserType.PHD) && userId !== user.id)
@@ -23,6 +23,20 @@ export class AchievementsService {
       },
     });
     if (!foundUser) throw new BadRequestException("해당 유저가 존재하지 않습니다.");
+
+    // 교수 아이디 확인
+    if (professorIds && professorIds.length !== 0) {
+      const foundProfessors = await this.prismaService.user.findMany({
+        where: {
+          id: { in: professorIds },
+          type: UserType.PROFESSOR,
+        },
+      });
+      const foundIds = foundProfessors.map((user) => user.id);
+      const missingIds = professorIds.filter((id) => !foundIds.includes(id));
+      if (missingIds.length !== 0) throw new BadRequestException(`ID:[${missingIds}]에 해당하는 교수가 없습니다.`);
+    }
+
     return await this.prismaService.achievements.create({
       data: {
         userId,
@@ -33,6 +47,8 @@ export class AchievementsService {
         publicationDate,
         authorNumbers,
         authorType,
+        professorId1: professorIds ? professorIds[0] : undefined,
+        professorId2: professorIds && professorIds.length == 2 ? professorIds[1] : undefined,
       },
     });
   }
