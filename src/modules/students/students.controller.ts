@@ -149,6 +149,51 @@ export class StudentsController {
     return new CommonResponseDto(pageDto);
   }
 
+  @Post("/excel/phd")
+  @UseUserTypeGuard([UserType.ADMIN])
+  @UseInterceptors(FileInterceptor("file", { fileFilter: ExcelFilter }))
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          format: "binary",
+        },
+      },
+    },
+  })
+  @ApiOperation({
+    summary: "박사과정 학생 엑셀 업로드 API",
+    description: "엑셀을 업로드하여 박사과정 학생을 생성한다. 학번 기준 기존 학생인 경우 업데이트를 진행한다.",
+  })
+  @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
+  @ApiBadRequestResponse({ description: "엑셀 양식 오류" })
+  @ApiCreatedResponse({
+    description: "생성 및 업데이트 성공",
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(CommonResponseDto) },
+        { $ref: getSchemaPath(PageDto) },
+        {
+          properties: {
+            content: {
+              type: "array",
+              items: { $ref: getSchemaPath(PhDDto) },
+            },
+          },
+        },
+      ],
+    },
+  })
+  async createPhDExcel(@UploadedFile() excelFile: Express.Multer.File) {
+    const students = await this.studentsService.createPhDExcel(excelFile);
+    const contents = students.map((student) => new PhDDto(student));
+    const pageDto = new PageDto(0, 0, contents.length, contents);
+    return new CommonResponseDto(pageDto);
+  }
+
   // 학생 대량 조회 API
   @Get("/excel")
   @UseUserTypeGuard([UserType.ADMIN])

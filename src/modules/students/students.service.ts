@@ -276,7 +276,7 @@ export class StudentsService {
     try {
       return await this.prismaService.$transaction(async (tx) => {
         // 사용자(user) 생성
-        return tx.user.create({
+        return await tx.user.create({
           data: {
             deptId,
             loginId,
@@ -1082,6 +1082,146 @@ export class StudentsService {
       },
       {
         timeout: 40000,
+      }
+    );
+  }
+
+  async createPhDExcel(excelFile: Express.Multer.File) {
+    if (!excelFile) throw new BadRequestException("파일을 업로드해주세요.");
+    const workBook = XLSX.read(excelFile.buffer, { type: "buffer" });
+    const sheetName = workBook.SheetNames[0];
+    const sheet = workBook.Sheets[sheetName];
+    const studentRecords = XLSX.utils.sheet_to_json(sheet);
+
+    return await this.prismaService.$transaction(
+      async (tx) => {
+        const students = [];
+        for (const [index, studentRecord] of studentRecords.entries()) {
+          try {
+            // 모든 항목 값 받아오기
+            const studentNumber = studentRecord["학번"]?.toString();
+            const password = studentRecord["비밀번호"]?.toString();
+            const name = studentRecord["이름"];
+            const email = studentRecord["이메일"];
+            const phone = studentRecord["연락처"]?.toString();
+            const major = studentRecord["학과"];
+
+            // 학과 찾기
+            let deptId: number, foundDept: Department;
+            if (major) {
+              foundDept = await this.prismaService.department.findFirst({
+                where: { name: major },
+              });
+              if (!foundDept) throw new BadRequestException(`${index + 2} 행의 학과 명을 확인해주세요.`);
+              deptId = foundDept.id;
+            }
+
+            // 학번으로 기존 학생 여부 판단
+            if (!studentNumber) throw new BadRequestException(`${index + 2}번째 행의 [학번] 항목을 다시 확인해주세요.`);
+            const foundStudent = await this.prismaService.user.findUnique({
+              where: {
+                loginId: studentNumber,
+                type: UserType.PHD,
+                deletedAt: null,
+              },
+            });
+
+            // 학생 업데이트
+            if (foundStudent) {
+              // 학생 기본 정보 업데이트 (학번, 비밀번호, 이름, 이메일, 연락처, 학과)
+              const updateStudentDto = new UpdateStudentDto();
+              updateStudentDto.password = password;
+              updateStudentDto.name = name;
+              updateStudentDto.email = email;
+              updateStudentDto.phone = phone;
+              updateStudentDto.deptId = deptId;
+              // validation
+              const validationErrors = await validate(updateStudentDto);
+              if (validationErrors.length > 0) {
+                validationErrors.map((error) => console.log(error.constraints));
+                throw new BadRequestException(`${index + 2} 행의 데이터 입력 형식이 잘못되었습니다.`);
+              }
+
+              // 이메일 중복 여부 확인
+              if (updateStudentDto.email) {
+                const foundEmail = await this.prismaService.user.findUnique({
+                  where: { email: updateStudentDto.email, deletedAt: null },
+                });
+                if (foundEmail && foundEmail.id !== foundStudent.id)
+                  throw new BadRequestException(`${index + 2}행 : 이미 존재하는 이메일로는 변경할 수 없습니다.`);
+              }
+
+              // 업데이트
+              const updatePhD = await tx.user.update({
+                where: { id: foundStudent.id, deletedAt: null },
+                data: {
+                  loginId: updateStudentDto.loginId,
+                  password: updateStudentDto.password
+                    ? this.authService.createHash(updateStudentDto.password)
+                    : undefined,
+                  name: updateStudentDto.name,
+                  email: updateStudentDto.email,
+                  phone: updateStudentDto.phone,
+                  deptId: updateStudentDto.deptId,
+                },
+                include: { department: true },
+              });
+
+              students.push(updatePhD);
+            }
+            // 신규 학생 생성
+            else {
+              const createPhDDto = new CreatePhDDto();
+              createPhDDto.loginId = studentNumber;
+              createPhDDto.password = password;
+              createPhDDto.name = name;
+              createPhDDto.email = email;
+              createPhDDto.phone = phone;
+              createPhDDto.deptId = deptId;
+
+              // DTO 이용한 validation
+              const validationErrors = await validate(createPhDDto);
+              if (validationErrors.length > 0) {
+                validationErrors.map((error) => console.log(error.constraints));
+                throw new BadRequestException(`${index + 2} 행의 데이터 입력 형식이 잘못되었습니다.`);
+              }
+
+              // 이메일 존재 여부 확인
+              if (createPhDDto.email) {
+                const foundEmail = await this.prismaService.user.findUnique({
+                  where: { email: createPhDDto.email },
+                });
+                if (foundEmail) throw new BadRequestException(`${index + 2}행 : 이미 존재하는 이메일입니다.`);
+              }
+
+              // 신규 학생 생성
+              const newPhD = await tx.user.create({
+                data: {
+                  deptId: createPhDDto.deptId,
+                  loginId: createPhDDto.loginId,
+                  email: createPhDDto.email,
+                  password: this.authService.createHash(createPhDDto.password),
+                  name: createPhDDto.name,
+                  phone: createPhDDto.phone,
+                  type: UserType.PHD,
+                },
+                include: { department: true },
+              });
+
+              students.push(newPhD);
+            }
+          } catch (error) {
+            console.log(error);
+            if (error.status === 400) {
+              throw new BadRequestException(error.message);
+            }
+            throw new InternalServerErrorException(`${index + 2} 행에서 에러 발생`);
+          }
+        }
+        return students;
+      },
+      {
+        timeout: 4000,
       }
     );
   }
