@@ -163,6 +163,8 @@ export class AchievementsService {
             department: true,
           },
         },
+        Professor1: true,
+        Professor2: true,
       },
     });
     if (!achievements) throw new BadRequestException("검색된 논문 실적이 없습니다.");
@@ -174,6 +176,9 @@ export class AchievementsService {
       record["학번"] = student.loginId;
       record["이름"] = student.name;
       record["학과"] = dept.name;
+      record["학위과정"] = achievement.User.type === UserType.STUDENT ? "석사" : "박사";
+      record["지도교수1"] = achievement.Professor1 ? achievement.Professor1.name : null;
+      record["지도교수2"] = achievement.Professor2 ? achievement.Professor2.name : null;
 
       record["실적 구분"] = this.PerformanceToFullname(achievement.performance);
       record["학술지 또는 학술대회명"] = achievement.journalName;
