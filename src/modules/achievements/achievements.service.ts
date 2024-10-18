@@ -62,7 +62,7 @@ export class AchievementsService {
     if (!foundUser) throw new BadRequestException("해당 논문실적은 존재하지 않습니다.");
     if ((user.type === UserType.STUDENT || user.type === UserType.PHD) && foundUser.userId != user.id)
       throw new BadRequestException("다른 학생의 논문실적은 수정할수 없습니다.");
-    const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
+    const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers, professorIds } =
       updateAchievementDto;
     try {
       return await this.prismaService.achievements.update({
@@ -77,6 +77,12 @@ export class AchievementsService {
           ...(publicationDate && { publicationDate }),
           ...(authorType && { authorType }),
           ...(authorNumbers && { authorNumbers }),
+          ...(professorIds.length == 0 && { professorId1: null }),
+          ...(professorIds.length == 0 && { professorId2: null }),
+          ...(professorIds.length == 1 && { professorId1: professorIds[0] }),
+          ...(professorIds.length == 1 && { professorId2: null }),
+          ...(professorIds.length == 2 && { professorId1: professorIds[0] }),
+          ...(professorIds.length == 2 && { professorId2: professorIds[1] }),
         },
       });
     } catch {

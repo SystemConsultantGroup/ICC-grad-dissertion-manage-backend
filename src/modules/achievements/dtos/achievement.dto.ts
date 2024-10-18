@@ -13,6 +13,8 @@ export class AchievementDto {
     this.authorNumbers = achievement.authorNumbers;
     this.name = achievement.User.name;
     this.department = achievement.User.department.name;
+    this.professorId1 = achievement.professorId1;
+    this.professorId2 = achievement.professorId2;
   }
   @ApiProperty({ description: "논문실적 id" })
   id: number;
@@ -43,6 +45,12 @@ export class AchievementDto {
 
   @ApiProperty({ description: "학과" })
   department?: string;
+
+  @ApiProperty({ description: "지도교수1" })
+  professorId1: number;
+
+  @ApiProperty({ description: "지도교수2" })
+  professorId2: number;
 }
 
 export class CreateAchievementResponseDto {
@@ -56,6 +64,8 @@ export class CreateAchievementResponseDto {
     this.authorType = achievement.authorType;
     this.authorNumbers = achievement.authorNumbers;
     this.userId = achievement.userId;
+    this.professorId1 = achievement.professorId1;
+    this.professorId2 = achievement.professorId2;
   }
   @ApiProperty({ description: "논문실적 id" })
   id: number;
@@ -83,4 +93,10 @@ export class CreateAchievementResponseDto {
 
   @ApiProperty({ description: "유저ID" })
   userId: number;
+
+  @ApiProperty({ description: "지도교수1" })
+  professorId1: number;
+
+  @ApiProperty({ description: "지도교수2" })
+  professorId2: number;
 }

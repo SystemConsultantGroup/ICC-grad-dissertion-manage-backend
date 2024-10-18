@@ -35,7 +35,7 @@ export class ProfessorsController {
     summary: "교수 목록 조회",
     description: "교수 목록 조회",
   })
-  @UseUserTypeGuard([UserType.ADMIN])
+  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT, UserType.PHD])
   @ApiUnauthorizedResponse({ description: "[관리자] 로그인 후 접근 가능" })
   @ApiInternalServerErrorResponse({ description: "서버 내부 오류" })
   @ApiPaginationOKResponse({ description: "교수 목록 조회 성공", dto: ProfessorDto })

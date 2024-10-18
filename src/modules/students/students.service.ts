@@ -1239,7 +1239,7 @@ export class StudentsService {
 
     const students = await this.prismaService.user.findMany({
       where: {
-        type: UserType.STUDENT,
+        type: { in: [UserType.STUDENT, UserType.PHD] },
         loginId: { contains: studentNumber },
         name: { contains: name },
         email: { contains: email },
@@ -1254,7 +1254,7 @@ export class StudentsService {
 
     const totalCount = await this.prismaService.user.count({
       where: {
-        type: UserType.STUDENT,
+        type: { in: [UserType.STUDENT, UserType.PHD] },
         loginId: { contains: studentNumber },
         name: { contains: name },
         email: { contains: email },
@@ -1360,7 +1360,7 @@ export class StudentsService {
     const student = await this.prismaService.user.findUnique({
       where: {
         id: studentId,
-        type: UserType.STUDENT,
+        type: { in: [UserType.STUDENT, UserType.PHD] },
         deletedAt: null,
       },
       include: { department: true, studentProcess: true },
@@ -1379,7 +1379,7 @@ export class StudentsService {
     const foundStudent = await this.prismaService.user.findUnique({
       where: {
         id: studentId,
-        type: UserType.STUDENT,
+        type: { in: [UserType.STUDENT, UserType.PHD] },
         deletedAt: null,
       },
     });
