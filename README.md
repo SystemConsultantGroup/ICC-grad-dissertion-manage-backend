@@ -10,5 +10,5 @@ npx prisma db seed
 npm run start
 ```
 
-### 개발중..
-- PDF 생성 모듈 MSA 전환
+### 주의사항
+- html 크기와 카프카 메시지 크기 리밋를 신경 써주세요.
