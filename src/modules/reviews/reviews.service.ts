@@ -274,7 +274,7 @@ export class ReviewsService {
           const key = v1();
           const createdAt = new Date();
           await this.kafkaProducer.sendMessage("pdf-topic-dev", reviewId, formatHtml, {
-            originalName: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
+            originalName: studentName + "_" + fileName.replace("_양식.html", "심사결과보고서.pdf"),
             uuid: key,
           });
           // await convertHTMLToPDF(formatHtml, async (pdf) => {
@@ -291,7 +291,7 @@ export class ReviewsService {
           return resolve(
             await this.prismaService.file.create({
               data: {
-                name: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
+                name: studentName + "_" + fileName.replace("_양식.html", "심사결과보고서.pdf"),
                 mimeType: "application/pdf",
                 uuid: key,
                 createdAt: createdAt,
@@ -306,7 +306,7 @@ export class ReviewsService {
     }
   }
 
-  async buildReportPdf(reviewId, replacer, isMain, studentName: string) {
+  async buildReportPdf(reviewId, replacer, isMain, studentName: string, professorName: string) {
     const fileName = (isMain ? "" : "예비") + "심사보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     try {
@@ -342,14 +342,14 @@ export class ReviewsService {
           //   );
           // });
           await this.kafkaProducer.sendMessage("pdf-topic-dev", reviewId.toString(), formatHtml, {
-            originalName: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
+            originalName: studentName + "_심사보고서_" + professorName + fileName.replace("_양식.html", ".pdf"),
             uuid: key,
           });
 
           return resolve(
             await this.prismaService.file.create({
               data: {
-                name: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
+                name: studentName + "_심사보고서_" + professorName + fileName.replace("_양식.html", ".pdf"),
                 mimeType: "application/pdf",
                 uuid: key,
                 createdAt: createdAt,
@@ -764,7 +764,8 @@ export class ReviewsService {
             foundReview.id,
             replacer,
             isMain,
-            foundReview.thesisInfo.process.student.name
+            foundReview.thesisInfo.process.student.name,
+            foundReview.reviewer.name
           );
         } //내용심사 & 구두심사 중 하나라도 보류중인 경우 파일생성없이 comment와 상태만 업데이트
       } else if (foundReview.thesisInfo.stage == Stage.PRELIMINARY) {
@@ -788,7 +789,8 @@ export class ReviewsService {
             foundReview.id,
             replacer,
             isMain,
-            foundReview.thesisInfo.process.student.name
+            foundReview.thesisInfo.process.student.name,
+            foundReview.reviewer.name
           );
         }
       }
