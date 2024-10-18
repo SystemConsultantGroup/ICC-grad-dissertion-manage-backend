@@ -189,8 +189,7 @@ export class AchievementsService {
       record["실적 구분"] = this.PerformanceToFullname(achievement.performance);
       record["학술지 또는 학술대회명"] = achievement.journalName;
       record["논문 제목"] = achievement.paperTitle;
-      (record["ISSN"] = achievement.ISSN ? achievement.ISSN : "미제출"),
-        (record["게재년월일"] = achievement.publicationDate);
+      (record["ISSN"] = achievement.ISSN ? achievement.ISSN : ""), (record["게재년월일"] = achievement.publicationDate);
       record["주저자여부"] = this.authorToFullname(achievement.authorType);
       record["저자수"] = achievement.authorNumbers;
 

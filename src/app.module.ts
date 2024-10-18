@@ -14,6 +14,8 @@ import { ReviewsModule } from "./modules/reviews/reviews.module";
 import { TaskModule } from "./modules/task/task.module";
 import { AchievementsModule } from "./modules/achievements/achievements.module";
 import { ThesesModule } from "./modules/theses/theses.module";
+import { KafkaModule } from "./config/kafka/kafka.module";
+import { MetricsModule } from "./config/metrics/metrics.module";
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { ThesesModule } from "./modules/theses/theses.module";
     TaskModule,
     AchievementsModule,
     ThesesModule,
+    KafkaModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -26,6 +26,8 @@ import * as Zip from "jszip";
 import { GetCurrentListResDto } from "./dtos/get-current-list.res.dto";
 import { GetResultResDto } from "./dtos/get-result.res.dto";
 import { readableToBuffer } from "src/common/utils/readable-to-buf";
+// import { convertHTMLToPDF } from "src/common/utils/convert-html-to-pdf";
+import { KafkaProducer } from "../../config/kafka/kafka.service";
 import { convertHTMLToPDF } from "src/common/utils/convert-html-to-pdf";
 import { ProcessDto } from "./dtos/process.dto";
 
@@ -33,7 +35,8 @@ import { ProcessDto } from "./dtos/process.dto";
 export class ReviewsService {
   constructor(
     private readonly minioClientService: MinioClientService,
-    private readonly prismaService: PrismaService
+    private readonly prismaService: PrismaService,
+    private readonly kafkaProducer: KafkaProducer
   ) {}
 
   buildFilename(base, searchQuery, isRevision = false) {
@@ -65,11 +68,11 @@ export class ReviewsService {
     return fileName;
   }
 
-  async buildResultPdf(reviewId, replacer, isMain) {
+  async buildResultPdf(reviewId, replacer, isMain, studentName: string) {
     const fileName = (isMain ? "" : "예비") + "심사결과보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     try {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         readFile(filePath, "utf8", async (err, formatHtml) => {
           if (err) throw new InternalServerErrorException("reading format html file failed: " + filePath);
           const replacerKeys = Object.keys(replacer);
@@ -270,22 +273,25 @@ export class ReviewsService {
 
           const key = v1();
           const createdAt = new Date();
-          await convertHTMLToPDF(formatHtml, async (pdf) => {
-            if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
-            await this.minioClientService.uploadFile(
-              key,
-              pdf,
-              Buffer.byteLength(pdf),
-              createdAt,
-              reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-              "application/pdf"
-            );
+          await this.kafkaProducer.sendMessage("pdf-topic-dev", reviewId, formatHtml, {
+            originalName: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
+            uuid: key,
           });
-
+          // await convertHTMLToPDF(formatHtml, async (pdf) => {
+          //   if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
+          //   await this.minioClientService.uploadFile(
+          //     key,
+          //     pdf,
+          //     Buffer.byteLength(pdf),
+          //     createdAt,
+          //     reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+          //     "application/pdf"
+          //   );
+          // });
           return resolve(
             await this.prismaService.file.create({
               data: {
-                name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+                name: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
                 mimeType: "application/pdf",
                 uuid: key,
                 createdAt: createdAt,
@@ -300,11 +306,11 @@ export class ReviewsService {
     }
   }
 
-  async buildReportPdf(reviewId, replacer, isMain) {
+  async buildReportPdf(reviewId, replacer, isMain, studentName: string, professorName: string) {
     const fileName = (isMain ? "" : "예비") + "심사보고서_양식.html";
     const filePath = path.join("resources", "format", fileName);
     try {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         readFile(filePath, "utf8", async (err, formatHtml) => {
           if (err) throw new InternalServerErrorException("reading format html file failed: " + filePath);
           const replacerKeys = Object.keys(replacer);
@@ -324,22 +330,26 @@ export class ReviewsService {
 
           const key = v1();
           const createdAt = new Date();
-          await convertHTMLToPDF(formatHtml, async (pdf) => {
-            if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
-            await this.minioClientService.uploadFile(
-              key,
-              pdf,
-              Buffer.byteLength(pdf),
-              createdAt,
-              reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
-              "application/pdf"
-            );
+          // await convertHTMLToPDF(formatHtml, async (pdf) => {
+          //   if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
+          //   await this.minioClientService.uploadFile(
+          //     key,
+          //     pdf,
+          //     Buffer.byteLength(pdf),
+          //     createdAt,
+          //     reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+          //     "application/pdf"
+          //   );
+          // });
+          await this.kafkaProducer.sendMessage("pdf-topic-dev", reviewId.toString(), formatHtml, {
+            originalName: studentName + "_" + professorName + "_" + fileName.replace("_양식.html", ".pdf"),
+            uuid: key,
           });
 
           return resolve(
             await this.prismaService.file.create({
               data: {
-                name: reviewId.toString() + "_" + fileName.replace(".html", ".pdf"),
+                name: studentName + "_" + professorName + "_" + fileName.replace("_양식.html", ".pdf"),
                 mimeType: "application/pdf",
                 uuid: key,
                 createdAt: createdAt,
@@ -750,7 +760,13 @@ export class ReviewsService {
             "$심사위원:성명": foundReview.reviewer.name,
             $서명: foundReview.reviewer.signId,
           };
-          file = await this.buildReportPdf(foundReview.id, replacer, isMain);
+          file = await this.buildReportPdf(
+            foundReview.id,
+            replacer,
+            isMain,
+            foundReview.thesisInfo.process.student.name,
+            foundReview.reviewer.name
+          );
         } //내용심사 & 구두심사 중 하나라도 보류중인 경우 파일생성없이 comment와 상태만 업데이트
       } else if (foundReview.thesisInfo.stage == Stage.PRELIMINARY) {
         // 예심 (=내용 심사 only)
@@ -769,7 +785,13 @@ export class ReviewsService {
             "$심사위원:성명": foundReview.reviewer.name,
             $서명: foundReview.reviewer.signId,
           };
-          file = await this.buildReportPdf(foundReview.id, replacer, isMain);
+          file = await this.buildReportPdf(
+            foundReview.id,
+            replacer,
+            isMain,
+            foundReview.thesisInfo.process.student.name,
+            foundReview.reviewer.name
+          );
         }
       }
     }
@@ -1223,7 +1245,7 @@ export class ReviewsService {
         }
       }
       const isMain = foundReview.thesisInfo.stage == Stage.MAIN ? true : false;
-      file = await this.buildResultPdf(foundReview.id, replacer, isMain);
+      file = await this.buildResultPdf(foundReview.id, replacer, isMain, foundReview.thesisInfo.process.student.name);
     }
     try {
       const review = await this.prismaService.$transaction(async (tx) => {

@@ -4,6 +4,8 @@ import { ValidationPipe, VersioningType } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { winstonLogger } from "./config/logger/winston/winston.config";
+import { ResponseInterceptor } from "./config/metrics/interceptors/response.prom.interceptor";
+import { PrometheusInterceptor } from "./config/metrics/interceptors/request.prom.interceptor";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -23,7 +25,7 @@ async function bootstrap() {
       },
     })
   );
-
+  app.useGlobalInterceptors(new PrometheusInterceptor());
   app.enableCors({
     origin: "*",
     credentials: true,
