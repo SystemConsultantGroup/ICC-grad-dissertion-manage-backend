@@ -35,7 +35,7 @@ export class AchievementsController {
     summary: "논문실적 등록",
     description: "논문실적 등록",
   })
-  @UseUserTypeGuard([UserType.STUDENT, UserType.ADMIN])
+  @UseUserTypeGuard([UserType.STUDENT, UserType.ADMIN, UserType.PHD])
   @Post()
   @ApiCreatedResponse({
     description: "논문 실적 등록 성공",
@@ -71,7 +71,7 @@ export class AchievementsController {
   @ApiInternalServerErrorResponse({
     description: "논문 조회 실패",
   })
-  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT])
+  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT, UserType.PHD])
   @Get()
   async getAchievements(@Query() achievementsQuery: AchievementsSearchQuery, @CurrentUser() currentUser: User) {
     const { achievements, counts } = await this.achievemenstService.getAchievements(currentUser, achievementsQuery);
@@ -94,7 +94,7 @@ export class AchievementsController {
     description: "논문실적 수정 성공",
     type: CommonResponseDto,
   })
-  @UseUserTypeGuard([UserType.STUDENT, UserType.ADMIN])
+  @UseUserTypeGuard([UserType.STUDENT, UserType.ADMIN, UserType.PHD])
   @Put(":id")
   async updateAchievement(
     @Param("id", PositiveIntPipe) id: number,
@@ -130,7 +130,7 @@ export class AchievementsController {
   })
   @ApiInternalServerErrorResponse({ description: "논문 실적 조회 실패" })
   @ApiUnauthorizedResponse({ description: "학생은 본인 논문실적만 조회 허용" })
-  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT])
+  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT, UserType.PHD])
   @Get(":id")
   async getAchievement(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
     const achievement = await this.achievemenstService.getAchievement(id, user);
@@ -146,7 +146,7 @@ export class AchievementsController {
   })
   @ApiInternalServerErrorResponse({ description: "논문 실적 삭제 실패" })
   @ApiUnauthorizedResponse({ description: "학생은 본인 논문실적만 삭제 허용" })
-  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT])
+  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT, UserType.PHD])
   @Delete(":id")
   async deleteAchievement(@Param("id", PositiveIntPipe) id: number, @CurrentUser() user: User) {
     await this.achievemenstService.deleteAchievement(id, user);

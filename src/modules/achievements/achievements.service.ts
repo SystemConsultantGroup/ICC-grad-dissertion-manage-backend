@@ -12,10 +12,10 @@ export class AchievementsService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async createAchievement(userId: number, user: User, createAchievementsDto: CreateAchievementsDto) {
-    const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
+    const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers, professorIds } =
       createAchievementsDto;
 
-    if (user.type === UserType.STUDENT && userId !== user.id)
+    if ((user.type === UserType.STUDENT || user.type === UserType.PHD) && userId !== user.id)
       throw new UnauthorizedException("본인 논문실적만 등록 가능합니다.");
     const foundUser = await this.prismaService.user.findUnique({
       where: {
@@ -23,6 +23,20 @@ export class AchievementsService {
       },
     });
     if (!foundUser) throw new BadRequestException("해당 유저가 존재하지 않습니다.");
+
+    // 교수 아이디 확인
+    if (professorIds && professorIds.length !== 0) {
+      const foundProfessors = await this.prismaService.user.findMany({
+        where: {
+          id: { in: professorIds },
+          type: UserType.PROFESSOR,
+        },
+      });
+      const foundIds = foundProfessors.map((user) => user.id);
+      const missingIds = professorIds.filter((id) => !foundIds.includes(id));
+      if (missingIds.length !== 0) throw new BadRequestException(`ID:[${missingIds}]에 해당하는 교수가 없습니다.`);
+    }
+
     return await this.prismaService.achievements.create({
       data: {
         userId,
@@ -33,6 +47,8 @@ export class AchievementsService {
         publicationDate,
         authorNumbers,
         authorType,
+        professorId1: professorIds ? professorIds[0] : undefined,
+        professorId2: professorIds && professorIds.length == 2 ? professorIds[1] : undefined,
       },
     });
   }
@@ -44,7 +60,7 @@ export class AchievementsService {
       },
     });
     if (!foundUser) throw new BadRequestException("해당 논문실적은 존재하지 않습니다.");
-    if (user.type === UserType.STUDENT && foundUser.userId != user.id)
+    if ((user.type === UserType.STUDENT || user.type === UserType.PHD) && foundUser.userId != user.id)
       throw new BadRequestException("다른 학생의 논문실적은 수정할수 없습니다.");
     const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
       updateAchievementDto;
@@ -69,7 +85,7 @@ export class AchievementsService {
   }
 
   async getAchievements(currentUser: User, achievementsQuery: AchievementsSearchQuery) {
-    if (currentUser.type == UserType.STUDENT) {
+    if (currentUser.type === UserType.STUDENT || currentUser.type === UserType.PHD) {
       const studentQuery = {
         where: {
           userId: currentUser.id,
@@ -147,6 +163,8 @@ export class AchievementsService {
             department: true,
           },
         },
+        Professor1: true,
+        Professor2: true,
       },
     });
     if (!achievements) throw new BadRequestException("검색된 논문 실적이 없습니다.");
@@ -158,6 +176,9 @@ export class AchievementsService {
       record["학번"] = student.loginId;
       record["이름"] = student.name;
       record["학과"] = dept.name;
+      record["학위과정"] = achievement.User.type === UserType.STUDENT ? "석사" : "박사";
+      record["지도교수1"] = achievement.Professor1 ? achievement.Professor1.name : null;
+      record["지도교수2"] = achievement.Professor2 ? achievement.Professor2.name : null;
 
       record["실적 구분"] = this.PerformanceToFullname(achievement.performance);
       record["학술지 또는 학술대회명"] = achievement.journalName;
@@ -236,7 +257,7 @@ export class AchievementsService {
       },
     });
     if (!achievement) throw new BadRequestException("해당 id의 논문실적이 존재하지 않습니다.");
-    if (user.type === UserType.STUDENT && achievement.userId !== user.id)
+    if ((user.type === UserType.STUDENT || user.type === UserType.PHD) && achievement.userId !== user.id)
       throw new UnauthorizedException("학생의 경우 본인 논문 실적만 조회가 가능합니다.");
     return achievement;
   }
@@ -248,7 +269,7 @@ export class AchievementsService {
       },
     });
     if (!achievement) throw new BadRequestException("해당 id의 논문실적이 존재하지 않습니다.");
-    if (user.type === UserType.STUDENT && achievement.userId !== user.id)
+    if ((user.type === UserType.STUDENT || user.type === UserType.PHD) && achievement.userId !== user.id)
       throw new UnauthorizedException("학생의 경우 본인 논문 실적만 조회가 가능합니다.");
     try {
       await this.prismaService.achievements.delete({
