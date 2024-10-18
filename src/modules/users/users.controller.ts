@@ -29,7 +29,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get("/me")
-  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT, UserType.PROFESSOR])
+  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT, UserType.PROFESSOR, UserType.PHD])
   @ApiOperation({
     summary: "로그인 유저 정보 조회 API",
     description: "로그인된 유저의 회원 정보를 조회할 수 있다.",
@@ -46,7 +46,7 @@ export class UsersController {
   }
 
   @Put("/me")
-  @UseUserTypeGuard([UserType.ADMIN, UserType.PROFESSOR, UserType.STUDENT])
+  @UseUserTypeGuard([UserType.ADMIN, UserType.PROFESSOR, UserType.STUDENT, UserType.PHD])
   @ApiOperation({
     summary: "로그인 유저 정보 수정 API",
     description: "로그인된 유저의 회원 정보 중 '비밀번호', '연락처', '이메일' 필드를 수정할 수 있다.",
