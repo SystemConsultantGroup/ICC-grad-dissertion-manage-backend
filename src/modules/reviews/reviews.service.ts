@@ -274,7 +274,7 @@ export class ReviewsService {
           const key = v1();
           const createdAt = new Date();
           await this.kafkaProducer.sendMessage("pdf-topic-dev", reviewId, formatHtml, {
-            originalName: studentName + "_" + fileName.replace("_양식.html", "심사결과보고서.pdf"),
+            originalName: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
             uuid: key,
           });
           // await convertHTMLToPDF(formatHtml, async (pdf) => {
@@ -291,7 +291,7 @@ export class ReviewsService {
           return resolve(
             await this.prismaService.file.create({
               data: {
-                name: studentName + "_" + fileName.replace("_양식.html", "심사결과보고서.pdf"),
+                name: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
                 mimeType: "application/pdf",
                 uuid: key,
                 createdAt: createdAt,
@@ -342,14 +342,14 @@ export class ReviewsService {
           //   );
           // });
           await this.kafkaProducer.sendMessage("pdf-topic-dev", reviewId.toString(), formatHtml, {
-            originalName: studentName + "_심사보고서_" + professorName + fileName.replace("_양식.html", ".pdf"),
+            originalName: studentName + "_" + professorName + "_" + fileName.replace("_양식.html", ".pdf"),
             uuid: key,
           });
 
           return resolve(
             await this.prismaService.file.create({
               data: {
-                name: studentName + "_심사보고서_" + professorName + fileName.replace("_양식.html", ".pdf"),
+                name: studentName + "_" + professorName + "_" + fileName.replace("_양식.html", ".pdf"),
                 mimeType: "application/pdf",
                 uuid: key,
                 createdAt: createdAt,
