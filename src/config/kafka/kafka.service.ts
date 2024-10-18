@@ -14,7 +14,7 @@ export class KafkaProducer implements OnModuleInit, OnModuleDestroy {
         "kafka-controller-1.kafka-controller-headless.kafka.svc.cluster.local:9092",
         "kafka-controller-2.kafka-controller-headless.kafka.svc.cluster.local:9092",
       ],
-      logLevel: logLevel.INFO,
+      logLevel: logLevel.DEBUG,
       retry: {
         initialRetryTime: 100,
         retries: 10,
