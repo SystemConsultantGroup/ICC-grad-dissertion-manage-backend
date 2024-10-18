@@ -42,6 +42,7 @@ export class MinioClientService {
     try {
       return await this.minioClient.getObject(this.bucket, key);
     } catch (err) {
+      console.error("key does not exist", key);
       throw new BadRequestException(err.message);
     }
   }
