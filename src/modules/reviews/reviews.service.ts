@@ -1169,27 +1169,27 @@ export class ReviewsService {
                   if (singleReview.isFinal) {
                     replacer["$심사위원장"].push({
                       $성명: singleReview.reviewer.name,
-                      "$내용:합격": singleReview.contentStatus ? "O" : "",
-                      "$내용:불합격": singleReview.contentStatus ? "" : "O",
-                      "$구두:합격": singleReview.presentationStatus ? "O" : "",
-                      "$구두:불합격": singleReview.presentationStatus ? "" : "O",
+                      "$내용:합격": singleReview.contentStatus === "PASS" ? "O" : "",
+                      "$내용:불합격": singleReview.contentStatus === "FAIL" ? "O" : "",
+                      "$구두:합격": singleReview.presentationStatus === "PASS" ? "O" : "",
+                      "$구두:불합격": singleReview.presentationStatus === "FAIL" ? "O" : "",
                     });
                   }
                 } else if (reviewer.role == Role.COMMITTEE_MEMBER) {
                   replacer["$심사위원"].push({
                     $성명: singleReview.reviewer.name,
-                    "$내용:합격": singleReview.contentStatus ? "O" : "",
-                    "$내용:불합격": singleReview.contentStatus ? "" : "O",
-                    "$구두:합격": singleReview.presentationStatus ? "O" : "",
-                    "$구두:불합격": singleReview.presentationStatus ? "" : "O",
+                    "$내용:합격": singleReview.contentStatus === "PASS" ? "O" : "",
+                    "$내용:불합격": singleReview.contentStatus === "FAIL" ? "O" : "",
+                    "$구두:합격": singleReview.presentationStatus === "PASS" ? "O" : "",
+                    "$구두:불합격": singleReview.presentationStatus === "FAIL" ? "O" : "",
                   });
                 } else if (reviewer.role == Role.ADVISOR) {
                   replacer["$지도교수"].push({
                     $성명: singleReview.reviewer.name,
-                    "$내용:합격": singleReview.contentStatus ? "O" : "",
-                    "$내용:불합격": singleReview.contentStatus ? "" : "O",
-                    "$구두:합격": singleReview.presentationStatus ? "O" : "",
-                    "$구두:불합격": singleReview.presentationStatus ? "" : "O",
+                    "$내용:합격": singleReview.contentStatus === "PASS" ? "O" : "",
+                    "$내용:불합격": singleReview.contentStatus === "FAIL" ? "O" : "",
+                    "$구두:합격": singleReview.presentationStatus === "PASS" ? "O" : "",
+                    "$구두:불합격": singleReview.presentationStatus === "FAIL" ? "O" : "",
                   });
                 }
               }
@@ -1222,21 +1222,21 @@ export class ReviewsService {
                   if (singleReview.isFinal) {
                     replacer["$심사위원장"].push({
                       $성명: singleReview.reviewer.name,
-                      $합격: singleReview.contentStatus ? "O" : "",
-                      $불합격: singleReview.contentStatus ? "" : "O",
+                      $합격: singleReview.contentStatus === "PASS" ? "O" : "",
+                      $불합격: singleReview.contentStatus === "FAIL" ? "O" : "",
                     });
                   }
                 } else if (reviewer.role == Role.COMMITTEE_MEMBER) {
                   replacer["$심사위원"].push({
                     $성명: singleReview.reviewer.name,
-                    $합격: singleReview.contentStatus ? "O" : "",
-                    $불합격: singleReview.contentStatus ? "" : "O",
+                    $합격: singleReview.contentStatus === "PASS" ? "O" : "",
+                    $불합격: singleReview.contentStatus === "FAIL" ? "O" : "",
                   });
                 } else if (reviewer.role == Role.ADVISOR) {
                   replacer["$지도교수"].push({
                     $성명: singleReview.reviewer.name,
-                    $합격: singleReview.contentStatus ? "O" : "",
-                    $불합격: singleReview.contentStatus ? "" : "O",
+                    $합격: singleReview.contentStatus === "PASS" ? "O" : "",
+                    $불합격: singleReview.contentStatus === "FAIL" ? "O" : "",
                   });
                 }
               }
