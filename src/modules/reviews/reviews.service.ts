@@ -447,6 +447,10 @@ export class ReviewsService {
           stage: { in: [Stage.MAIN, Stage.PRELIMINARY] },
           ...(searchQuery.title && { title: { contains: searchQuery.title } }),
         },
+        createdAt: {
+          gte: searchQuery.startDate,
+          lte: searchQuery.endDate,
+        },
         reviewerId: id,
         isFinal: false,
         // NOT: {
@@ -499,6 +503,10 @@ export class ReviewsService {
         },
         reviewerId: id,
         isFinal: false,
+        createdAt: {
+          gte: searchQuery.startDate,
+          lte: searchQuery.endDate,
+        },
         NOT: {
           thesisInfo: {
             stage: Stage.REVISION,
@@ -875,6 +883,10 @@ export class ReviewsService {
           ...(searchQuery.stage && { stage: searchQuery.stage }),
           ...(searchQuery.title && { title: { contains: searchQuery.title } }),
         },
+        createdAt: {
+          gte: searchQuery.startDate,
+          lte: searchQuery.endDate,
+        },
         isFinal: true,
         ...(searchQuery.status && { contentStatus: { in: status } }),
       },
@@ -917,6 +929,10 @@ export class ReviewsService {
           },
         },
         isFinal: true,
+        createdAt: {
+          gte: searchQuery.startDate,
+          lte: searchQuery.endDate,
+        },
         ...(searchQuery.author && {
           thesisInfo: { process: { student: { name: { contains: searchQuery.author } } } },
         }),
