@@ -110,6 +110,9 @@ export class TaskService {
       case 9:
         this.addCronJob(phase.title, phase.start, this._09);
         break;
+      case 10:
+        this.addCronJob(phase.title, phase.start, this._10);
+        break;
       default:
         console.log("WARNING: Cron작업이 제대로 작동이 안되고 있을 가능성이 있습니다. DB에서 단계를 확인해주세요");
         break;
@@ -281,4 +284,6 @@ export class TaskService {
       });
     });
   };
+
+  _10 = async () => {};
 }
