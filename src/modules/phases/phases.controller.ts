@@ -24,7 +24,7 @@ import { PositiveIntPipe } from "../../common/pipes/positive-int.pipe";
 export class PhasesController {
   constructor(private readonly phasesService: PhasesService) {}
 
-  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT, UserType.PROFESSOR])
+  @UseUserTypeGuard([UserType.ADMIN, UserType.STUDENT, UserType.PROFESSOR, UserType.PHD])
   @Get()
   @ApiOperation({ summary: "모든 시스템 단계 일정 조회" })
   @ApiOkResponse({
