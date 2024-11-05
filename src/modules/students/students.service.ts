@@ -1492,6 +1492,7 @@ export class StudentsService {
           data: {
             phaseId: 4, // 본심 논문 제출 단계
             currentPhase: Stage.MAIN,
+            headReviewerId: headReviewerId,
           },
         });
 
