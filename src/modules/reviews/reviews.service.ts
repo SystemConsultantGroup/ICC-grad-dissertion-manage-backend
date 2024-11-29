@@ -1137,9 +1137,10 @@ export class ReviewsService {
 
     // 합격인 심사의 개수를 카운트
     const passCount = otherReviews.filter((review) => review.contentStatus === Status.PASS).length;
+    const threshold = Math.ceil(otherReviews.length / 2);
 
-    // 합격인 심사의 개수가 2개 미만이면 심사가 모두 완료되어야 함
-    if (passCount < 2) {
+    // 합격인 심사의 개수가 과반수 미만이면 심사가 모두 완료되어야 함
+    if (passCount < threshold) {
       const notSubmitted = otherReviews.filter((review) => {
         if (review.contentStatus == Status.FAIL || review.contentStatus == Status.PASS) {
           return false;
