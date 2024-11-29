@@ -1134,13 +1134,24 @@ export class ReviewsService {
         isFinal: false,
       },
     });
-    const notSubmitted = otherReviews.filter((review) => {
-      if (review.contentStatus == Status.FAIL || review.contentStatus == Status.PASS) {
-        return false;
+
+    // 합격인 심사의 개수를 카운트
+    const passCount = otherReviews.filter((review) => review.contentStatus === Status.PASS).length;
+
+    // 합격인 심사의 개수가 2개 미만이면 심사가 모두 완료되어야 함
+    if (passCount < 2) {
+      const notSubmitted = otherReviews.filter((review) => {
+        if (review.contentStatus == Status.FAIL || review.contentStatus == Status.PASS) {
+          return false;
+        }
+        return true;
+      });
+
+      if (notSubmitted.length > 0) {
+        throw new BadRequestException("심사가 완료되지 않았습니다.");
       }
-      return true;
-    });
-    if (notSubmitted.length != 0) throw new BadRequestException("심사가 완료되지 않았습니다.");
+    }
+
     if (!foundReview) throw new NotFoundException("존재하지 않는 심사정보입니다");
     if (userType == UserType.PROFESSOR) {
       if (foundReview.reviewerId != userId) throw new BadRequestException("본인의 논문 심사가 아닙니다.");
