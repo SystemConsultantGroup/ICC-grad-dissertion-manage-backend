@@ -32,7 +32,7 @@ import { MetricsModule } from "./config/metrics/metrics.module";
     TaskModule,
     AchievementsModule,
     ThesesModule,
-    KafkaModule,
+    // KafkaModule,
     MetricsModule,
   ],
   controllers: [AppController],

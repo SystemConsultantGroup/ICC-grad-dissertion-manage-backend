@@ -35,8 +35,8 @@ import { ProcessDto } from "./dtos/process.dto";
 export class ReviewsService {
   constructor(
     private readonly minioClientService: MinioClientService,
-    private readonly prismaService: PrismaService,
-    private readonly kafkaProducer: KafkaProducer
+    private readonly prismaService: PrismaService
+    // private readonly kafkaProducer: KafkaProducer
   ) {}
 
   buildFilename(base, searchQuery, isRevision = false) {
@@ -273,10 +273,10 @@ export class ReviewsService {
 
           const key = v1();
           const createdAt = new Date();
-          await this.kafkaProducer.sendMessage("pdf-topic-dev", JSON.stringify(reviewId), formatHtml, {
-            originalName: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
-            uuid: key,
-          });
+          // await this.kafkaProducer.sendMessage("pdf-topic-dev", JSON.stringify(reviewId), formatHtml, {
+          //   originalName: studentName + "_" + fileName.replace("_양식.html", ".pdf"),
+          //   uuid: key,
+          // });
           // await convertHTMLToPDF(formatHtml, async (pdf) => {
           //   if (err) throw new InternalServerErrorException("Creating PDF Buffer failed!");
           //   await this.minioClientService.uploadFile(
@@ -341,10 +341,10 @@ export class ReviewsService {
           //     "application/pdf"
           //   );
           // });
-          await this.kafkaProducer.sendMessage("pdf-topic-dev", JSON.stringify(reviewId), formatHtml, {
-            originalName: studentName + "_" + professorName + "_" + fileName.replace("_양식.html", ".pdf"),
-            uuid: key,
-          });
+          // await this.kafkaProducer.sendMessage("pdf-topic-dev", JSON.stringify(reviewId), formatHtml, {
+          //   originalName: studentName + "_" + professorName + "_" + fileName.replace("_양식.html", ".pdf"),
+          //   uuid: key,
+          // });
 
           return resolve(
             await this.prismaService.file.create({
