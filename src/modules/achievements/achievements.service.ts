@@ -3,7 +3,7 @@ import { PrismaService } from "../../config/database/prisma.service";
 import { CreateAchievementsDto } from "./dtos/create-achievements.dto";
 import { UpdateAchievementsDto } from "./dtos/update-achievements.dto";
 import { AchievementsExcelQuery, AchievementsSearchQuery } from "./dtos/achievements-query.dto";
-import { AuthorType, Performance, User, UserType } from "@prisma/client";
+import { AuthorType, Performance, Role, User, UserType } from "@prisma/client";
 import * as XLSX from "xlsx";
 import * as DateUtil from "../../common/utils/date.util";
 import { Readable } from "stream";
@@ -146,6 +146,18 @@ export class AchievementsService {
         User: {
           include: {
             department: true,
+            studentProcess: {
+              include: {
+                reviewers: {
+                  include: {
+                    reviewer: true,
+                  },
+                  where: {
+                    role: Role.ADVISOR,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -155,6 +167,7 @@ export class AchievementsService {
       const record = {};
       const student = achievement.User;
       const dept = achievement.User.department;
+      const advisors = student.studentProcess ? student.studentProcess.reviewers : null; // 박사과정생은 지도교수 등록되어있지 않음
 
       record["학번"] = student.loginId;
       record["이름"] = student.name;
@@ -166,6 +179,11 @@ export class AchievementsService {
       (record["ISSN"] = achievement.ISSN ? achievement.ISSN : ""), (record["게재년월일"] = achievement.publicationDate);
       record["주저자여부"] = this.authorToFullname(achievement.authorType);
       record["저자수"] = achievement.authorNumbers;
+      if (advisors !== null) {
+        advisors.forEach((reviewerInfo, index) => {
+          record[`지도 교수${index + 1}`] = reviewerInfo.reviewer.name;
+        });
+      }
 
       return record;
     });
