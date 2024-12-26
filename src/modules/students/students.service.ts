@@ -561,7 +561,7 @@ export class StudentsService {
                         thesisInfoId: mainThesisInfo.id,
                         reviewerId: headReviewerId,
                         contentStatus: ReviewStatus.UNEXAMINED,
-                        presentationStatus: ReviewStatus.UNEXAMINED,
+                        presentationStatus: ReviewStatus.PASS, // 최종 심사는 구두 심사 없음
                         isFinal: true,
                       }
                     );
@@ -646,6 +646,7 @@ export class StudentsService {
                     }
                     if (process.currentPhase === Stage.MAIN) {
                       reviewData.push(
+                        // 본심 심사
                         ...newAdvisorIds.map((id) => {
                           return {
                             thesisInfoId: mainThesisInfo.id,
@@ -740,6 +741,7 @@ export class StudentsService {
                     }
                     if (process.currentPhase === Stage.MAIN) {
                       reviewData.push(
+                        // 본심 심사
                         ...newCommitteeIds.map((id) => {
                           return {
                             thesisInfoId: mainThesisInfo.id,
@@ -1964,6 +1966,7 @@ export class StudentsService {
           });
         }
         if (foundStudent.studentProcess.currentPhase === Stage.MAIN) {
+          // 본심 심사
           reviewData.push({
             thesisInfoId: mainThesisInfo.id,
             reviewerId,
@@ -2197,7 +2200,7 @@ export class StudentsService {
               thesisInfoId: mainThesisInfo.id,
               reviewerId: headReviewerId,
               contentStatus: ReviewStatus.UNEXAMINED,
-              presentationStatus: ReviewStatus.UNEXAMINED,
+              presentationStatus: ReviewStatus.PASS, // 최종 심사는 구두 심사 없음
               isFinal: true,
             }
           );
