@@ -1,14 +1,4 @@
-import {
-  ArrayMaxSize,
-  ArrayMinSize,
-  IsArray,
-  IsDate,
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsPositive,
-  IsString,
-} from "class-validator";
+import { IsDate, IsEnum, IsInt, IsOptional, IsPositive, IsString } from "class-validator";
 import { Author } from "../../../common/enums/author.enum";
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
@@ -80,13 +70,4 @@ export class UpdateAchievementsDto {
   @IsInt()
   @IsPositive()
   authorNumbers: number;
-
-  @ApiProperty({ description: "지도교수 아이디 리스트", type: [Number], example: "[3, 4]" })
-  @IsArray()
-  @Type(() => Number)
-  @IsInt({ each: true })
-  @IsPositive({ each: true })
-  @ArrayMinSize(0)
-  @ArrayMaxSize(2)
-  professorIds: number[];
 }
