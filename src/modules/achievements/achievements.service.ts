@@ -3,7 +3,7 @@ import { PrismaService } from "../../config/database/prisma.service";
 import { CreateAchievementsDto } from "./dtos/create-achievements.dto";
 import { UpdateAchievementsDto } from "./dtos/update-achievements.dto";
 import { AchievementsExcelQuery, AchievementsSearchQuery } from "./dtos/achievements-query.dto";
-import { AuthorType, Performance, User, UserType } from "@prisma/client";
+import { AuthorType, Performance, Role, User, UserType } from "@prisma/client";
 import * as XLSX from "xlsx";
 import * as DateUtil from "../../common/utils/date.util";
 import { Readable } from "stream";
@@ -12,7 +12,7 @@ export class AchievementsService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async createAchievement(userId: number, user: User, createAchievementsDto: CreateAchievementsDto) {
-    const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers, professorIds } =
+    const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
       createAchievementsDto;
 
     if ((user.type === UserType.STUDENT || user.type === UserType.PHD) && userId !== user.id)
@@ -24,19 +24,6 @@ export class AchievementsService {
     });
     if (!foundUser) throw new BadRequestException("해당 유저가 존재하지 않습니다.");
 
-    // 교수 아이디 확인
-    if (professorIds && professorIds.length !== 0) {
-      const foundProfessors = await this.prismaService.user.findMany({
-        where: {
-          id: { in: professorIds },
-          type: UserType.PROFESSOR,
-        },
-      });
-      const foundIds = foundProfessors.map((user) => user.id);
-      const missingIds = professorIds.filter((id) => !foundIds.includes(id));
-      if (missingIds.length !== 0) throw new BadRequestException(`ID:[${missingIds}]에 해당하는 교수가 없습니다.`);
-    }
-
     return await this.prismaService.achievements.create({
       data: {
         userId,
@@ -47,8 +34,6 @@ export class AchievementsService {
         publicationDate,
         authorNumbers,
         authorType,
-        professorId1: professorIds ? professorIds[0] : undefined,
-        professorId2: professorIds && professorIds.length == 2 ? professorIds[1] : undefined,
       },
     });
   }
@@ -62,7 +47,7 @@ export class AchievementsService {
     if (!foundUser) throw new BadRequestException("해당 논문실적은 존재하지 않습니다.");
     if ((user.type === UserType.STUDENT || user.type === UserType.PHD) && foundUser.userId != user.id)
       throw new BadRequestException("다른 학생의 논문실적은 수정할수 없습니다.");
-    const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers, professorIds } =
+    const { performance, paperTitle, journalName, ISSN, publicationDate, authorType, authorNumbers } =
       updateAchievementDto;
     try {
       return await this.prismaService.achievements.update({
@@ -77,12 +62,6 @@ export class AchievementsService {
           ...(publicationDate && { publicationDate }),
           ...(authorType && { authorType }),
           ...(authorNumbers && { authorNumbers }),
-          ...(professorIds.length == 0 && { professorId1: null }),
-          ...(professorIds.length == 0 && { professorId2: null }),
-          ...(professorIds.length == 1 && { professorId1: professorIds[0] }),
-          ...(professorIds.length == 1 && { professorId2: null }),
-          ...(professorIds.length == 2 && { professorId1: professorIds[0] }),
-          ...(professorIds.length == 2 && { professorId2: professorIds[1] }),
         },
       });
     } catch {
@@ -167,10 +146,20 @@ export class AchievementsService {
         User: {
           include: {
             department: true,
+            studentProcess: {
+              include: {
+                reviewers: {
+                  include: {
+                    reviewer: true,
+                  },
+                  where: {
+                    role: Role.ADVISOR,
+                  },
+                },
+              },
+            },
           },
         },
-        Professor1: true,
-        Professor2: true,
       },
     });
     if (!achievements) throw new BadRequestException("검색된 논문 실적이 없습니다.");
@@ -178,20 +167,23 @@ export class AchievementsService {
       const record = {};
       const student = achievement.User;
       const dept = achievement.User.department;
+      const advisors = student.studentProcess ? student.studentProcess.reviewers : null; // 박사과정생은 지도교수 등록되어있지 않음
 
       record["학번"] = student.loginId;
       record["이름"] = student.name;
       record["학과"] = dept.name;
       record["학위과정"] = achievement.User.type === UserType.STUDENT ? "석사" : "박사";
-      record["지도교수1"] = achievement.Professor1 ? achievement.Professor1.name : null;
-      record["지도교수2"] = achievement.Professor2 ? achievement.Professor2.name : null;
-
       record["실적 구분"] = this.PerformanceToFullname(achievement.performance);
       record["학술지 또는 학술대회명"] = achievement.journalName;
       record["논문 제목"] = achievement.paperTitle;
       (record["ISSN"] = achievement.ISSN ? achievement.ISSN : ""), (record["게재년월일"] = achievement.publicationDate);
       record["주저자여부"] = this.authorToFullname(achievement.authorType);
       record["저자수"] = achievement.authorNumbers;
+      if (advisors !== null) {
+        advisors.forEach((reviewerInfo, index) => {
+          record[`지도 교수${index + 1}`] = reviewerInfo.reviewer.name;
+        });
+      }
 
       return record;
     });
