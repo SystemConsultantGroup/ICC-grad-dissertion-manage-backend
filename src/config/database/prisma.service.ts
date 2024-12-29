@@ -2,10 +2,7 @@ import { Injectable, OnModuleInit } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
 import { PrismaClientOptions } from "@prisma/client/runtime/library";
 @Injectable()
-export class PrismaService
-  extends PrismaClient<PrismaClientOptions, "query" | "info" | "warn" | "error">
-  implements OnModuleInit
-{
+export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
     super({
       log: [
@@ -23,10 +20,10 @@ export class PrismaService
     //   console.log("Paramas: " + e.params);
     //   console.log("Duration " + e.duration + "ms");
     // });
-    this.$on("error", (e) => {
-      console.log("Target: " + e.target);
-      console.log("Message: " + e.message);
-    });
+    // this.$on("error", (e) => {
+    //   console.log("Target: " + e.target);
+    //   console.log("Message: " + e.message);
+    // });
     await this.$connect();
   }
 }
