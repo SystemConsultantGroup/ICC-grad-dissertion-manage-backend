@@ -1,7 +1,7 @@
 FROM node:18-alpine
 
 # Korean Timezone Setting
-ADD https://worldtimeapi.org/api/timezone/Asia/Seoul /tmp/bustcache
+# ADD https://worldtimeapi.org/api/timezone/Asia/Seoul /tmp/bustcache
 
 WORKDIR /app
 COPY /.husky ./
