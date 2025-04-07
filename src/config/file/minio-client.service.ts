@@ -40,7 +40,6 @@ export class MinioClientService {
 
   async getFile(key: string) {
     try {
-      console.log(key);
       return await this.minioClient.getObject(this.bucket, key);
     } catch (err) {
       throw new BadRequestException(err.message);
