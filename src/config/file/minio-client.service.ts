@@ -1,5 +1,5 @@
-import { ConfigService } from "@nestjs/config";
 import { BadRequestException, Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import * as Minio from "minio";
 import { MinioService } from "nestjs-minio-client";
 
@@ -40,6 +40,7 @@ export class MinioClientService {
 
   async getFile(key: string) {
     try {
+      console.log(key);
       return await this.minioClient.getObject(this.bucket, key);
     } catch (err) {
       throw new BadRequestException(err.message);
