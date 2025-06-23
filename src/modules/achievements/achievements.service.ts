@@ -1,12 +1,12 @@
 import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
-import { PrismaService } from "../../config/database/prisma.service";
-import { CreateAchievementsDto } from "./dtos/create-achievements.dto";
-import { UpdateAchievementsDto } from "./dtos/update-achievements.dto";
-import { AchievementsExcelQuery, AchievementsSearchQuery } from "./dtos/achievements-query.dto";
 import { AuthorType, Performance, Role, User, UserType } from "@prisma/client";
+import { Readable } from "stream";
 import * as XLSX from "xlsx";
 import * as DateUtil from "../../common/utils/date.util";
-import { Readable } from "stream";
+import { PrismaService } from "../../config/database/prisma.service";
+import { AchievementsExcelQuery, AchievementsSearchQuery } from "./dtos/achievements-query.dto";
+import { CreateAchievementsDto } from "./dtos/create-achievements.dto";
+import { UpdateAchievementsDto } from "./dtos/update-achievements.dto";
 @Injectable()
 export class AchievementsService {
   constructor(private readonly prismaService: PrismaService) {}
@@ -207,11 +207,11 @@ export class AchievementsService {
       case Performance.SCOPUS:
         return "SCOPUS";
       case Performance.SCIE:
-        return "SCI(E)급 국제학회";
+        return "우수국제(Top-Tier 학술대회(Top-tier Conference list)";
       case Performance.INTERNATIONAL_B:
         return "국제 B급 학술지";
       case Performance.DOMESTIC_A:
-        return "국내 A급 학술지";
+        return "KCI 등재지(KCI Journal)";
       case Performance.DOMESTIC_B:
         return "국내 B급 학술지";
       case Performance.ICOP:
