@@ -1,27 +1,26 @@
 FROM node:18-alpine
 
-# Korean Timezone Setting
-ADD https://worldtimeapi.org/api/timezone/Asia/Seoul /tmp/bustcache
+# Install tzdata and set timezone to Asia/Seoul
+RUN apk add --no-cache tzdata \
+  && cp /usr/share/zoneinfo/Asia/Seoul /etc/localtime \
+  && echo "Asia/Seoul" > /etc/timezone
+
+# Set locale to Korean (optional, only for string formatting, etc.)
+ENV TZ=Asia/Seoul
+ENV LANG=ko_KR.UTF-8
+ENV LANGUAGE=ko_KR:ko
 
 WORKDIR /app
-COPY /.husky ./
-COPY nest-cli.json ./
-COPY tsconfig.json ./
-COPY tsconfig.build.json ./
 
-ENV LANG=ko_KR.UTF-8
-ENV LANGUAGE=ko_KR.UTF-
-
-# package.json, package-lock.json
 COPY package*.json ./
 RUN npm install
 
 COPY prisma ./prisma
 RUN npx prisma generate
 
-COPY src ./src
-COPY resources ./resources
+COPY . .
+
 RUN npm run build
 
-ENTRYPOINT [ "node" ]
+ENTRYPOINT ["node"]
 CMD ["dist/src/main"]
