@@ -1288,8 +1288,8 @@ export class ReviewsService {
                           $성명: singleReview.reviewer.name,
                           "$내용:합격": singleReview.contentStatus === "PASS" ? "O" : "",
                           "$내용:불합격": singleReview.contentStatus === "FAIL" ? "O" : "",
-                          "$구두:합격": singleReview.presentationStatus === "PASS" ? "O" : "",
-                          "$구두:불합격": singleReview.presentationStatus === "FAIL" ? "O" : "",
+                          "$구두:합격": singleReview.contentStatus === "PASS" ? "O" : "",
+                          "$구두:불합격": singleReview.contentStatus === "FAIL" ? "O" : "",
                         });
                       }
                     } else if (reviewer.role == Role.COMMITTEE_MEMBER) {
