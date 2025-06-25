@@ -1,5 +1,5 @@
-import { ConfigService } from "@nestjs/config";
 import { BadRequestException, Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import * as Minio from "minio";
 import { MinioService } from "nestjs-minio-client";
 
