@@ -207,7 +207,7 @@ export class AchievementsService {
       case Performance.SCOPUS:
         return "SCOPUS";
       case Performance.SCIE:
-        return "우수국제(Top-Tier 학술대회(Top-tier Conference list)";
+        return "우수국제(Top-Tier) 학술대회(Top-tier Conference list)";
       case Performance.INTERNATIONAL_B:
         return "국제 B급 학술지";
       case Performance.DOMESTIC_A:

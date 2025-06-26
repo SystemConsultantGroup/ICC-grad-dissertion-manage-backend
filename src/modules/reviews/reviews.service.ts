@@ -1255,7 +1255,7 @@ export class ReviewsService {
 
         // 3. 업데이트된 데이터로 PDF 생성
         let file;
-        if (!updateReviewFinalDto.fileUUID) {
+        if (!updateReviewFinalDto.fileUUID && updatedReview.contentStatus != Status.PENDING) {
           let replacer;
           if (updatedReview.thesisInfo.stage == Stage.MAIN) {
             if (
