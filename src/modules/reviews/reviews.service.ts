@@ -1283,7 +1283,7 @@ export class ReviewsService {
                 for (const reviewer of updatedReview.thesisInfo.process.reviewers) {
                   if (singleReview.reviewerId == reviewer.reviewerId) {
                     if (reviewer.role == Role.COMMITTEE_CHAIR) {
-                      if (singleReview.isFinal) {
+                      if (!singleReview.isFinal) { // 본심사에서도 최종판정 여부가 아닌 개별심사 여부를 원하시는 듯.
                         replacer["$심사위원장"].push({
                           $성명: singleReview.reviewer.name,
                           "$내용:합격": singleReview.contentStatus === "PASS" ? "O" : "",
