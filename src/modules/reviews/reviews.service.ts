@@ -1339,7 +1339,7 @@ export class ReviewsService {
                 for (const reviewer of updatedReview.thesisInfo.process.reviewers) {
                   if (singleReview.reviewerId == reviewer.reviewerId) {
                     if (reviewer.role == Role.COMMITTEE_CHAIR) {
-                      if (singleReview.isFinal) {
+                      if (!singleReview.isFinal) { // 예비심사에서 최종판정 여부가 아닌, 개별심사위원 합불여부를 표시해달라고 요청하심.
                         replacer["$심사위원장"].push({
                           $성명: singleReview.reviewer.name,
                           $합격: singleReview.contentStatus === "PASS" ? "O" : "",
